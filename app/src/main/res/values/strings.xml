@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">TutorialYoutubeMadeSimple</string>
+    
+    <!-- Error messages -->
+    <string name="error_invalid_url">Invalid video URL/ID.</string>
+    <string name="error_no_summary">No summary results received.</string>
+    <string name="error_no_transcript">No transcript found for this video.</string>
+    <string name="error_generic">An error occurred during summarization.</string>
+    <string name="error_export_file">Error exporting file: %1$s</string>
+    <string name="error_video_not_found">Video not found. Please check if the video exists.</string>
+    <string name="error_transcripts_disabled">Transcripts are disabled for this video.</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_language_not_found">No transcript available in the supported language.</string>
+    
+    <!-- Default values -->
+    <string name="default_no_title">(No title)</string>
+    
+    <!-- Share dialog -->
+    <string name="share_dialog_title">Share summary via…</string>
+
+    <!-- Input labels -->
+    <string name="input_url_label">Enter YouTube URL or ID</string>
+    <string name="input_url_placeholder">Example: https://youtu.be/VIDEO_ID</string>
+    
+    <!-- Button labels -->
+    <string name="summarize_button">Summarize Video</string>
+    <string name="back_button">Back</string>
+    <string name="export_share_button">Export HTML and Share</string>
+    
+    <!-- Loading states -->
+    <string name="loading_summary">Summarizing…</string>
+    
+    <!-- Processing steps -->
+    <string name="step_fetch_metadata">Fetching video metadata from YouTube API…</string>
+    <string name="step_process_transcript">Retrieving and processing video transcript…</string>
+    <string name="step_extract_topics">Extracting and processing topics using LLM…</string>
+    <string name="step_generate_html">Generating HTML content…</string>
+
+    <!-- Exit Dialog -->
+    <string name="exit_dialog_title">Exit Summary</string>
+    <string name="exit_dialog_message">Are you sure you want to exit? Your progress will be lost.</string>
+    <string name="exit_dialog_confirm">Yes, Exit</string>
+    <string name="exit_dialog_cancel">Cancel</string>
+</resources>
