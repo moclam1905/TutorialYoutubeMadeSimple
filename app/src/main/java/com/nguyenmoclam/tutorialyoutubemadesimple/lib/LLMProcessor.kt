@@ -327,4 +327,102 @@ class LLMProcessor {
             )
         }
     }
+
+    suspend fun extractKeyPoints(transcript: String, language: String): List<String> {
+        val prompt = """
+        You are an expert content analyzer. Given a YouTube video transcript, identify the key points or important facts discussed in the video. These key points will be used to generate questions later.
+
+        TRANSCRIPT:
+        $transcript
+
+        LANGUAGE:
+        $language
+
+        INSTRUCTIONS:
+        1. Identify at most 10 key points or important facts from the transcript.
+        2. Each key point should be concise and clear.
+        3. Format the response as a valid JSON object with the following structure:
+
+        {
+          "key_points": [
+            "Key point 1",
+            "Key point 2",
+            ...
+          ]
+        }
+
+        Ensure the response is a valid JSON object following the specified structure.
+    """.trimIndent()
+
+        val response = callLLM(prompt)
+        val json = Json.parseToJsonElement(response).jsonObject
+        return json["key_points"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
+    }
+
+    suspend fun generateQuestionsFromKeyPoints(
+        keyPoints: List<String>,
+        language: String,
+        questionType: String,
+        numberOfQuestions: Int
+    ): String {
+        val keyPointsText = keyPoints.joinToString("\n")
+        val prompt = """
+        You are an expert in creating educational questions. Given a list of key points from a YouTube video transcript, generate questions based on these key points. The questions should be in the specified language, of the specified type, and limited to the specified number.
+
+        KEY POINTS:
+        $keyPointsText
+
+        LANGUAGE:
+        $language
+
+        QUESTION TYPE:
+        $questionType
+
+        NUMBER OF QUESTIONS:
+        $numberOfQuestions
+
+        INSTRUCTIONS:
+        1. Generate exactly $numberOfQuestions questions based on the provided key points.
+        2. All questions and answers must be in $language.
+        3. For multiple-choice questions:
+            - Provide 4 options labeled as A, B, C, D.
+            - Indicate the correct answer(s) using the labels (e.g., "A" or ["A", "C"]).
+            - For single-answer questions, there should be exactly one correct answer.
+            - For multiple-answer questions, there can be more than one correct answer.
+        4. For True/False questions:
+           - Provide a statement and indicate whether it is true or false.
+        5. Ensure the questions are directly related to the key points.
+        6. Format the response as a valid JSON object with the following structure:
+
+        For multiple-choice questions:
+        {
+          "questions": [
+            {
+              "question": "Question text",
+              "options": {
+                "A": "Option 1",
+                "B": "Option 2",
+                "C": "Option 3",
+                "D": "Option 4"
+                },
+                "correct_answers": ["A"]  // or ["A", "C"] for multiple answers
+            }
+          ]
+        }
+
+        For True/False questions:
+        {
+          "questions": [
+            {
+              "statement": "Statement text",
+              "is_true": true/false
+            }
+          ]
+        }
+
+        Ensure the response is a valid JSON object following the specified structure.
+    """.trimIndent()
+
+        return callLLM(prompt)
+    }
 }
