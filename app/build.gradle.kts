@@ -5,7 +5,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version "2.0.0"
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
+
+private val bytecodeVersion = JavaVersion.toVersion(libs.versions.jvmBytecode.get())
 
 android {
     namespace = "com.nguyenmoclam.tutorialyoutubemadesimple"
@@ -24,7 +28,14 @@ android {
             load(project.rootProject.file("local.properties").inputStream())
         }
         buildConfigField("String", "YOUTUBE_API_KEY", "\"${properties.getProperty("YOUTUBE_API_KEY")}\"") 
-        buildConfigField("String", "OPENROUTER_API_KEY", "\"${properties.getProperty("OPENROUTER_API_KEY")}\"") 
+        buildConfigField("String", "OPENROUTER_API_KEY", "\"${properties.getProperty("OPENROUTER_API_KEY")}\"")
+
+        // The schemas directory contains a schema file for each version of the Room database.
+        // This is required to enable Room auto migrations.
+        // See https://developer.android.com/reference/kotlin/androidx/room/AutoMigration.
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
     }
 
     buildTypes {
@@ -37,15 +48,15 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
+        sourceCompatibility = bytecodeVersion
+        targetCompatibility = bytecodeVersion
     }
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    hilt {
+        enableAggregatingTask = false
     }
 }
 
@@ -70,6 +81,16 @@ dependencies {
 
     implementation (libs.commons.text)
     implementation(libs.kotlinx.serialization.json)
+    
+    // Hilt dependencies
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+
+    // Room dependencies
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

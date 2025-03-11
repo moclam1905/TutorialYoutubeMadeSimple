@@ -3,11 +3,14 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.navigation
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.CreateQuizScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.HomeScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.ResultScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
 
 /**
@@ -18,17 +21,24 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
 @Composable
 fun AppNavigation(
     navController: NavHostController,
-    viewModel: SummaryViewModel
+    viewModel: SummaryViewModel,
+    modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
         startDestination = AppScreens.Home.route
     ) {
         composable(AppScreens.Home.route) {
-            HomeScreen(viewModel = viewModel, navController = navController)
+            HomeScreen()
+        }
+        composable(AppScreens.CreateQuiz.route) {
+            CreateQuizScreen(viewModel = viewModel, navController = navController)
         }
         composable(AppScreens.Result.route) {
             ResultScreen(viewModel = viewModel, navController = navController)
+        }
+        composable(AppScreens.Settings.route) {
+            SettingScreen()
         }
     }
 }
@@ -39,5 +49,7 @@ fun AppNavigation(
  */
 sealed class AppScreens(val route: String) {
     object Home : AppScreens("home")
+    object CreateQuiz : AppScreens("create_quiz")
     object Result : AppScreens("result")
+    object Settings : AppScreens("settings")
 }

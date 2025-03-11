@@ -13,10 +13,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * HomeScreen composable that displays a simple text to distinguish it from other screens.
+ * SettingScreen composable that displays a simple text to distinguish it from other screens.
  */
 @Composable
-fun HomeScreen() {
+fun SettingScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -24,7 +24,7 @@ fun HomeScreen() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Home Screen",
+            text = "Setting Screen",
             fontSize = 24.sp,
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center

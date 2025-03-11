@@ -10,17 +10,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nguyenmoclam.tutorialyoutubemadesimple.ApiService
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
+import com.nguyenmoclam.tutorialyoutubemadesimple.YouTubeApi
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.HtmlGenerator
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.Section
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.YouTubeTranscriptLight
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import javax.inject.Inject
 
 enum class ProcessingStep(val messageRes: Int) {
     FETCH_METADATA(R.string.step_fetch_metadata),
@@ -46,9 +51,11 @@ enum class ProcessingStep(val messageRes: Int) {
  * - Manages loading states and error handling
  * - Provides file sharing functionality
  */
-class SummaryViewModel(application: Application) : AndroidViewModel(application) {
-    // use application context to avoid leaks
-    private val context = application
+@HiltViewModel
+class SummaryViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val youTubeApiService: YouTubeApi
+) : ViewModel() {
 
     /** Generated HTML summary content of the video */
     var summaryText by mutableStateOf("")
@@ -141,7 +148,7 @@ class SummaryViewModel(application: Application) : AndroidViewModel(application)
 
                     // Step 1: Fetch video metadata from YouTube API
                     // This includes title and available thumbnail URLs at different resolutions
-                    val videoResponse = ApiService.youtubeApi.getVideoInfo(videoId, youtubeApiKey)
+                    val videoResponse = youTubeApiService.getVideoInfo(videoId, youtubeApiKey)
                     val snippet = videoResponse.items.firstOrNull()?.snippet
                     fetchedTitle = snippet?.title ?: context.getString(R.string.default_no_title)
                     // Attempts to get thumbnails in descending order of quality:
