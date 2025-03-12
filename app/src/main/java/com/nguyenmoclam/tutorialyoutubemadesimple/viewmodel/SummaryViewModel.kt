@@ -273,4 +273,74 @@ class SummaryViewModel @Inject constructor(
             ).show()
         }
     }
+
+    /** Quiz creation form state variables */
+    var youtubeUrl by mutableStateOf("")
+        private set
+
+    var selectedLanguage by mutableStateOf("English")
+        private set
+
+    var questionType by mutableStateOf("multiple-choice")
+        private set
+
+    var questionCountMode by mutableStateOf("auto")
+        private set
+
+    var questionLevel by mutableStateOf("medium")
+        private set
+
+    var manualQuestionCount by mutableStateOf("5")
+        private set
+
+    var generateSummary by mutableStateOf(true)
+        private set
+
+    var generateQuestions by mutableStateOf(true)
+        private set
+
+    /** Update functions for quiz creation form state */
+    fun updateYoutubeUrl(url: String) {
+        youtubeUrl = url
+    }
+
+    fun updateSelectedLanguage(language: String) {
+        selectedLanguage = language
+    }
+
+    fun updateQuestionType(type: String) {
+        questionType = type
+    }
+
+    fun updateQuestionCountMode(mode: String) {
+        questionCountMode = mode
+    }
+
+    fun updateQuestionLevel(level: String) {
+        questionLevel = level
+    }
+
+    fun updateManualQuestionCount(count: String) {
+        manualQuestionCount = count
+    }
+
+    fun updateGenerateSummary(generate: Boolean) {
+        generateSummary = generate
+    }
+
+    fun updateGenerateQuestions(generate: Boolean) {
+        generateQuestions = generate
+    }
+
+    /** Reset quiz creation form state */
+    fun resetQuizFormState() {
+        youtubeUrl = ""
+        selectedLanguage = "English"
+        questionType = "multiple-choice"
+        questionCountMode = "auto"
+        questionLevel = "medium"
+        manualQuestionCount = "5"
+        generateSummary = true
+        generateQuestions = true
+    }
 }

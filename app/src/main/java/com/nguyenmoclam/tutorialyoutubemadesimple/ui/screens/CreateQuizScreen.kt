@@ -39,19 +39,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StepIndicator
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ProcessingStep
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
 
-/**
- * CreateQuizScreen composable that implements a 3-step quiz creation process.
- *
- * Features:
- * - Step 1: YouTube URL input and language selection
- * - Step 2: Quiz configuration (question type and count)
- * - Step 3: Output options (summary and/or questions)
- * - Navigation between steps
- * - Progress tracking
- *
- * @param viewModel SummaryViewModel instance for managing video data and processing
- * @param navController NavHostController for handling screen navigation
- */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun CreateQuizScreen(
@@ -61,37 +48,23 @@ fun CreateQuizScreen(
     // State for tracking the current step in the quiz creation process
     var currentStep by remember { mutableIntStateOf(1) }
     
-    // State for YouTube URL input
-    var youtubeUrlValue by remember { mutableStateOf(TextFieldValue("")) }
-    
-    // State for language selection
-    var selectedLanguage by remember { mutableStateOf("English") }
+    // State for language selection dropdown
     var showLanguageDropdown by remember { mutableStateOf(false) }
     val languages = listOf("English", "Tiếng Việt", "Français", "Español", "Deutsch")
-    
-    // State for quiz configuration
-    var questionType by remember { mutableStateOf("multiple-choice") }
-    var questionCountMode by remember { mutableStateOf("auto") }
-    var questionLevel by remember { mutableStateOf("medium") } // low, medium, high
-    var manualQuestionCount by remember { mutableStateOf("10") }
-    
-    // State for output options
-    var generateSummary by remember { mutableStateOf(true) }
-    var generateQuestions by remember { mutableStateOf(true) }
     
     // Function to validate the current step and move to the next
     fun moveToNextStep() {
         when (currentStep) {
             1 -> {
                 // Validate YouTube URL
-                if (youtubeUrlValue.text.isNotBlank()) {
+                if (viewModel.youtubeUrl.isNotBlank()) {
                     currentStep = 2
                 }
             }
             2 -> {
                 // Validate question count if in manual mode
-                if (questionCountMode == "manual") {
-                    val count = manualQuestionCount.toIntOrNull()
+                if (viewModel.questionCountMode == "manual") {
+                    val count = viewModel.manualQuestionCount.toIntOrNull()
                     if (count != null && count in 1..50) {
                         currentStep = 3
                     }
@@ -101,11 +74,9 @@ fun CreateQuizScreen(
             }
             3 -> {
                 // Start quiz generation process
-                if (generateSummary || generateQuestions) {
-                    // TODO: Implement quiz generation logic
-                    // For now, just navigate to result screen
+                if (viewModel.generateSummary || viewModel.generateQuestions) {
                     viewModel.startSummarization(
-                        youtubeUrlValue.text,
+                        viewModel.youtubeUrl,
                         MainActivity.YOUTUBE_API_KEY
                     )
                     if (viewModel.errorMessage == null) {
@@ -141,29 +112,29 @@ fun CreateQuizScreen(
         // Content based on current step
         when (currentStep) {
             1 -> Step1Content(
-                youtubeUrlValue = youtubeUrlValue,
-                onYoutubeUrlChange = { youtubeUrlValue = it },
-                selectedLanguage = selectedLanguage,
-                onLanguageSelected = { selectedLanguage = it },
+                youtubeUrlValue = TextFieldValue(viewModel.youtubeUrl),
+                onYoutubeUrlChange = { viewModel.updateYoutubeUrl(it.text) },
+                selectedLanguage = viewModel.selectedLanguage,
+                onLanguageSelected = { viewModel.updateSelectedLanguage(it) },
                 showLanguageDropdown = showLanguageDropdown,
                 onShowLanguageDropdownChange = { showLanguageDropdown = it },
                 languages = languages
             )
             2 -> Step2Content(
-                questionType = questionType,
-                onQuestionTypeChange = { questionType = it },
-                questionCountMode = questionCountMode,
-                onQuestionCountModeChange = { questionCountMode = it },
-                questionLevel = questionLevel,
-                onQuestionLevelChange = { questionLevel = it },
-                manualQuestionCount = manualQuestionCount,
-                onManualQuestionCountChange = { manualQuestionCount = it }
+                questionType = viewModel.questionType,
+                onQuestionTypeChange = { viewModel.updateQuestionType(it) },
+                questionCountMode = viewModel.questionCountMode,
+                onQuestionCountModeChange = { viewModel.updateQuestionCountMode(it) },
+                questionLevel = viewModel.questionLevel,
+                onQuestionLevelChange = { viewModel.updateQuestionLevel(it) },
+                manualQuestionCount = viewModel.manualQuestionCount,
+                onManualQuestionCountChange = { viewModel.updateManualQuestionCount(it) }
             )
             3 -> Step3Content(
-                generateSummary = generateSummary,
-                onGenerateSummaryChange = { generateSummary = it },
-                generateQuestions = generateQuestions,
-                onGenerateQuestionsChange = { generateQuestions = it },
+                generateSummary = viewModel.generateSummary,
+                onGenerateSummaryChange = { viewModel.updateGenerateSummary(it) },
+                generateQuestions = viewModel.generateQuestions,
+                onGenerateQuestionsChange = { viewModel.updateGenerateQuestions(it) },
                 isLoading = viewModel.isLoading,
                 currentStep = viewModel.currentStep
             )
@@ -200,11 +171,11 @@ fun CreateQuizScreen(
                 onClick = { moveToNextStep() },
                 modifier = Modifier.weight(1f),
                 enabled = !viewModel.isLoading && when (currentStep) {
-                    1 -> youtubeUrlValue.text.isNotBlank()
-                    2 -> questionCountMode != "manual" || 
-                         (manualQuestionCount.toIntOrNull() != null && 
-                          manualQuestionCount.toIntOrNull()!! in 1..50)
-                    3 -> generateSummary || generateQuestions
+                    1 -> viewModel.youtubeUrl.isNotBlank()
+                    2 -> viewModel.questionCountMode != "manual" || 
+                         (viewModel.manualQuestionCount.toIntOrNull() != null && 
+                          viewModel.manualQuestionCount.toIntOrNull()!! in 1..50)
+                    3 -> viewModel.generateSummary || viewModel.generateQuestions
                     else -> false
                 }
             ) {
