@@ -1,6 +1,5 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
-import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.widget.Toast
@@ -9,10 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nguyenmoclam.tutorialyoutubemadesimple.ApiService
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.YouTubeApi
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.HtmlGenerator
@@ -300,7 +297,7 @@ class SummaryViewModel @Inject constructor(
         private set
 
     /** Get the actual question count based on mode and level */
-    val questionCount: Int
+    val numberOfQuestions: Int
         get() = when (questionCountMode) {
             "auto" -> when (questionLevel) {
                 "low" -> 5

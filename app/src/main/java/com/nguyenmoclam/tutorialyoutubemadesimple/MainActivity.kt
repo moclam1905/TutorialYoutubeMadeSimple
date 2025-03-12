@@ -27,6 +27,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.CurvedBottomNavigation
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavItem
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -42,8 +43,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             YouTubeSummaryTheme {
-                // Initialize ViewModel and NavController for Compose
+                // Initialize ViewModels and NavController for Compose
                 val viewModel: SummaryViewModel = viewModel()
+                val quizViewModel: QuizCreationViewModel = viewModel()
                 val navController = rememberNavController()
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Scaffold(
@@ -54,6 +56,7 @@ class MainActivity : ComponentActivity() {
                         AppNavigation(
                             navController = navController,
                             viewModel = viewModel,
+                            quizViewModel = quizViewModel,
                             modifier = Modifier.padding(innerPadding)
                         )
                     }

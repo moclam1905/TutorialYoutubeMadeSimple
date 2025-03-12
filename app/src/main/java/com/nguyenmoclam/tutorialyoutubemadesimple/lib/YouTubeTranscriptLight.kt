@@ -207,7 +207,7 @@ class YouTubeTranscriptLight {
         val transcripts = mutableListOf<Transcript>()
         // Regex pattern to extract transcript segments with timing information
         val pattern = Pattern.compile(
-            """<text start="([d.]+)" dur="([d.]+)"[^>]*>(.*?)</text>""",
+            """<text start="([\d.]+)" dur="([\d.]+)"[^>]*>(.*?)</text>""",
             Pattern.DOTALL
         )
         val matcher = pattern.matcher(xml)

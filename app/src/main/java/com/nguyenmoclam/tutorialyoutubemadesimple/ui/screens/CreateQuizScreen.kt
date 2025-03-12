@@ -31,19 +31,21 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
+import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ErrorMessage
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step1Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step2Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step3Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StepIndicator
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ProcessingStep
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun CreateQuizScreen(
     viewModel: SummaryViewModel,
-    navController: NavHostController
+    navController: NavHostController,
+    quizViewModel: QuizCreationViewModel
 ) {
     // State for tracking the current step in the quiz creation process
     var currentStep by remember { mutableIntStateOf(1) }
@@ -76,12 +78,33 @@ fun CreateQuizScreen(
             3 -> {
                 // Start quiz generation process
                 if (viewModel.generateSummary || viewModel.generateQuestions) {
-                    viewModel.startSummarization(
-                        viewModel.youtubeUrl,
-                        MainActivity.YOUTUBE_API_KEY
+                    // Get question count based on mode
+                    val questionCount = if (viewModel.questionCountMode == "manual") {
+                        viewModel.manualQuestionCount.toIntOrNull() ?: 5
+                    } else {
+                        // Auto mode - determine count based on level
+                        when (viewModel.questionLevel) {
+                            "low" -> 5
+                            "medium" -> 10
+                            "high" -> 15
+                            else -> 10 // Default to medium if unknown
+                        }
+                    }
+                    
+                    // Call createQuiz in QuizCreationViewModel
+                    quizViewModel.createQuiz(
+                        videoUrlOrId = viewModel.youtubeUrl,
+                        youtubeApiKey = MainActivity.YOUTUBE_API_KEY,
+                        generateSummary = viewModel.generateSummary,
+                        generateQuestions = viewModel.generateQuestions,
+                        selectedLanguage = viewModel.selectedLanguage,
+                        questionType = viewModel.questionType,
+                        numberOfQuestions = questionCount
                     )
-                    if (viewModel.errorMessage == null) {
-                        navController.navigate("result")
+                    
+                    // Navigate to QuizDetailScreen if no error
+                    if (quizViewModel.state.errorMessage == null) {
+                        navController.navigate(AppScreens.QuizDetail.route)
                     }
                 }
             }
