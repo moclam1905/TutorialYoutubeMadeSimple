@@ -85,7 +85,7 @@ fun Step2Content(
                         label = "Multiple Choice",
                         modifier = Modifier.weight(1f)
                     )
-                    
+
                     // Divider between options
                     Box(modifier = Modifier.padding(horizontal = 8.dp)) {
                         Divider(
@@ -95,7 +95,7 @@ fun Step2Content(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
                         )
                     }
-                    
+
                     // True/False option
                     RadioOptionItem(
                         selected = questionType == "true-false",
@@ -183,7 +183,7 @@ fun Step2Content(
                             selected = questionLevel == "low",
                             onClick = { onQuestionLevelChange("low") },
                             title = "Low",
-                            subtitle = "5-10 questions",
+                            subtitle = "5 questions",
                             modifier = Modifier.weight(1f)
                         )
                         
@@ -192,7 +192,7 @@ fun Step2Content(
                             selected = questionLevel == "medium",
                             onClick = { onQuestionLevelChange("medium") },
                             title = "Medium",
-                            subtitle = "11-20 questions",
+                            subtitle = "10 questions",
                             modifier = Modifier.weight(1f)
                         )
                         
@@ -201,7 +201,7 @@ fun Step2Content(
                             selected = questionLevel == "high",
                             onClick = { onQuestionLevelChange("high") },
                             title = "High",
-                            subtitle = "21-30 questions",
+                            subtitle = "15 questions",
                             modifier = Modifier.weight(1f)
                         )
                     }

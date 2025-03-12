@@ -299,6 +299,19 @@ class SummaryViewModel @Inject constructor(
     var generateQuestions by mutableStateOf(true)
         private set
 
+    /** Get the actual question count based on mode and level */
+    val questionCount: Int
+        get() = when (questionCountMode) {
+            "auto" -> when (questionLevel) {
+                "low" -> 5
+                "medium" -> 10
+                "high" -> 15
+                else -> 10 // Default to medium if unknown
+            }
+            "manual" -> manualQuestionCount.toIntOrNull() ?: 5
+            else -> 5 // Default value
+        }
+
     /** Update functions for quiz creation form state */
     fun updateYoutubeUrl(url: String) {
         youtubeUrl = url

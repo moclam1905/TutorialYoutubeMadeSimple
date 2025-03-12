@@ -62,13 +62,14 @@ fun CreateQuizScreen(
                 }
             }
             2 -> {
-                // Validate question count if in manual mode
+                // Validate question count based on mode
                 if (viewModel.questionCountMode == "manual") {
                     val count = viewModel.manualQuestionCount.toIntOrNull()
-                    if (count != null && count in 1..50) {
+                    if (count != null && count in 1..20) {
                         currentStep = 3
                     }
                 } else {
+                    // Auto mode - validate based on selected level
                     currentStep = 3
                 }
             }
@@ -174,7 +175,7 @@ fun CreateQuizScreen(
                     1 -> viewModel.youtubeUrl.isNotBlank()
                     2 -> viewModel.questionCountMode != "manual" || 
                          (viewModel.manualQuestionCount.toIntOrNull() != null && 
-                          viewModel.manualQuestionCount.toIntOrNull()!! in 1..50)
+                          viewModel.manualQuestionCount.toIntOrNull()!! in 1..20)
                     3 -> viewModel.generateSummary || viewModel.generateQuestions
                     else -> false
                 }
