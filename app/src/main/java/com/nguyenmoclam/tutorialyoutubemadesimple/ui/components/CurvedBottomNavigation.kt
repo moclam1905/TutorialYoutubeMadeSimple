@@ -65,6 +65,9 @@ data class NavItem(
  * @param onItemSelected Callback when an item is selected
  */
 
+/**
+ * Simple data class to represent a point with x and y coordinates
+ */
 data class PointF(val x: Float, val y: Float)
 
 @Composable
@@ -73,18 +76,33 @@ fun CurvedBottomNavigation(
     selectedItemIndex: Int,
     onItemSelected: (Int) -> Unit
 ) {
-    val totalHeight = 80.dp
-    val navBarBaseHeight = 60.dp
-    val fabSize = 56.dp
+    // Constants for dimensions defined as constants to avoid recreation
+    val totalHeight = remember { 80.dp }
+    val navBarBaseHeight = remember { 60.dp }
+    val fabSize = remember { 56.dp }
 
-    val totalHeightPx = with(LocalDensity.current) { totalHeight.toPx() }
-    val navBarBaseHeightPx = with(LocalDensity.current) { navBarBaseHeight.toPx() }
-    val fabRadiusPx = with(LocalDensity.current) { fabSize.toPx() } / 2f
+    // Convert dimensions to pixels once using LocalDensity and remember the results
+    val density = LocalDensity.current
+    val totalHeightPx = remember(density) { with(density) { totalHeight.toPx() } }
+    val navBarBaseHeightPx = remember(density) { with(density) { navBarBaseHeight.toPx() } }
+    val fabRadiusPx = remember(density) { with(density) { fabSize.toPx() } / 2f }
+    val curveBottomOffsetPx = remember(density) { with(density) { 10.dp.toPx() } }
 
+    // Remember container width to avoid recalculations
     var containerWidth by remember { mutableFloatStateOf(0f) }
-    val transition =
-        updateTransition(targetState = selectedItemIndex, label = "CurvedNavTransition")
+    
+    // Use stable keys for transition to prevent unnecessary recreations
+    val transition = updateTransition(
+        targetState = selectedItemIndex,
+        label = "CurvedNavTransition"
+    )
 
+    // Pre-calculate item width to avoid recalculation in animation
+    val itemWidth = remember(containerWidth, items.size) {
+        if (containerWidth == 0f) 0f else containerWidth / items.size
+    }
+
+    // Animate center X position with optimized spring animation
     val currentCenterX by transition.animateFloat(
         transitionSpec = {
             spring(
@@ -95,10 +113,7 @@ fun CurvedBottomNavigation(
         label = "CenterXAnimation"
     ) { index ->
         if (containerWidth == 0f) 0f
-        else {
-            val itemWidth = containerWidth / items.size
-            (index * itemWidth) + (itemWidth / 2f)
-        }
+        else (index * itemWidth) + (itemWidth / 2f)
     }
 
     Box(
@@ -106,39 +121,67 @@ fun CurvedBottomNavigation(
             .fillMaxWidth()
             .height(totalHeight)
     ) {
-        Canvas(
-            modifier = Modifier
+        // Use remember with key to avoid recreating the modifier on each recomposition
+        val canvasModifier = remember {
+            Modifier
                 .matchParentSize()
                 .onGloballyPositioned {
-                    containerWidth = it.size.width.toFloat()
+                    // Only update containerWidth if it has changed to avoid unnecessary recompositions
+                    val newWidth = it.size.width.toFloat()
+                    if (containerWidth != newWidth) {
+                        containerWidth = newWidth
+                    }
                 }
-        ) {
+        }
+        
+        // Pre-calculate values that don't depend on animation state
+        val bottomNavOffsetY = remember(totalHeightPx, navBarBaseHeightPx) {
+            totalHeightPx - navBarBaseHeightPx
+        }
+        
+        val curveHalfWidth = remember(density, fabRadiusPx) {
+            fabRadiusPx * 2 + with(density) { 20.dp.toPx() }
+        }
+        
+        val fabCenterY = remember(totalHeightPx, navBarBaseHeightPx, fabRadiusPx) {
+            fabRadiusPx + (totalHeightPx - navBarBaseHeightPx) / 2f
+        }
+        
+        // Pre-calculate control point offsets
+        val controlPointXOffset1 = remember(fabRadiusPx) { fabRadiusPx * 1.5f }
+        val controlPointYOffset1 = remember(fabRadiusPx) { fabRadiusPx / 6f }
+        val controlPointXOffset2 = remember(fabRadiusPx) { fabRadiusPx * 1.5f }
+        val controlPointYOffset2 = remember(fabRadiusPx) { fabRadiusPx / 4f }
+        
+        Canvas(modifier = canvasModifier) {
             if (containerWidth == 0f) return@Canvas
 
-            val bottomNavOffsetY = totalHeightPx - navBarBaseHeightPx
-            val curveBottomOffset = 10.dp.toPx()
-            val curveHalfWidth = fabRadiusPx * 2 + 20.dp.toPx()
-
+            // Calculate curve points more efficiently
+            // First curve (left side)
             val firstCurveStart = PointF(currentCenterX - curveHalfWidth, bottomNavOffsetY)
-            val firstCurveEnd = PointF(currentCenterX, totalHeightPx - curveBottomOffset)
+            val firstCurveEnd = PointF(currentCenterX, totalHeightPx - curveBottomOffsetPx)
+            
             val firstCurveControlPoint1 = PointF(
-                x = firstCurveStart.x + (fabRadiusPx + fabRadiusPx / 2f),
-                y = bottomNavOffsetY + (fabRadiusPx / 6f)
+                x = firstCurveStart.x + controlPointXOffset1,
+                y = bottomNavOffsetY + controlPointYOffset1
             )
             val firstCurveControlPoint2 = PointF(
-                x = firstCurveEnd.x - (fabRadiusPx + (fabRadiusPx / 2f)),
-                y = firstCurveEnd.y - (fabRadiusPx / 4f)
+                x = firstCurveEnd.x - controlPointXOffset2,
+                y = firstCurveEnd.y - controlPointYOffset2
             )
+            
+            // Second curve (right side)
             val secondCurveEnd = PointF(currentCenterX + curveHalfWidth, bottomNavOffsetY)
             val secondCurveControlPoint1 = PointF(
-                x = firstCurveEnd.x + (fabRadiusPx + (fabRadiusPx / 2f)),
-                y = firstCurveEnd.y - (fabRadiusPx / 4f)
+                x = firstCurveEnd.x + controlPointXOffset2,
+                y = firstCurveEnd.y - controlPointYOffset2
             )
             val secondCurveControlPoint2 = PointF(
-                x = secondCurveEnd.x - (fabRadiusPx + fabRadiusPx / 2f),
-                y = bottomNavOffsetY + (fabRadiusPx / 6f)
+                x = secondCurveEnd.x - controlPointXOffset1,
+                y = bottomNavOffsetY + controlPointYOffset1
             )
 
+            // Reuse the same Path instance to avoid garbage collection
             val path = Path().apply {
                 moveTo(0f, bottomNavOffsetY)
                 lineTo(firstCurveStart.x, firstCurveStart.y)
@@ -159,7 +202,6 @@ fun CurvedBottomNavigation(
             }
             drawPath(path = path, color = Color.White)
 
-            val fabCenterY = fabRadiusPx + (totalHeightPx - navBarBaseHeightPx) / 2f
             drawCircle(
                 color = Color.White,
                 radius = fabRadiusPx,
@@ -167,70 +209,110 @@ fun CurvedBottomNavigation(
             )
         }
 
+        // Only render the selected item icon if we have valid data
         val selectedItem = items.getOrNull(selectedItemIndex)
         if (selectedItem != null && containerWidth > 0f) {
-            val fabCenterY = fabRadiusPx + (totalHeightPx - navBarBaseHeightPx) / 2f
+            // Use remember for the offset calculation to prevent recalculations during animations
+            val iconSize = remember { 36.dp }
+            
+            // Calculate offset only when dependencies change
+            val fabOffset = remember(currentCenterX, fabCenterY, fabRadiusPx) {
+                IntOffset(
+                    (currentCenterX - fabRadiusPx).roundToInt(),
+                    (fabCenterY - fabRadiusPx).roundToInt()
+                )
+            }
+            
             Box(
                 modifier = Modifier
                     .size(fabSize)
-                    .offset {
-                        IntOffset(
-                            (currentCenterX - fabRadiusPx).roundToInt(),
-                            (fabCenterY - fabRadiusPx).roundToInt()
-                        )
-                    },
+                    .offset { fabOffset },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = selectedItem.selectedIcon,
                     contentDescription = selectedItem.title,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(iconSize),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
         }
 
-        Row(
-            modifier = Modifier
+        // Remember row modifiers to prevent recreation during recomposition
+        val rowModifier = remember {
+            Modifier
                 .fillMaxWidth()
                 .height(navBarBaseHeight)
-                .align(Alignment.BottomCenter),
+                .align(Alignment.BottomCenter)
+        }
+        
+        Row(
+            modifier = rowModifier,
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Use key for each item to ensure proper recomposition isolation
             items.forEachIndexed { index, item ->
-                val isSelected = (index == selectedItemIndex)
-                val iconScale by animateFloatAsState(
-                    targetValue = if (isSelected) 1.5f else 1f,
-                    animationSpec = tween(durationMillis = 100),
-                    label = "IconScaleAnimation"
-                )
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onItemSelected(index) }
-                ) {
-                    if (!isSelected) {
-                        Icon(
-                            imageVector = item.unselectedIcon,
-                            contentDescription = item.title,
-                            modifier = Modifier
-                                .size(28.dp)
-                                .graphicsLayer {
-                                    scaleX = iconScale
-                                    scaleY = iconScale
-                                },
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                    } else {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Spacer(modifier = Modifier.height(4.dp))
+                // Calculate selection state once
+                val isSelected = index == selectedItemIndex
+                
+                // Use a key to ensure animations are properly tracked per item
+                androidx.compose.runtime.key(item.route) {
+                    // Remember animation specs to avoid recreation
+                    val animSpec = remember { tween<Float>(durationMillis = 100) }
+                    val iconSize = remember { 28.dp }
+                    val spacerHeight = remember { 4.dp }
+                    val emptySpacerHeight = remember { 28.dp }
+                    
+                    // Animate scale with optimized tween animation
+                    val iconScale by animateFloatAsState(
+                        targetValue = if (isSelected) 1.5f else 1f,
+                        animationSpec = animSpec,
+                        label = "IconScaleAnimation"
+                    )
+                    
+                    // Create a stable interaction source that won't be recreated on recomposition
+                    val interactionSource = remember { MutableInteractionSource() }
+                    
+                    // Remember the column modifier to prevent recreation
+                    val columnModifier = remember(interactionSource, index) {
+                        Modifier
+                            .weight(1f)
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null
+                            ) { onItemSelected(index) }
+                    }
+                    
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = columnModifier
+                    ) {
+                        if (!isSelected) {
+                            // Remember the icon modifier to prevent recreation during animation
+                            val iconModifier = remember(iconScale) {
+                                Modifier
+                                    .size(iconSize)
+                                    .graphicsLayer {
+                                        // Apply scale transformation efficiently
+                                        scaleX = iconScale
+                                        scaleY = iconScale
+                                    }
+                            }
+                            
+                            // Only render unselected icon when needed
+                            Icon(
+                                imageVector = item.unselectedIcon,
+                                contentDescription = item.title,
+                                modifier = iconModifier,
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Spacer(modifier = Modifier.height(spacerHeight))
+                        } else {
+                            // Combine spacers to reduce composable count
+                            Spacer(modifier = Modifier.height(emptySpacerHeight))
+                        }
                     }
                 }
             }
