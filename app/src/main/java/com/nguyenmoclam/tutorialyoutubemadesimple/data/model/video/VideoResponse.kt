@@ -7,7 +7,8 @@ data class VideoItem(val snippet: Snippet)
 data class Snippet(
     val title: String,
     val thumbnails: Thumbnails,
-    val defaultAudioLanguage: String?
+    val defaultAudioLanguage: String?,
+    val description: String?
 )
 
 data class Thumbnails(

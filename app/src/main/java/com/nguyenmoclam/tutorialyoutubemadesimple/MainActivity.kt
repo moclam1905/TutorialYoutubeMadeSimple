@@ -43,8 +43,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             YouTubeSummaryTheme {
-                val viewModel: QuizViewModel = viewModel()
-                val quizViewModel: QuizCreationViewModel = viewModel()
+                val quizViewModel: QuizViewModel = viewModel()
+                val quizCreationViewModel: QuizCreationViewModel = viewModel()
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestinationRoute = navBackStackEntry?.destination?.route
@@ -59,8 +59,8 @@ class MainActivity : ComponentActivity() {
                     ) { innerPadding ->
                         AppNavigation(
                             navController = navController,
-                            viewModel = viewModel,
-                            quizViewModel = quizViewModel,
+                            viewModel = quizViewModel,
+                            quizViewModel = quizCreationViewModel,
                             modifier = Modifier.padding(innerPadding)
                         )
                     }

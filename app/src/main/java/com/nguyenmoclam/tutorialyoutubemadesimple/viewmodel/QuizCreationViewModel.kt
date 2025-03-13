@@ -117,6 +117,7 @@ class QuizCreationViewModel @Inject constructor(
             val fetchedThumb = snippet?.thumbnails?.run {
                 maxres?.url ?: high?.url ?: medium?.url ?: default?.url
             } ?: ""
+            val fetchedDescription = snippet?.description ?: "No description available"
 
             state = state.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT)
             val transcripts = YouTubeTranscriptLight.create().getTranscript(videoId)
@@ -125,7 +126,7 @@ class QuizCreationViewModel @Inject constructor(
             // Create quiz domain model
             val quiz = Quiz(
                 title = fetchedTitle,
-                description = "", // Can be updated later if needed
+                description = fetchedDescription,
                 videoUrl = videoUrlOrId,
                 language = selectedLanguage,
                 questionType = questionType,
