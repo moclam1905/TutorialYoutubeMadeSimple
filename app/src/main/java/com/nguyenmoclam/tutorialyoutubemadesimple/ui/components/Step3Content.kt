@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ProcessingStep
 
 /**
  * Content for Step 3: Output options (summary and/or questions).
@@ -29,8 +26,7 @@ fun Step3Content(
     onGenerateSummaryChange: (Boolean) -> Unit,
     generateQuestions: Boolean,
     onGenerateQuestionsChange: (Boolean) -> Unit,
-    isLoading: Boolean,
-    currentStep: ProcessingStep
+    isLoading: Boolean
 ) {
     Card(
         modifier = Modifier
@@ -76,31 +72,6 @@ fun Step3Content(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Processing indicator (only visible when loading)
-            if (isLoading) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = if (currentStep != ProcessingStep.NONE) {
-                            when (currentStep) {
-                                ProcessingStep.FETCH_METADATA -> "Loading video information..."
-                                ProcessingStep.PROCESS_TRANSCRIPT -> "Processing video content..."
-                                ProcessingStep.EXTRACT_TOPICS -> "Extracting topics..."
-                                ProcessingStep.GENERATE_HTML -> "Generating content..."
-                                else -> "Processing..."
-                            }
-                        } else {
-                            "Processing..."
-                        },
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
         }
     }
 }

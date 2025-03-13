@@ -38,12 +38,12 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step2Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step3Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StepIndicator
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun CreateQuizScreen(
-    viewModel: SummaryViewModel,
+    viewModel: QuizViewModel,
     navController: NavHostController,
     quizViewModel: QuizCreationViewModel
 ) {
@@ -78,19 +78,6 @@ fun CreateQuizScreen(
             3 -> {
                 // Start quiz generation process
                 if (viewModel.generateSummary || viewModel.generateQuestions) {
-                    // Get question count based on mode
-                    val questionCount = if (viewModel.questionCountMode == "manual") {
-                        viewModel.manualQuestionCount.toIntOrNull() ?: 5
-                    } else {
-                        // Auto mode - determine count based on level
-                        when (viewModel.questionLevel) {
-                            "low" -> 5
-                            "medium" -> 10
-                            "high" -> 15
-                            else -> 10 // Default to medium if unknown
-                        }
-                    }
-                    
                     // Call createQuiz in QuizCreationViewModel
                     quizViewModel.createQuiz(
                         videoUrlOrId = viewModel.youtubeUrl,
@@ -99,7 +86,7 @@ fun CreateQuizScreen(
                         generateQuestions = viewModel.generateQuestions,
                         selectedLanguage = viewModel.selectedLanguage,
                         questionType = viewModel.questionType,
-                        numberOfQuestions = questionCount
+                        numberOfQuestions = viewModel.numberOfQuestions
                     )
                     
                     // Navigate to QuizDetailScreen if no error
@@ -159,8 +146,7 @@ fun CreateQuizScreen(
                 onGenerateSummaryChange = { viewModel.updateGenerateSummary(it) },
                 generateQuestions = viewModel.generateQuestions,
                 onGenerateQuestionsChange = { viewModel.updateGenerateQuestions(it) },
-                isLoading = viewModel.isLoading,
-                currentStep = viewModel.currentStep
+                isLoading = viewModel.isLoading
             )
         }
         
@@ -214,15 +200,3 @@ fun CreateQuizScreen(
         }
     }
 }
-
-// StepIndicator component has been moved to a separate file in the components package
-
-// ErrorMessage component has been moved to a separate file in the components package
-
-// Step1Content component has been moved to a separate file in the components package
-
-// Step2Content component has been moved to a separate file in the components package
-
-// Step3Content component has been moved to a separate file in the components package
-
-// ActionButton component is no longer needed as the functionality is handled in the moveToNextStep function

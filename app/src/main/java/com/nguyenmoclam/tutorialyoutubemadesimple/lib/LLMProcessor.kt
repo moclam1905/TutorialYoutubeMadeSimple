@@ -2,36 +2,16 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.lib
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.ApiService
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity.Companion.OPENROUTER_API_KEY
-import com.nguyenmoclam.tutorialyoutubemadesimple.Message
-import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterRequest
-import com.nguyenmoclam.tutorialyoutubemadesimple.Question
-import com.nguyenmoclam.tutorialyoutubemadesimple.Topic
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.Message
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterRequest
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Question
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-
-/**
- * Data class representing a multiple choice question
- * @property question The question text
- * @property options Map of option labels (A,B,C,D) to option text
- * @property correctAnswers List of correct answer labels
- */
-data class MultipleChoiceQuestion(
-    val question: String,
-    val options: Map<String, String>,
-    val correctAnswers: List<String>
-)
-
-/**
- * Data class representing a true/false question
- * @property statement The statement to evaluate
- * @property isTrue Whether the statement is true or false
- */
-data class TrueFalseQuestion(
-    val statement: String,
-    val isTrue: Boolean
-)
 
 /**
  * Processes YouTube video content using Language Learning Models (LLM) to extract and simplify topics and questions.
@@ -188,7 +168,6 @@ class LLMProcessor {
      * @return A list of [Topic] objects, limited to 5 topics with 3 questions each
      */
     private fun parseTopicsFromJson(jsonResponse: String): List<Topic> {
-        // Loại bỏ code block (nếu có)
         val cleanJson = if (jsonResponse.contains("```")) {
             jsonResponse.substringAfter("```json").substringBefore("```").trim()
         } else {
@@ -240,7 +219,6 @@ class LLMProcessor {
             val json = Json.parseToJsonElement(cleanJson).jsonObject
             val topicsArray = json["topics"]?.jsonArray ?: return originalTopics
 
-            // Tạo map để truy cập nhanh
             val processedTopicsMap = topicsArray.associate { topicElement ->
                 val topicObj = topicElement.jsonObject
                 val originalTitle = topicObj["original_title"]?.jsonPrimitive?.content ?: ""
@@ -277,14 +255,10 @@ class LLMProcessor {
             }
         } catch (e: Exception) {
             println("parseBatchProcessedContent error: ${e.message}")
-            // Nếu lỗi, trả về danh sách gốc
             originalTopics
         }
     }
 
-    /**
-     * Chỉ dùng kotlinx.serialization để parse key points.
-     */
     private fun parseKeyPointsFromJson(jsonStr: String): List<String> {
         return try {
             val json = Json.parseToJsonElement(jsonStr).jsonObject
@@ -319,7 +293,6 @@ class LLMProcessor {
         """.trimIndent()
 
         val response = callLLM(prompt)
-        // Làm sạch nếu có dấu ```json
         val cleanJson = if (response.contains("```")) {
             response.substringAfter("```json").substringBefore("```").trim()
         } else {
@@ -396,11 +369,7 @@ class LLMProcessor {
         return callLLM(prompt)
     }
 
-    /**
-     * Chỉ dùng kotlinx.serialization để parse danh sách câu hỏi (MultipleChoice + TrueFalse).
-     */
     fun parseQuizQuestions(jsonResponse: String): Pair<List<MultipleChoiceQuestion>, List<TrueFalseQuestion>> {
-        // Làm sạch nếu có code block
         val cleanJson = if (jsonResponse.contains("```")) {
             jsonResponse.substringAfter("```json").substringBefore("```").trim()
         } else {
@@ -408,17 +377,14 @@ class LLMProcessor {
         }
 
         return try {
-            parseWithKotlinxSerialization(cleanJson)
+            parseQuestionsFromJson(cleanJson)
         } catch (e: Exception) {
             println("parseQuizQuestions error: ${e.message}")
             Pair(emptyList(), emptyList())
         }
     }
 
-    /**
-     * Hàm parse dùng duy nhất kotlinx.serialization.
-     */
-    private fun parseWithKotlinxSerialization(jsonStr: String): Pair<List<MultipleChoiceQuestion>, List<TrueFalseQuestion>> {
+    private fun parseQuestionsFromJson(jsonStr: String): Pair<List<MultipleChoiceQuestion>, List<TrueFalseQuestion>> {
         val json = Json.parseToJsonElement(jsonStr).jsonObject
         val questionsArray = json["questions"]?.jsonArray ?: return Pair(emptyList(), emptyList())
 

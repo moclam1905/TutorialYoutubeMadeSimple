@@ -12,9 +12,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * HomeScreen composable that displays a simple text to distinguish it from other screens.
- */
 @Composable
 fun HomeScreen() {
     Box(

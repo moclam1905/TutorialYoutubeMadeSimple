@@ -13,7 +13,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.ResultScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 
 /**
  * Main navigation component for the app.
@@ -23,7 +23,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
 @Composable
 fun AppNavigation(
     navController: NavHostController,
-    viewModel: SummaryViewModel,
+    viewModel: QuizViewModel,
     quizViewModel: QuizCreationViewModel,
     modifier: Modifier = Modifier
 ) {

@@ -33,9 +33,9 @@
     <!-- Processing steps -->
     <string name="step_fetch_metadata">Fetching video metadata from YouTube API…</string>
     <string name="step_process_transcript">Retrieving and processing video transcript…</string>
-    <string name="step_extract_topics">Extracting and processing topics using LLM…</string>
-    <string name="step_generate_html">Generating HTML content…</string>
-
+    <string name="step_summary">Extracting and processing topics using LLM…</string>
+    <string name="step_questions">Processing questions content…</string>
+    <string name="step_create_quiz">Processing quiz content…</string>
     <!-- Exit Dialog -->
     <string name="exit_dialog_title">Exit Summary</string>
     <string name="exit_dialog_message">Are you sure you want to exit? Your progress will be lost.</string>

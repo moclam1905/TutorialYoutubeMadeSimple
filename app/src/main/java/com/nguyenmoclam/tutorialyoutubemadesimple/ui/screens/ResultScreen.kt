@@ -34,8 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ProcessingStep
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ProcessingCreateStep
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 
 /**
  * Result screen composable that displays the summarized content and sharing options.
@@ -93,7 +93,7 @@ private fun ExitConfirmationDialog(
  * @param currentStep Current processing step from the ViewModel
  */
 @Composable
-private fun LoadingContent(currentStep: ProcessingStep) {
+private fun LoadingContent(currentStep: ProcessingCreateStep) {
     val context = LocalContext.current
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -104,7 +104,7 @@ private fun LoadingContent(currentStep: ProcessingStep) {
         Spacer(modifier = Modifier.height(8.dp))
         // Animated text that smoothly transitions between processing steps
         AnimatedContent(
-            targetState = if (currentStep != ProcessingStep.NONE) {
+            targetState = if (currentStep != ProcessingCreateStep.NONE) {
                 currentStep.getMessage(context)
             } else {
                 context.getString(R.string.loading_summary)
@@ -232,7 +232,7 @@ private fun SuccessContent(
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun ResultScreen(viewModel: SummaryViewModel, navController: NavHostController) {
+fun ResultScreen(viewModel: QuizViewModel, navController: NavHostController) {
     val context = LocalContext.current
     var showExitDialog by remember { mutableStateOf(false) }
 

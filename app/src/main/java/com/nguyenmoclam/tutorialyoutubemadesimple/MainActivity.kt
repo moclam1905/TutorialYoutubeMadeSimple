@@ -28,7 +28,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.CurvedBottomNavi
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavItem
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -43,14 +43,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             YouTubeSummaryTheme {
-                // Initialize ViewModels and NavController for Compose
-                val viewModel: SummaryViewModel = viewModel()
+                val viewModel: QuizViewModel = viewModel()
                 val quizViewModel: QuizCreationViewModel = viewModel()
                 val navController = rememberNavController()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestinationRoute = navBackStackEntry?.destination?.route
+
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Scaffold(
                         bottomBar = {
-                            BottomNavigationBar(navController)
+                            if (currentDestinationRoute != AppScreens.QuizDetail.route) {
+                                BottomNavigationBar(navController)
+                            }
                         }
                     ) { innerPadding ->
                         AppNavigation(
@@ -67,7 +71,6 @@ class MainActivity : ComponentActivity() {
     
     @Composable
     private fun BottomNavigationBar(navController: androidx.navigation.NavHostController) {
-        // Create navigation items with both filled and outlined icons for selected/unselected states
         val navItems = listOf(
             NavItem(
                 title = "Home",
@@ -78,13 +81,13 @@ class MainActivity : ComponentActivity() {
             NavItem(
                 title = "Create Quiz",
                 selectedIcon = Icons.Filled.Add,
-                unselectedIcon = Icons.Filled.Add, // Using same icon as we don't have outlined version
+                unselectedIcon = Icons.Filled.Add,
                 route = AppScreens.CreateQuiz.route
             ),
             NavItem(
                 title = "Settings",
                 selectedIcon = Icons.Filled.Settings,
-                unselectedIcon = Icons.Filled.Settings, // Using same icon as we don't have outlined version
+                unselectedIcon = Icons.Filled.Settings,
                 route = AppScreens.Settings.route
             )
         )
@@ -96,8 +99,7 @@ class MainActivity : ComponentActivity() {
         val selectedIndex = navItems.indexOfFirst { item ->
             currentDestination?.hierarchy?.any { it.route == item.route } == true
         }.takeIf { it >= 0 } ?: 0
-        
-        // Use our custom curved navigation bar
+
         CurvedBottomNavigation(
             items = navItems,
             selectedItemIndex = selectedIndex,
