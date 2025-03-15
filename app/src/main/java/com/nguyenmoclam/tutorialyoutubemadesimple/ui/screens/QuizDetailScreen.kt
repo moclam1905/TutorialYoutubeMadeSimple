@@ -68,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
@@ -75,13 +76,16 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.MultiWaveLoadingAnimation
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizDetailScreen(
     navController: NavHostController,
-    quizViewModel: QuizCreationViewModel
+    quizViewModel: QuizCreationViewModel,
+    quizId: Long = -1L,
+    quizDetailViewModel: QuizDetailViewModel = hiltViewModel()
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -93,9 +97,20 @@ fun QuizDetailScreen(
     var selectedAnswer by remember { mutableStateOf("") }
     var showFeedback by remember { mutableStateOf(false) }
     var isCorrect by remember { mutableStateOf(false) }
+    
+    // Track answered questions and their selected answers - now using ViewModel state
+    var answeredQuestions by remember { mutableStateOf<Map<Int, String>>(quizDetailViewModel.state.answeredQuestions) }
 
+    // Load quiz data from database if quizId is provided
+    LaunchedEffect(quizId) {
+        if (quizId > 0) {
+            quizDetailViewModel.loadQuizById(quizId)
+        }
+    }
+
+    // Load quiz questions from QuizCreationViewModel (when coming from quiz creation)
     LaunchedEffect(quizViewModel.state.quizQuestionsJson) {
-        if (quizViewModel.state.quizQuestionsJson.isNotEmpty()) {
+        if (quizId <= 0 && quizViewModel.state.quizQuestionsJson.isNotEmpty()) {
             try {
                 val llmProcessor = LLMProcessor()
                 val (multipleChoiceQuestions, trueFalseQuestions) =
@@ -103,6 +118,49 @@ fun QuizDetailScreen(
                 quizQuestions = multipleChoiceQuestions + trueFalseQuestions
             } catch (e: Exception) {
                 println("Error parsing quiz questions: ${e.message}")
+            }
+        }
+    }
+
+    // Load quiz questions from QuizDetailViewModel (when coming from HomeScreen)
+    LaunchedEffect(quizDetailViewModel.state.questions) {
+        if (quizId > 0 && quizDetailViewModel.state.questions.isNotEmpty()) {
+            quizQuestions = quizDetailViewModel.state.questions
+        }
+    }
+    
+    // Set the current question index based on answered questions from ViewModel
+    LaunchedEffect(quizQuestions, quizDetailViewModel.state.answeredQuestions) {
+        if (quizQuestions.isNotEmpty()) {
+            // Update local state with ViewModel state
+            answeredQuestions = quizDetailViewModel.state.answeredQuestions
+            
+            // If we have answered questions, show the last answered question
+            if (answeredQuestions.isNotEmpty()) {
+                // Use the ViewModel's method to get the last answered question index
+                currentQuestionIndex = quizDetailViewModel.getLastAnsweredQuestionIndex()
+                selectedAnswer = quizDetailViewModel.getAnswerForQuestion(currentQuestionIndex)
+                showFeedback = selectedAnswer.isNotEmpty()
+                
+                // Check if the answer was correct
+                if (showFeedback) {
+                    val currentQuestion = quizQuestions[currentQuestionIndex]
+                    isCorrect = when (currentQuestion) {
+                        is MultipleChoiceQuestion -> {
+                            currentQuestion.correctAnswers.contains(selectedAnswer)
+                        }
+                        is TrueFalseQuestion -> {
+                            (selectedAnswer == "True" && currentQuestion.isTrue) ||
+                            (selectedAnswer == "False" && !currentQuestion.isTrue)
+                        }
+                        else -> false
+                    }
+                }
+            } else {
+                // If no questions have been answered, show the first question
+                currentQuestionIndex = quizDetailViewModel.state.currentQuestionIndex
+                selectedAnswer = ""
+                showFeedback = false
             }
         }
     }
@@ -162,7 +220,12 @@ fun QuizDetailScreen(
                 if (materialsExpanded) {
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         NavigationDrawerItem(
-                            icon = { Icon(Icons.Default.Summarize, contentDescription = "Summary") },
+                            icon = {
+                                Icon(
+                                    Icons.Default.Summarize,
+                                    contentDescription = "Summary"
+                                )
+                            },
                             label = { Text("Summary") },
                             selected = selectedContentIndex == 0,
                             onClick = {
@@ -205,7 +268,7 @@ fun QuizDetailScreen(
         content = {
             Scaffold(
                 topBar = {
-                    if (!quizViewModel.state.isLoading) {
+                    if (!quizViewModel.state.isLoading && !quizDetailViewModel.state.isLoading) {
                         TopAppBar(
                             title = { Text("Quiz Details") },
                             navigationIcon = {
@@ -229,7 +292,7 @@ fun QuizDetailScreen(
                         .padding(paddingValues)
                 ) {
                     when {
-                        quizViewModel.state.isLoading -> {
+                        quizViewModel.state.isLoading || quizDetailViewModel.state.isLoading -> {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -245,14 +308,28 @@ fun QuizDetailScreen(
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         MultiWaveLoadingAnimation(
-                                            progress = quizViewModel.state.currentStep.getProgressPercentage(),
+                                            progress = if (quizId <= 0) {
+                                                // Coming from quiz creation - use QuizCreationViewModel
+                                                quizViewModel.state.currentStep.getProgressPercentage()
+                                            } else {
+                                                // Coming from HomeScreen - use a fixed progress for QuizDetailViewModel
+                                                if (quizDetailViewModel.state.isLoading) 50f else 0f
+                                            },
                                             modifier = Modifier.size(200.dp)
                                         )
 
                                         Spacer(modifier = Modifier.height(16.dp))
 
                                         Text(
-                                            text = quizViewModel.state.currentStep.getMessage(LocalContext.current),
+                                            text = if (quizId <= 0) {
+                                                // Coming from quiz creation - use QuizCreationViewModel message
+                                                quizViewModel.state.currentStep.getMessage(
+                                                    LocalContext.current
+                                                )
+                                            } else {
+                                                // Coming from HomeScreen - use a generic loading message
+                                                "Loading quiz details..."
+                                            },
                                             style = MaterialTheme.typography.bodyLarge,
                                             textAlign = TextAlign.Center
                                         )
@@ -261,14 +338,15 @@ fun QuizDetailScreen(
                             }
                         }
 
-                        quizViewModel.state.errorMessage != null -> {
+                        quizViewModel.state.errorMessage != null || quizDetailViewModel.state.errorMessage != null -> {
                             // Error state
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = quizViewModel.state.errorMessage ?: "",
+                                    text = quizViewModel.state.errorMessage
+                                        ?: quizDetailViewModel.state.errorMessage ?: "",
                                     color = MaterialTheme.colorScheme.error,
                                     modifier = Modifier.padding(16.dp)
                                 )
@@ -278,8 +356,15 @@ fun QuizDetailScreen(
                         else -> {
                             if (selectedContentIndex == 0) {
                                 // Summary
-                                if (quizViewModel.state.quizSummary.isNotEmpty()) {
-                                    SummaryContent(quizViewModel.state.quizSummary)
+                                // Get summary from either QuizCreationViewModel or QuizDetailViewModel
+                                val summaryContent = if (quizId > 0) {
+                                    quizDetailViewModel.state.summary
+                                } else {
+                                    quizViewModel.state.quizSummary
+                                }
+
+                                if (summaryContent.isNotEmpty()) {
+                                    SummaryContent(summaryContent)
                                 } else {
                                     Box(
                                         modifier = Modifier.fillMaxSize(),
@@ -300,10 +385,13 @@ fun QuizDetailScreen(
                                         showFeedback = showFeedback,
                                         isCorrect = isCorrect,
                                         onSubmitAnswer = {
-                                            val currentQuestion = quizQuestions[currentQuestionIndex]
+                                            val currentQuestion =
+                                                quizQuestions[currentQuestionIndex]
                                             isCorrect = when (currentQuestion) {
                                                 is MultipleChoiceQuestion -> {
-                                                    currentQuestion.correctAnswers.contains(selectedAnswer)
+                                                    currentQuestion.correctAnswers.contains(
+                                                        selectedAnswer
+                                                    )
                                                 }
 
                                                 is TrueFalseQuestion -> {
@@ -314,12 +402,52 @@ fun QuizDetailScreen(
                                                 else -> false
                                             }
                                             showFeedback = true
+                                            
+                                            // Save the answered question in local state
+                                            answeredQuestions = answeredQuestions.toMutableMap().apply {
+                                                put(currentQuestionIndex, selectedAnswer)
+                                            }
+                                            
+                                            // Save the progress in the ViewModel
+                                            quizDetailViewModel.saveQuizProgress(currentQuestionIndex, selectedAnswer)
                                         },
                                         onNextQuestion = {
                                             if (currentQuestionIndex < quizQuestions.size - 1) {
+                                                // Save the current question's state before moving to the next
+                                                answeredQuestions = answeredQuestions.toMutableMap().apply {
+                                                    put(currentQuestionIndex, selectedAnswer)
+                                                }
+                                                
+                                                // Save the progress in the ViewModel
+                                                quizDetailViewModel.saveQuizProgress(currentQuestionIndex, selectedAnswer)
+                                                
+                                                // Move to the next question
                                                 currentQuestionIndex++
-                                                selectedAnswer = ""
-                                                showFeedback = false
+                                                
+                                                // Check if the next question has been answered before
+                                                if (answeredQuestions.containsKey(currentQuestionIndex)) {
+                                                    selectedAnswer = answeredQuestions[currentQuestionIndex] ?: ""
+                                                    showFeedback = true
+                                                    
+                                                    // Check if the answer was correct
+                                                    val nextQuestion = quizQuestions[currentQuestionIndex]
+                                                    isCorrect = when (nextQuestion) {
+                                                        is MultipleChoiceQuestion -> {
+                                                            nextQuestion.correctAnswers.contains(selectedAnswer)
+                                                        }
+                                                        is TrueFalseQuestion -> {
+                                                            (selectedAnswer == "True" && nextQuestion.isTrue) ||
+                                                            (selectedAnswer == "False" && !nextQuestion.isTrue)
+                                                        }
+                                                        else -> false
+                                                    }
+                                                } else {
+                                                    selectedAnswer = ""
+                                                    showFeedback = false
+                                                }
+                                                
+                                                // Update the current question index in the ViewModel
+                                                quizDetailViewModel.saveQuizProgress(currentQuestionIndex, "")
                                             }
                                         }
                                     )
@@ -412,6 +540,7 @@ fun QuizContent(
                             if (isSelected) MaterialTheme.colorScheme.primaryContainer
                             else MaterialTheme.colorScheme.surface
                         }
+
                         isSelected && isCorrect -> Color(0xFFDCEDC8)
                         isSelected && !isCorrect -> Color(0xFFFFCDD2)
                         currentQuestion.correctAnswers.contains(key) -> Color(0xFFDCEDC8)
@@ -487,6 +616,7 @@ fun QuizContent(
                         if (isTrueSelected) MaterialTheme.colorScheme.primaryContainer
                         else MaterialTheme.colorScheme.surface
                     }
+
                     isTrueSelected && currentQuestion.isTrue -> Color(0xFFDCEDC8)
                     isTrueSelected && !currentQuestion.isTrue -> Color(0xFFFFCDD2)
                     currentQuestion.isTrue -> Color(0xFFDCEDC8)
@@ -543,6 +673,7 @@ fun QuizContent(
                         if (isFalseSelected) MaterialTheme.colorScheme.primaryContainer
                         else MaterialTheme.colorScheme.surface
                     }
+
                     isFalseSelected && !currentQuestion.isTrue -> Color(0xFFDCEDC8)
                     isFalseSelected && currentQuestion.isTrue -> Color(0xFFFFCDD2)
                     !currentQuestion.isTrue -> Color(0xFFDCEDC8)

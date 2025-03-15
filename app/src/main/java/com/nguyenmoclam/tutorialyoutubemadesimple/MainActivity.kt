@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Scaffold(
                         bottomBar = {
-                            if (currentDestinationRoute != AppScreens.QuizDetail.route) {
+                            if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true) {
                                 BottomNavigationBar(navController)
                             }
                         }

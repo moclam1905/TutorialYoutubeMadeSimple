@@ -5,8 +5,10 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.CreateQuizScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.HomeScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
@@ -32,7 +34,7 @@ fun AppNavigation(
         startDestination = AppScreens.Home.route
     ) {
         composable(AppScreens.Home.route) {
-            HomeScreen()
+            HomeScreen(navController = navController)
         }
         composable(AppScreens.CreateQuiz.route) {
             CreateQuizScreen(viewModel = viewModel, navController = navController, quizViewModel = quizViewModel)
@@ -43,8 +45,16 @@ fun AppNavigation(
         composable(AppScreens.Settings.route) {
             SettingScreen()
         }
-        composable(AppScreens.QuizDetail.route) {
-            QuizDetailScreen(navController = navController, quizViewModel = quizViewModel)
+        composable(
+            route = AppScreens.QuizDetail.route + "/{quizId}",
+            arguments = listOf(navArgument("quizId") { type = NavType.LongType; defaultValue = -1L })
+        ) { backStackEntry ->
+            val quizId = backStackEntry.arguments?.getLong("quizId") ?: -1L
+            QuizDetailScreen(
+                navController = navController,
+                quizViewModel = quizViewModel,
+                quizId = quizId
+            )
         }
     }
 }
@@ -59,4 +69,13 @@ sealed class AppScreens(val route: String) {
     object Result : AppScreens("result")
     object Settings : AppScreens("settings")
     object QuizDetail : AppScreens("quiz_detail")
+    
+    fun withArgs(vararg args: String): String {
+        return buildString {
+            append(route)
+            args.forEach { arg ->
+                append("/$arg")
+            }
+        }
+    }
 }

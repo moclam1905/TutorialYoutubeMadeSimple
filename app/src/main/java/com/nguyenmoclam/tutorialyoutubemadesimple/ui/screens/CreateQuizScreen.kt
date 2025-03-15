@@ -91,7 +91,7 @@ fun CreateQuizScreen(
                     
                     // Navigate to QuizDetailScreen if no error
                     if (quizViewModel.state.errorMessage == null) {
-                        navController.navigate(AppScreens.QuizDetail.route)
+                        navController.navigate(AppScreens.QuizDetail.withArgs("-1"))
                     }
                 }
             }

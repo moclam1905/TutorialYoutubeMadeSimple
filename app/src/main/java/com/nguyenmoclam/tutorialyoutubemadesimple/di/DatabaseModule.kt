@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.AppDatabase
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuestionDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizResultDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.SummaryDao
 import dagger.Module
@@ -81,5 +82,16 @@ object DatabaseModule {
     @Provides
     fun provideSummaryDao(database: AppDatabase): SummaryDao {
         return database.summaryDao()
+    }
+    
+    /**
+     * Provides the QuizProgressDao instance.
+     * 
+     * @param database The AppDatabase instance
+     * @return The QuizProgressDao instance
+     */
+    @Provides
+    fun provideQuizProgressDao(database: AppDatabase): QuizProgressDao {
+        return database.quizProgressDao()
     }
 }

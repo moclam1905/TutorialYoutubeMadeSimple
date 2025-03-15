@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,17 +48,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
+import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    navController: NavHostController
 ) {
     val quizzes by viewModel.quizzes.collectAsState()
     val expandedStatsMap by viewModel.expandedStatsMap.collectAsState()
     val quizStatsCache by viewModel.quizStatsCache.collectAsState()
     val showDeleteConfirmDialog by viewModel.showDeleteConfirmDialog.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     
     // Delete Confirmation Dialog
     showDeleteConfirmDialog?.let { quizId ->
@@ -87,7 +93,13 @@ fun HomeScreen(
             .padding(16.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        if (quizzes.isEmpty()) {
+        if (isLoading) {
+            // Show loading indicator when data is being loaded
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else if (quizzes.isEmpty()) {
             Text(
                 text = "No quizzes available. Create your first quiz!",
                 fontSize = 18.sp,
@@ -104,7 +116,8 @@ fun HomeScreen(
                         quizStats = quizStatsCache[quiz.id],
                         onToggleStats = { viewModel.toggleStatsExpanded(quiz.id) },
                         onDeleteQuiz = { viewModel.showDeleteQuizDialog(quiz.id) },
-                        daysSinceLastUpdate = viewModel.getDaysSinceLastUpdate(quiz.lastUpdated)
+                        daysSinceLastUpdate = viewModel.getDaysSinceLastUpdate(quiz.lastUpdated),
+                        onQuizClick = { navController.navigate(AppScreens.QuizDetail.withArgs(quiz.id.toString())) }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
@@ -121,10 +134,13 @@ fun QuizItem(
     quizStats: HomeViewModel.QuizStats?,
     onToggleStats: () -> Unit,
     onDeleteQuiz: () -> Unit,
-    daysSinceLastUpdate: Int
+    daysSinceLastUpdate: Int,
+    onQuizClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onQuizClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
