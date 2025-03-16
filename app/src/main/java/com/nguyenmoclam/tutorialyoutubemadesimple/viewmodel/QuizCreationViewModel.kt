@@ -7,23 +7,24 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
-import com.nguyenmoclam.tutorialyoutubemadesimple.YouTubeApi
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Question
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Summary
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.QuizRepository
-import com.nguyenmoclam.tutorialyoutubemadesimple.lib.HtmlGenerator
-import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
-import com.nguyenmoclam.tutorialyoutubemadesimple.lib.Section
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.CreateQuizUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.ExtractVideoIdUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.FetchVideoMetadataUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GenerateQuestionsUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GenerateQuizSummaryUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.ParseQuestionsUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.ProcessYouTubeTranscriptUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.question.CreateQuizQuestionsUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.summary.CreateQuizSummaryUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.YouTubeTranscriptLight
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 enum class ProcessingCreateStep(val messageRes: Int) {
@@ -51,8 +52,15 @@ enum class ProcessingCreateStep(val messageRes: Int) {
 @HiltViewModel
 class QuizCreationViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val youTubeApiService: YouTubeApi,
-    private val quizRepository: QuizRepository
+    private val extractVideoIdUseCase: ExtractVideoIdUseCase,
+    private val fetchVideoMetadataUseCase: FetchVideoMetadataUseCase,
+    private val processYouTubeTranscriptUseCase: ProcessYouTubeTranscriptUseCase,
+    private val createQuizUseCase: CreateQuizUseCase,
+    private val generateQuizSummaryUseCase: GenerateQuizSummaryUseCase,
+    private val generateQuestionsUseCase: GenerateQuestionsUseCase,
+    private val parseQuestionsUseCase: ParseQuestionsUseCase,
+    private val createQuizSummaryUseCase: CreateQuizSummaryUseCase,
+    private val createQuizQuestionsUseCase: CreateQuizQuestionsUseCase
 ) : ViewModel() {
 
     data class QuizState(
@@ -74,25 +82,23 @@ class QuizCreationViewModel @Inject constructor(
         state = state.copy(
             isLoading = false,
             currentStep = ProcessingCreateStep.NONE,
-            errorMessage = when (throwable) {
-                is YouTubeTranscriptLight.TranscriptError -> handleTranscriptError(throwable)
-                else -> throwable.message ?: context.getString(R.string.error_generic)
-            }
+            errorMessage = throwable.message ?: context.getString(R.string.error_generic)
         )
     }
 
-    private fun handleTranscriptError(error: YouTubeTranscriptLight.TranscriptError): String {
-        return when (error) {
-            is YouTubeTranscriptLight.TranscriptError.VideoNotFound ->
+    private fun handleTranscriptError(errorType: String): String {
+        return when (errorType) {
+            "VideoNotFound" ->
                 context.getString(R.string.error_video_not_found)
-            is YouTubeTranscriptLight.TranscriptError.TranscriptsDisabled ->
+            "TranscriptsDisabled" ->
                 context.getString(R.string.error_transcripts_disabled)
-            is YouTubeTranscriptLight.TranscriptError.NoTranscriptAvailable ->
+            "NoTranscriptAvailable" ->
                 context.getString(R.string.error_no_transcript)
-            is YouTubeTranscriptLight.TranscriptError.NetworkError ->
+            "NetworkError" ->
                 context.getString(R.string.error_network)
-            is YouTubeTranscriptLight.TranscriptError.LanguageNotFound ->
+            "LanguageNotFound" ->
                 context.getString(R.string.error_language_not_found)
+            else -> context.getString(R.string.error_generic)
         }
     }
 
@@ -107,21 +113,35 @@ class QuizCreationViewModel @Inject constructor(
     ) {
         state = QuizState(isLoading = true, currentStep = ProcessingCreateStep.FETCH_METADATA)
 
-        viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
-            val videoId = extractVideoId(videoUrlOrId)
+        viewModelScope.launch(coroutineExceptionHandler) {
+            // Extract video ID using the use case
+            val videoId = extractVideoIdUseCase(videoUrlOrId)
                 ?: throw IllegalArgumentException(context.getString(R.string.error_invalid_url))
 
-            val videoResponse = youTubeApiService.getVideoInfo(videoId, youtubeApiKey)
-            val snippet = videoResponse.items.firstOrNull()?.snippet
-            val fetchedTitle = snippet?.title ?: context.getString(R.string.default_no_title)
-            val fetchedThumb = snippet?.thumbnails?.run {
-                maxres?.url ?: high?.url ?: medium?.url ?: default?.url
-            } ?: ""
-            val fetchedDescription = snippet?.description ?: "No description available"
+            // Fetch video metadata using the use case
+            val metadata = fetchVideoMetadataUseCase(
+                videoId = videoId,
+                apiKey = youtubeApiKey,
+                defaultTitle = context.getString(R.string.default_no_title)
+            )
+            
+            if (metadata.error != null) {
+                throw IllegalStateException(metadata.error)
+            }
+            
+            val fetchedTitle = metadata.title
+            val fetchedThumb = metadata.thumbnailUrl
+            val fetchedDescription = metadata.description
 
+            // Process transcript using the use case
             state = state.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT)
-            val transcripts = YouTubeTranscriptLight.create().getTranscript(videoId)
-            val transcriptContent = transcripts.joinToString(" ") { it.text }
+            val transcriptResult = processYouTubeTranscriptUseCase(videoId)
+            
+            if (transcriptResult.error != null) {
+                throw IllegalStateException(handleTranscriptError(transcriptResult.error))
+            }
+            
+            val transcriptContent = transcriptResult.text
 
             // Create quiz domain model
             val quiz = Quiz(
@@ -136,35 +156,43 @@ class QuizCreationViewModel @Inject constructor(
                 lastUpdated = System.currentTimeMillis()
             )
 
-            // Insert quiz and get its ID
-            val quizId = quizRepository.insertQuiz(quiz)
+            // Insert quiz and get its ID using the use case
+            val quizId = createQuizUseCase(quiz)
 
             val newState = if (generateSummary && generateQuestions) {
                 supervisorScope {
                     state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
                     
                     val summaryDeferred = async {
-                        createSummary(fetchedTitle, fetchedThumb, transcriptContent)
+                        val result = generateQuizSummaryUseCase(fetchedTitle, fetchedThumb, transcriptContent)
+                        if (result.error != null) {
+                            throw IllegalStateException(result.error)
+                        }
+                        result.content
                     }
                     
                     val questionsDeferred = async {
-                        createQuestions(transcriptContent, selectedLanguage, questionType, numberOfQuestions)
+                        val result = generateQuestionsUseCase(transcriptContent, selectedLanguage, questionType, numberOfQuestions)
+                        if (result.error != null) {
+                            throw IllegalStateException(result.error)
+                        }
+                        result.content
                     }
                     
                     try {
                         val summary = summaryDeferred.await()
-                        val questions = questionsDeferred.await()
+                        val questionsJson = questionsDeferred.await()
                         
                         state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
-                        // Save summary to database using domain model
-                        quizRepository.insertSummary(Summary(
+                        // Save summary to database using domain model and use case
+                        createQuizSummaryUseCase(Summary(
                             quizId = quizId,
                             content = summary
                         ))
 
-                        // Parse and save questions using domain model
-                        val questionEntities = parseAndCreateQuestions(questions, quizId)
-                        quizRepository.insertQuestions(questionEntities)
+                        // Parse and save questions using domain model and use cases
+                        val questions = parseQuestionsUseCase(questionsJson, quizId)
+                        createQuizQuestionsUseCase(questions)
 
                         state.copy(
                             isLoading = false,
@@ -178,11 +206,17 @@ class QuizCreationViewModel @Inject constructor(
                 }
             } else if (generateSummary) {
                 state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
-                val summary = createSummary(fetchedTitle, fetchedThumb, transcriptContent)
+                val summaryResult = generateQuizSummaryUseCase(fetchedTitle, fetchedThumb, transcriptContent)
+                
+                if (summaryResult.error != null) {
+                    throw IllegalStateException(summaryResult.error)
+                }
+                
+                val summary = summaryResult.content
                 
                 state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
-                // Save summary to database using domain model
-                quizRepository.insertSummary(Summary(
+                // Save summary to database using domain model and use case
+                createQuizSummaryUseCase(Summary(
                     quizId = quizId,
                     content = summary
                 ))
@@ -190,16 +224,23 @@ class QuizCreationViewModel @Inject constructor(
                 state.copy(
                     isLoading = false,
                     currentStep = ProcessingCreateStep.NONE,
-                    quizSummary = summary
+                    quizSummary = summary,
+                    quizIdInserted = quizId
                 )
             } else if (generateQuestions) {
                 state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
-                val questions = createQuestions(transcriptContent, selectedLanguage, questionType, numberOfQuestions)
+                val questionsResult = generateQuestionsUseCase(transcriptContent, selectedLanguage, questionType, numberOfQuestions)
+                
+                if (questionsResult.error != null) {
+                    throw IllegalStateException(questionsResult.error)
+                }
+                
+                val questionsJson = questionsResult.content
                 
                 state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
-                // Parse and save questions using domain model
-                val questionEntities = parseAndCreateQuestions(questions, quizId)
-                quizRepository.insertQuestions(questionEntities)
+                // Parse and save questions using domain model and use cases
+                val questions = parseQuestionsUseCase(questionsJson, quizId)
+                createQuizQuestionsUseCase(questions)
 
                 state.copy(
                     isLoading = false,
@@ -207,97 +248,17 @@ class QuizCreationViewModel @Inject constructor(
                     quizIdInserted = quizId
                 )
             } else {
-                state.copy(isLoading = false, currentStep = ProcessingCreateStep.NONE)
+                // Neither summary nor questions - just save the basic quiz info
+                state.copy(
+                    isLoading = false,
+                    currentStep = ProcessingCreateStep.NONE,
+                    quizIdInserted = quizId
+                )
             }
 
             state = newState
         }
     }
 
-    private fun parseAndCreateQuestions(questionsJson: String, quizId: Long): List<Question> {
-        val processor = LLMProcessor()
-        val (multipleChoiceQuestions, trueFalseQuestions) = processor.parseQuizQuestions(questionsJson)
-        
-        val questions = mutableListOf<Question>()
-        
-        // Convert multiple choice questions to domain model
-        questions.addAll(multipleChoiceQuestions.map { mcq ->
-            Question(
-                quizId = quizId,
-                text = mcq.question,
-                options = mcq.options.values.toList(),
-                correctAnswer = mcq.correctAnswers.joinToString(",")
-            )
-        })
-        
-        // Convert true/false questions to domain model
-        questions.addAll(trueFalseQuestions.map { tfq ->
-            Question(
-                quizId = quizId,
-                text = tfq.statement,
-                options = listOf("True", "False"),
-                correctAnswer = if (tfq.isTrue) "True" else "False"
-            )
-        })
-        
-        return questions
-    }
-
-    private suspend fun createSummary(
-        fetchedTitle: String,
-        fetchedThumb: String,
-        transcriptContent: String
-    ): String = withContext(Dispatchers.IO) {
-        val processor = LLMProcessor()
-        val topics = processor.extractTopicsAndQuestions(transcriptContent, fetchedTitle)
-            .takeIf { it.isNotEmpty() }
-            ?: throw IllegalStateException(context.getString(R.string.error_no_summary))
-
-        val processedTopics = processor.processContent(topics, transcriptContent)
-        val sections = processedTopics.map { topic ->
-            Section(
-                title = topic.rephrased_title.ifEmpty { topic.title },
-                bullets = topic.questions.map { q ->
-                    Pair(q.rephrased.ifEmpty { q.original }, q.answer)
-                }
-            )
-        }
-
-        HtmlGenerator.generate(
-            title = fetchedTitle,
-            imageUrl = fetchedThumb,
-            sections = sections
-        )
-    }
-
-    private suspend fun createQuestions(
-        transcriptContent: String,
-        selectedLanguage: String,
-        questionType: String,
-        numberOfQuestions: Int
-    ): String = withContext(Dispatchers.IO) {
-        val processor = LLMProcessor()
-        val keyPoints = processor.extractKeyPoints(transcriptContent, selectedLanguage)
-        processor.generateQuestionsFromKeyPoints(
-            keyPoints = keyPoints,
-            language = selectedLanguage,
-            questionType = questionType,
-            numberOfQuestions = numberOfQuestions
-        )
-    }
-
-    private fun extractVideoId(input: String): String? {
-        val url = input.trim()
-        return try {
-            val regexWatch = Regex("v=([^&]+)")
-            val regexShort = Regex("youtu\\.be/([^?]+)")
-            when {
-                url.contains("watch?v=") -> regexWatch.find(url)?.groupValues?.get(1)
-                url.contains("youtu.be/") -> regexShort.find(url)?.groupValues?.get(1)
-                else -> url.takeIf { it.isNotEmpty() && !it.contains(" ") }
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
+    // All helper methods have been replaced with use cases
 }

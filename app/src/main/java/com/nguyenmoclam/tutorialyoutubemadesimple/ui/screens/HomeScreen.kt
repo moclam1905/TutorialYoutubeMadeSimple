@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.QuizStats
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.HomeViewModel
 
@@ -58,14 +59,10 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     navController: NavHostController
 ) {
-    val quizzes by viewModel.quizzes.collectAsState()
-    val expandedStatsMap by viewModel.expandedStatsMap.collectAsState()
-    val quizStatsCache by viewModel.quizStatsCache.collectAsState()
-    val showDeleteConfirmDialog by viewModel.showDeleteConfirmDialog.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val state by viewModel.state.collectAsState()
     
     // Delete Confirmation Dialog
-    showDeleteConfirmDialog?.let { quizId ->
+    state.showDeleteConfirmDialog?.let { quizId ->
         AlertDialog(
             onDismissRequest = { viewModel.hideDeleteQuizDialog() },
             title = { Text("Delete Quiz") },
@@ -93,13 +90,13 @@ fun HomeScreen(
             .padding(16.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        if (isLoading) {
+        if (state.isLoading) {
             // Show loading indicator when data is being loaded
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
                 color = MaterialTheme.colorScheme.primary
             )
-        } else if (quizzes.isEmpty()) {
+        } else if (state.quizzes.isEmpty()) {
             Text(
                 text = "No quizzes available. Create your first quiz!",
                 fontSize = 18.sp,
@@ -109,11 +106,11 @@ fun HomeScreen(
             )
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(quizzes) { quiz ->
+                items(state.quizzes) { quiz ->
                     QuizItem(
                         quiz = quiz,
-                        isStatsExpanded = expandedStatsMap[quiz.id] == true,
-                        quizStats = quizStatsCache[quiz.id],
+                        isStatsExpanded = state.expandedStatsMap[quiz.id] == true,
+                        quizStats = state.quizStatsCache[quiz.id],
                         onToggleStats = { viewModel.toggleStatsExpanded(quiz.id) },
                         onDeleteQuiz = { viewModel.showDeleteQuizDialog(quiz.id) },
                         daysSinceLastUpdate = viewModel.getDaysSinceLastUpdate(quiz.lastUpdated),
@@ -131,7 +128,7 @@ fun HomeScreen(
 fun QuizItem(
     quiz: Quiz,
     isStatsExpanded: Boolean,
-    quizStats: HomeViewModel.QuizStats?,
+    quizStats: QuizStats?,
     onToggleStats: () -> Unit,
     onDeleteQuiz: () -> Unit,
     daysSinceLastUpdate: Int,
@@ -249,7 +246,7 @@ fun QuizItem(
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
-                                text = String.format("%.1f%%", quizStats.averageScore * 100),
+                                text = String.format("%.1f%%", quizStats.completionScore * 100),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -267,7 +264,7 @@ fun QuizItem(
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
-                                text = "${quizStats.averageTimeSeconds} seconds",
+                                text = "${quizStats.timeElapsedSeconds} seconds",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )

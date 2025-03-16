@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import javax.inject.Inject
 
 /**
  * Processes YouTube video content using Language Learning Models (LLM) to extract and simplify topics and questions.
@@ -23,7 +24,7 @@ import kotlinx.serialization.json.jsonPrimitive
  *
  * The class uses OpenRouter's API with Gemini model for natural language processing tasks.
  */
-class LLMProcessor {
+class LLMProcessor @Inject constructor() {
 
     /**
      * Analyzes a video transcript to identify key topics and generate relevant questions.

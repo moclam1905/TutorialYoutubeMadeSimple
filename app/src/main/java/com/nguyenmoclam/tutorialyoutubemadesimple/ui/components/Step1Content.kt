@@ -1,5 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -19,7 +21,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -37,8 +38,6 @@ fun Step1Content(
     onShowLanguageDropdownChange: (Boolean) -> Unit,
     languages: List<String>
 ) {
-    val context = LocalContext.current
-    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -53,7 +52,14 @@ fun Step1Content(
                 label = { Text("Enter YouTube Video URL") },
                 placeholder = { Text("Example: https://youtu.be/VIDEO_ID") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    if (youtubeUrlValue.text.isNotEmpty()) {
+                        IconButton(onClick = { onYoutubeUrlChange(TextFieldValue("")) }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear text")
+                        }
+                    }
+                }
             )
             
             Spacer(modifier = Modifier.height(16.dp))

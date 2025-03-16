@@ -21,3 +21,4 @@ app/.idea/
 .externalNativeBuild
 .cxx
 local.properties
+.kotlin/errors
