@@ -2,7 +2,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizResultDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.QuizRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +21,7 @@ import kotlin.ranges.random
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
-    private val quizResultDao: QuizResultDao
+    private val quizProgressDao: QuizProgressDao
 ) : ViewModel() {
 
     // Loading state
@@ -73,20 +73,25 @@ class HomeViewModel @Inject constructor(
     private fun loadQuizStats(quizId: Long) {
         viewModelScope.launch {
             try {
-                // Fetch quiz results for this quiz
-                val results = quizResultDao.getResultsForQuiz(quizId).first()
+                // Fetch quiz progress for this quiz
+                val progress = quizRepository.getProgressForQuizAsFlow(quizId).first()
                 
-                // Calculate statistics if we have results
-                val stats = if (results.isNotEmpty()) {
-                    // Calculate average score
-                    val avgScore = results.map { it.score }.average().toFloat()
+                // Calculate statistics if we have progress
+                val stats = if (progress != null && progress.isNotEmpty()) {
+                    // Calculate completion percentage (how many questions answered)
+                    val quiz = quizRepository.getQuizById(quizId)
+                    val totalQuestions = quiz?.questionCount ?: 1
+                    val answeredCount = progress.size
+                    val completionScore = answeredCount.toFloat() / totalQuestions
                     
-                    // Calculate average completion time
-                    val avgTime = results.map { it.timeTaken }.average().toInt()
+                    // Get the last updated timestamp from the progress entity
+                    val progressEntity = quizProgressDao.getProgressForQuiz(quizId)
+                    val lastUpdated = progressEntity?.lastUpdated ?: System.currentTimeMillis()
+                    val timeElapsed = (System.currentTimeMillis() - lastUpdated) / 1000
                     
-                    QuizStats(avgScore, avgTime)
+                    QuizStats(completionScore, timeElapsed.toInt())
                 } else {
-                    // No results yet, use placeholder values with some randomization for demo purposes
+                    // No progress yet, use placeholder values with some randomization for demo purposes
                     // In a real app, you would show actual zeros or a message indicating no data
                     val randomScore = Random.nextFloat() * (0.95f - 0.65f) + 0.65f
                     val randomTime = (30..120).random()

@@ -72,12 +72,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
-import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.MultiWaveLoadingAnimation
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import kotlinx.coroutines.launch
+
+import androidx.activity.compose.BackHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,6 +102,11 @@ fun QuizDetailScreen(
     // Track answered questions and their selected answers - now using ViewModel state
     var answeredQuestions by remember { mutableStateOf<Map<Int, String>>(quizDetailViewModel.state.answeredQuestions) }
 
+    // Handle system back button press
+    BackHandler(enabled = quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted) {
+        quizDetailViewModel.showExitConfirmation()
+    }
+
     // Load quiz data from database if quizId is provided
     LaunchedEffect(quizId) {
         if (quizId > 0) {
@@ -109,22 +115,18 @@ fun QuizDetailScreen(
     }
 
     // Load quiz questions from QuizCreationViewModel (when coming from quiz creation)
-    LaunchedEffect(quizViewModel.state.quizQuestionsJson) {
-        if (quizId <= 0 && quizViewModel.state.quizQuestionsJson.isNotEmpty()) {
+    LaunchedEffect(quizViewModel.state.quizIdInserted) {
+        if (quizId <= 0 && quizViewModel.state.quizIdInserted >= 0L) {
             try {
-                val llmProcessor = LLMProcessor()
-                val (multipleChoiceQuestions, trueFalseQuestions) =
-                    llmProcessor.parseQuizQuestions(quizViewModel.state.quizQuestionsJson)
-                quizQuestions = multipleChoiceQuestions + trueFalseQuestions
+                quizDetailViewModel.loadQuizById(quizViewModel.state.quizIdInserted)
             } catch (e: Exception) {
                 println("Error parsing quiz questions: ${e.message}")
             }
         }
     }
 
-    // Load quiz questions from QuizDetailViewModel (when coming from HomeScreen)
     LaunchedEffect(quizDetailViewModel.state.questions) {
-        if (quizId > 0 && quizDetailViewModel.state.questions.isNotEmpty()) {
+        if (quizDetailViewModel.state.questions.isNotEmpty()) {
             quizQuestions = quizDetailViewModel.state.questions
         }
     }
@@ -272,13 +274,15 @@ fun QuizDetailScreen(
                         TopAppBar(
                             title = { Text("Quiz Details") },
                             navigationIcon = {
-                                IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                IconButton(onClick = { 
+                                    // If quiz is in progress, show exit confirmation dialog
+                                    if (quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted) {
+                                        quizDetailViewModel.showExitConfirmation()
+                                    } else {
+                                        scope.launch { drawerState.open() }
+                                    }
+                                }) {
                                     Icon(Icons.Default.Menu, contentDescription = "Menu")
-                                }
-                            },
-                            actions = {
-                                IconButton(onClick = { /* Share action */ }) {
-                                    Icon(Icons.Default.Share, contentDescription = "Share")
                                 }
                             }
                         )
@@ -376,81 +380,127 @@ fun QuizDetailScreen(
                             } else {
                                 // Questions
                                 if (quizQuestions.isNotEmpty()) {
-                                    QuizContent(
-                                        quizQuestions = quizQuestions,
-                                        currentQuestionIndex = currentQuestionIndex,
-                                        onQuestionChange = { currentQuestionIndex = it },
-                                        selectedAnswer = selectedAnswer,
-                                        onAnswerSelected = { selectedAnswer = it },
-                                        showFeedback = showFeedback,
-                                        isCorrect = isCorrect,
-                                        onSubmitAnswer = {
-                                            val currentQuestion =
-                                                quizQuestions[currentQuestionIndex]
-                                            isCorrect = when (currentQuestion) {
-                                                is MultipleChoiceQuestion -> {
-                                                    currentQuestion.correctAnswers.contains(
-                                                        selectedAnswer
-                                                    )
-                                                }
-
-                                                is TrueFalseQuestion -> {
-                                                    (selectedAnswer == "True" && currentQuestion.isTrue) ||
-                                                            (selectedAnswer == "False" && !currentQuestion.isTrue)
-                                                }
-
-                                                else -> false
+                                    // Check if quiz is completed to show results screen
+                                    if (quizDetailViewModel.state.quizCompleted) {
+                                        QuizResultsScreen(
+                                            quizQuestions = quizQuestions,
+                                            correctAnswers = quizDetailViewModel.getCorrectAnswersCount(),
+                                            incorrectAnswers = quizDetailViewModel.getIncorrectAnswersCount(),
+                                            skippedQuestions = quizDetailViewModel.state.skippedQuestions.size,
+                                            completionTimeSeconds = quizDetailViewModel.getQuizCompletionTimeInSeconds(),
+                                            correctQuestionIndices = quizDetailViewModel.getCorrectlyAnsweredQuestions(),
+                                            incorrectQuestionIndices = quizDetailViewModel.getIncorrectlyAnsweredQuestions(),
+                                            skippedQuestionIndices = quizDetailViewModel.state.skippedQuestions.toList(),
+                                            onRetryQuiz = {
+                                                quizDetailViewModel.resetQuiz()
                                             }
-                                            showFeedback = true
-                                            
-                                            // Save the answered question in local state
-                                            answeredQuestions = answeredQuestions.toMutableMap().apply {
-                                                put(currentQuestionIndex, selectedAnswer)
+                                        )
+                                    }
+                                    // Check if quiz has not started yet
+                                    else if (!quizDetailViewModel.state.quizStarted) {
+                                        StartQuizScreen(
+                                            questionCount = quizQuestions.size,
+                                            onStartQuiz = {
+                                                quizDetailViewModel.startQuiz()
+                                                selectedAnswer = ""
+                                                showFeedback = false
+                                                currentQuestionIndex = 0
                                             }
-                                            
-                                            // Save the progress in the ViewModel
-                                            quizDetailViewModel.saveQuizProgress(currentQuestionIndex, selectedAnswer)
-                                        },
-                                        onNextQuestion = {
-                                            if (currentQuestionIndex < quizQuestions.size - 1) {
-                                                // Save the current question's state before moving to the next
-                                                answeredQuestions = answeredQuestions.toMutableMap().apply {
-                                                    put(currentQuestionIndex, selectedAnswer)
+                                        )
+                                    }
+                                    // Show quiz content if quiz is started and not completed
+                                    else {
+                                        // Show exit confirmation dialog if needed
+                                        if (quizDetailViewModel.state.showExitConfirmation) {
+                                            ExitConfirmationDialog(
+                                                onConfirm = {
+                                                    quizDetailViewModel.confirmExit()
+                                                    navController.popBackStack()
+                                                },
+                                                onDismiss = {
+                                                    quizDetailViewModel.hideExitConfirmation()
                                                 }
-                                                
-                                                // Save the progress in the ViewModel
-                                                quizDetailViewModel.saveQuizProgress(currentQuestionIndex, selectedAnswer)
-                                                
-                                                // Move to the next question
-                                                currentQuestionIndex++
-                                                
-                                                // Check if the next question has been answered before
-                                                if (answeredQuestions.containsKey(currentQuestionIndex)) {
-                                                    selectedAnswer = answeredQuestions[currentQuestionIndex] ?: ""
-                                                    showFeedback = true
-                                                    
-                                                    // Check if the answer was correct
-                                                    val nextQuestion = quizQuestions[currentQuestionIndex]
-                                                    isCorrect = when (nextQuestion) {
-                                                        is MultipleChoiceQuestion -> {
-                                                            nextQuestion.correctAnswers.contains(selectedAnswer)
-                                                        }
-                                                        is TrueFalseQuestion -> {
-                                                            (selectedAnswer == "True" && nextQuestion.isTrue) ||
-                                                            (selectedAnswer == "False" && !nextQuestion.isTrue)
-                                                        }
-                                                        else -> false
-                                                    }
-                                                } else {
-                                                    selectedAnswer = ""
-                                                    showFeedback = false
-                                                }
-                                                
-                                                // Update the current question index in the ViewModel
-                                                quizDetailViewModel.saveQuizProgress(currentQuestionIndex, "")
-                                            }
+                                            )
                                         }
-                                    )
+                                        
+                                        QuizContent(
+                                            quizQuestions = quizQuestions,
+                                            currentQuestionIndex = currentQuestionIndex,
+                                            onQuestionChange = { currentQuestionIndex = it },
+                                            selectedAnswer = selectedAnswer,
+                                            onAnswerSelected = { selectedAnswer = it },
+                                            showFeedback = showFeedback,
+                                            isCorrect = isCorrect,
+                                            onSubmitAnswer = {
+                                                val currentQuestion = quizQuestions[currentQuestionIndex]
+                                                isCorrect = when (currentQuestion) {
+                                                    is MultipleChoiceQuestion -> {
+                                                        currentQuestion.correctAnswers.contains(selectedAnswer)
+                                                    }
+                                                    is TrueFalseQuestion -> {
+                                                        (selectedAnswer == "True" && currentQuestion.isTrue) ||
+                                                                (selectedAnswer == "False" && !currentQuestion.isTrue)
+                                                    }
+                                                    else -> false
+                                                }
+                                                showFeedback = true
+
+                                                // Save the progress in the ViewModel after checking correctness
+                                                quizDetailViewModel.saveQuizProgress(currentQuestionIndex, selectedAnswer)
+
+                                                // Update local state to match ViewModel state
+                                                answeredQuestions = quizDetailViewModel.state.answeredQuestions
+                                            },
+                                            onSkipQuestion = {
+                                                quizDetailViewModel.skipQuestion(currentQuestionIndex)
+                                                // Update local state to match ViewModel state
+                                                currentQuestionIndex = quizDetailViewModel.state.currentQuestionIndex
+                                                selectedAnswer = ""
+                                                showFeedback = false
+                                            },
+                                            onNextQuestion = {
+                                                if (currentQuestionIndex < quizQuestions.size - 1) {
+                                                    // Move to the next question
+                                                    currentQuestionIndex++
+                                                    
+                                                    // Save the current question index to the database
+                                                    // Only update if there's an answer for this question
+                                                    val existingAnswer = answeredQuestions.getOrDefault(currentQuestionIndex, "")
+                                                    if (existingAnswer.isNotEmpty()) {
+                                                        quizDetailViewModel.saveQuizProgress(currentQuestionIndex, existingAnswer)
+                                                    }
+
+                                                    // Check if the next question has been answered before
+                                                    if (answeredQuestions.containsKey(currentQuestionIndex)) {
+                                                        selectedAnswer = answeredQuestions[currentQuestionIndex] ?: ""
+                                                        showFeedback = true
+
+                                                        // Check if the answer was correct
+                                                        val nextQuestion = quizQuestions[currentQuestionIndex]
+                                                        isCorrect = when (nextQuestion) {
+                                                            is MultipleChoiceQuestion -> {
+                                                                nextQuestion.correctAnswers.contains(selectedAnswer)
+                                                            }
+                                                            is TrueFalseQuestion -> {
+                                                                (selectedAnswer == "True" && nextQuestion.isTrue) ||
+                                                                (selectedAnswer == "False" && !nextQuestion.isTrue)
+                                                            }
+                                                            else -> false
+                                                        }
+                                                    } else {
+                                                        selectedAnswer = ""
+                                                        showFeedback = false
+                                                    }
+                                                }
+                                                // If this is the last question and all questions are answered/skipped,
+                                                // we need to explicitly check completion
+                                                else if (currentQuestionIndex == quizQuestions.size - 1) {
+                                                    // Force a check for quiz completion
+                                                    quizDetailViewModel.checkQuizCompletion()
+                                                }
+                                            }
+                                        )
+                                    }
                                 } else {
                                     Box(
                                         modifier = Modifier.fillMaxSize(),
@@ -506,6 +556,7 @@ fun QuizContent(
     showFeedback: Boolean,
     isCorrect: Boolean,
     onSubmitAnswer: () -> Unit,
+    onSkipQuestion: () -> Unit,
     onNextQuestion: () -> Unit
 ) {
     Column(
@@ -742,12 +793,24 @@ fun QuizContent(
                     Icon(Icons.Default.ArrowForward, contentDescription = "Next")
                 }
             } else {
-                Button(
-                    onClick = onSubmitAnswer,
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = selectedAnswer.isNotEmpty()
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Submit Answer")
+                    Button(
+                        onClick = onSkipQuestion,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Skip Question")
+                    }
+                    
+                    Button(
+                        onClick = onSubmitAnswer,
+                        modifier = Modifier.weight(1f),
+                        enabled = selectedAnswer.isNotEmpty()
+                    ) {
+                        Text("Submit Answer")
+                    }
                 }
             }
         }

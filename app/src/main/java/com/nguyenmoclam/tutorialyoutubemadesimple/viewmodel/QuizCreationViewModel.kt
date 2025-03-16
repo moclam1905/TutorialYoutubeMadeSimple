@@ -59,7 +59,7 @@ class QuizCreationViewModel @Inject constructor(
         val isLoading: Boolean = false,
         val errorMessage: String? = null,
         val quizSummary: String = "",
-        val quizQuestionsJson: String = "",
+        val quizIdInserted: Long = -1,
         val currentStep: ProcessingCreateStep = ProcessingCreateStep.NONE
     )
 
@@ -170,7 +170,7 @@ class QuizCreationViewModel @Inject constructor(
                             isLoading = false,
                             currentStep = ProcessingCreateStep.NONE,
                             quizSummary = summary,
-                            quizQuestionsJson = questions
+                            quizIdInserted = quizId
                         )
                     } catch (e: Exception) {
                         throw e
@@ -204,7 +204,7 @@ class QuizCreationViewModel @Inject constructor(
                 state.copy(
                     isLoading = false,
                     currentStep = ProcessingCreateStep.NONE,
-                    quizQuestionsJson = questions
+                    quizIdInserted = quizId
                 )
             } else {
                 state.copy(isLoading = false, currentStep = ProcessingCreateStep.NONE)

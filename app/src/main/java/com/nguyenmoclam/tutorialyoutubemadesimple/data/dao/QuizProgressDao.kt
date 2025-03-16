@@ -16,6 +16,12 @@ interface QuizProgressDao {
     @Query("SELECT * FROM quiz_progress WHERE quizId = :quizId")
     suspend fun getProgressForQuiz(quizId: Long): QuizProgressEntity?
     
+    @Query("SELECT * FROM quiz_progress WHERE quizId = :quizId")
+    fun getProgressForQuizAsFlow(quizId: Long): Flow<QuizProgressEntity?>
+    
+    @Query("SELECT * FROM quiz_progress")
+    fun getAllProgress(): Flow<List<QuizProgressEntity>>
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProgress(progress: QuizProgressEntity): Long
     

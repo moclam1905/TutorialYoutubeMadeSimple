@@ -152,7 +152,7 @@ class LLMProcessor {
             Message(role = "user", content = prompt)
         )
         val request = OpenRouterRequest(
-            model = "google/gemini-2.0-flash-thinking-exp:free",
+            model = "google/gemini-2.0-flash-thinking-exp-1219:free",
             messages = messages
         )
         val authHeader = "Bearer $OPENROUTER_API_KEY"

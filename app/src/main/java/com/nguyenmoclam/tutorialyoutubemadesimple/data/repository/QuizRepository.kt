@@ -17,6 +17,8 @@ interface QuizRepository {
     
     // Quiz progress methods
     suspend fun getProgressForQuiz(quizId: Long): Map<Int, String>?
+    fun getProgressForQuizAsFlow(quizId: Long): Flow<Map<Int, String>?>
+    fun getAllProgress(): Flow<List<Map<Int, String>>>
     suspend fun saveQuizProgress(quizId: Long, currentQuestionIndex: Int, answeredQuestions: Map<Int, String>)
     suspend fun deleteProgressForQuiz(quizId: Long)
 }

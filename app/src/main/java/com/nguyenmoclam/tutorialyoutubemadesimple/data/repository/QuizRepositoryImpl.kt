@@ -61,6 +61,20 @@ class QuizRepositoryImpl @Inject constructor(
         return progressEntity?.answeredQuestions?.mapKeys { it.key.toInt() }
     }
     
+    override fun getProgressForQuizAsFlow(quizId: Long): Flow<Map<Int, String>?> {
+        return quizProgressDao.getProgressForQuizAsFlow(quizId).map { entity ->
+            entity?.answeredQuestions?.mapKeys { it.key.toInt() }
+        }
+    }
+    
+    override fun getAllProgress(): Flow<List<Map<Int, String>>> {
+        return quizProgressDao.getAllProgress().map { entities ->
+            entities.map { entity ->
+                entity.answeredQuestions.mapKeys { it.key.toInt() }
+            }
+        }
+    }
+    
     override suspend fun saveQuizProgress(quizId: Long, currentQuestionIndex: Int, answeredQuestions: Map<Int, String>) {
         // Convert Map<Int, String> to Map<String, String> for storage
         val stringKeyMap = answeredQuestions.mapKeys { it.key.toString() }

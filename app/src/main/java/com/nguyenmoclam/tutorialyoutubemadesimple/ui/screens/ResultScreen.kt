@@ -64,7 +64,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
  * @param onConfirm Callback invoked when the user confirms the exit action
  */
 @Composable
-private fun ExitConfirmationDialog(
+private fun ExitSummaryConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
@@ -241,7 +241,7 @@ fun ResultScreen(viewModel: QuizViewModel, navController: NavHostController) {
     }
 
     if (showExitDialog) {
-        ExitConfirmationDialog(
+        ExitSummaryConfirmationDialog(
             onDismiss = { showExitDialog = false },
             onConfirm = {
                 showExitDialog = false
