@@ -30,6 +30,12 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.BottomNavigationVisibilityState
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -48,12 +54,22 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestinationRoute = navBackStackEntry?.destination?.route
+                
+                // Observe bottom navigation visibility state
+                val isBottomNavVisible by BottomNavigationVisibilityState.isVisible
 
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Scaffold(
                         bottomBar = {
                             if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true) {
-                                BottomNavigationBar(navController)
+                                // Animate bottom navigation visibility
+                                AnimatedVisibility(
+                                    visible = isBottomNavVisible,
+                                    enter = slideInVertically(initialOffsetY = { it }),
+                                    exit = slideOutVertically(targetOffsetY = { it })
+                                ) {
+                                    BottomNavigationBar(navController)
+                                }
                             }
                         }
                     ) { innerPadding ->

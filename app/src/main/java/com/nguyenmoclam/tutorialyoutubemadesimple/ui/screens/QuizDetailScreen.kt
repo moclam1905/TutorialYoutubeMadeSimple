@@ -3,6 +3,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,8 +45,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -62,7 +62,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -72,15 +74,19 @@ import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ExitConfirmationDialog
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.MultiWaveLoadingAnimation
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.QuizResultsScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StartQuizScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.SlidingRootNav
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.model.SlideGravity
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.model.rememberSlidingRootNavState
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.transform.ElevationTransformation
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.transform.ScaleTransformation
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.transform.YTranslationTransformation
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import kotlinx.coroutines.launch
-
-import androidx.activity.compose.BackHandler
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ExitConfirmationDialog
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.QuizResultsScreen
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StartQuizScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,6 +109,12 @@ fun QuizDetailScreen(
 
     // Track answered questions and their selected answers - now using ViewModel state
     var answeredQuestions by remember { mutableStateOf<Map<Int, String>>(quizDetailViewModel.state.answeredQuestions) }
+
+    val configuration = LocalConfiguration.current
+    val screenWidthPx = with(LocalDensity.current) {
+        configuration.screenWidthDp.dp.toPx()
+    }
+    val dragDistance = (0.4f * screenWidthPx).toInt()
 
     // Handle system back button press
     BackHandler(enabled = quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted && selectedContentIndex == 1) {
@@ -171,10 +183,23 @@ fun QuizDetailScreen(
         }
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
+    // Create a state for the sliding root navigation
+    val slidingNavState =
+        rememberSlidingRootNavState(initialDragProgress = if (drawerState.currentValue == DrawerValue.Open) 1f else 0f)
+
+    // Use SlidingRootNav directly with the state
+    SlidingRootNav(
+        state = slidingNavState,
+        modifier = Modifier,
+        dragDistance = dragDistance,
+        gravity = SlideGravity.LEFT,
+        transformations = listOf(
+            ScaleTransformation(0.65f),
+            ElevationTransformation(20.dp.value),
+            YTranslationTransformation(20.dp.value)
+        ),
+        menuContent = {
+            Column(modifier = Modifier.fillMaxHeight()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -207,7 +232,7 @@ fun QuizDetailScreen(
                             if (quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted && selectedContentIndex == 1) {
                                 quizDetailViewModel.showExitConfirmation()
                             } else {
-                                drawerState.close()
+                                slidingNavState.dragProgress = 0f
                                 navController.navigate(AppScreens.Home.route)
                             }
                         }
@@ -241,7 +266,7 @@ fun QuizDetailScreen(
                             selected = selectedContentIndex == 0,
                             onClick = {
                                 scope.launch {
-                                    drawerState.close()
+                                    slidingNavState.dragProgress = 0f
                                 }
                                 selectedContentIndex = 0
                             }
@@ -253,7 +278,7 @@ fun QuizDetailScreen(
                             selected = selectedContentIndex == 1,
                             onClick = {
                                 scope.launch {
-                                    drawerState.close()
+                                    slidingNavState.dragProgress = 0f
                                 }
                                 selectedContentIndex = 1
                             }
@@ -267,16 +292,16 @@ fun QuizDetailScreen(
                     selected = false,
                     onClick = {
                         scope.launch {
-                            drawerState.close()
+                            slidingNavState.closeMenu()
                             navController.navigate(AppScreens.Settings.route)
                         }
                     }
                 )
 
-                Spacer(modifier = Modifier.weight(1f))
+                //Spacer(modifier = Modifier.weight(1f))
             }
         },
-        content = {
+        contentContent = {
             Scaffold(
                 topBar = {
                     if (!quizViewModel.state.isLoading && !quizDetailViewModel.state.isLoading) {
@@ -284,7 +309,10 @@ fun QuizDetailScreen(
                             title = { Text("Quiz Details") },
                             navigationIcon = {
                                 IconButton(onClick = {
-                                    scope.launch { drawerState.open() }
+                                    scope.launch {
+                                        // Open the sliding menu
+                                        slidingNavState.dragProgress = 1f
+                                    }
                                 }) {
                                     Icon(Icons.Default.Menu, contentDescription = "Menu")
                                 }
@@ -490,50 +518,9 @@ fun QuizDetailScreen(
                                                 if (currentQuestionIndex < quizQuestions.size - 1) {
                                                     // Move to the next question
                                                     currentQuestionIndex++
+                                                    selectedAnswer = ""
+                                                    showFeedback = false
 
-//                                                    val existingAnswer =
-//                                                        answeredQuestions.getOrDefault(
-//                                                            currentQuestionIndex,
-//                                                            ""
-//                                                        )
-//                                                    if (existingAnswer.isNotEmpty()) {
-//                                                        quizDetailViewModel.saveQuizProgress(
-//                                                            currentQuestionIndex,
-//                                                            existingAnswer
-//                                                        )
-//                                                    }
-
-                                                    // Check if the next question has been answered before
-                                                    if (answeredQuestions.containsKey(
-                                                            currentQuestionIndex
-                                                        )
-                                                    ) {
-                                                        selectedAnswer =
-                                                            answeredQuestions[currentQuestionIndex]
-                                                                ?: ""
-                                                        showFeedback = true
-
-                                                        // Check if the answer was correct
-                                                        val nextQuestion =
-                                                            quizQuestions[currentQuestionIndex]
-                                                        isCorrect = when (nextQuestion) {
-                                                            is MultipleChoiceQuestion -> {
-                                                                nextQuestion.correctAnswers.contains(
-                                                                    selectedAnswer
-                                                                )
-                                                            }
-
-                                                            is TrueFalseQuestion -> {
-                                                                (selectedAnswer == "True" && nextQuestion.isTrue) ||
-                                                                        (selectedAnswer == "False" && !nextQuestion.isTrue)
-                                                            }
-
-                                                            else -> false
-                                                        }
-                                                    } else {
-                                                        selectedAnswer = ""
-                                                        showFeedback = false
-                                                    }
                                                 }
                                                 // If this is the last question and all questions are answered/skipped,
                                                 // we need to explicitly check completion

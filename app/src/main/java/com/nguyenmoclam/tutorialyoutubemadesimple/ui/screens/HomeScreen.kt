@@ -22,26 +22,39 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,12 +67,34 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.QuizStats
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.HomeViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     navController: NavHostController
 ) {
     val state by viewModel.state.collectAsState()
+    
+    // Add scroll state tracking
+    val lazyListState = rememberLazyListState()
+    val isScrollingUp = remember {
+        derivedStateOf {
+            if (lazyListState.firstVisibleItemIndex > 0) {
+                // When scrolled past the first item, check scroll direction
+                lazyListState.firstVisibleItemScrollOffset == 0 || 
+                lazyListState.isScrollInProgress.not()
+            } else {
+                // Always show navigation when at the top
+                true
+            }
+        }
+    }
+    
+    // Share scroll state with MainActivity
+    LaunchedEffect(isScrollingUp.value) {
+        // Update the BottomNavigationVisibilityState singleton
+        BottomNavigationVisibilityState.isVisible.value = isScrollingUp.value
+    }
     
     // Delete Confirmation Dialog
     state.showDeleteConfirmDialog?.let { quizId ->
@@ -84,30 +119,84 @@ fun HomeScreen(
         )
     }
     
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        contentAlignment = Alignment.TopCenter
+            .padding(16.dp)
     ) {
+        // Learning Hub Title
+        Text(
+            text = "Learning Hub",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Text(
+            text = "Explore programming challenges",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Search Bar
+        OutlinedTextField(
+            value = "",
+            onValueChange = { },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Search challenges...") },
+            leadingIcon = { 
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search"
+                )
+            },
+            shape = RoundedCornerShape(8.dp),
+            singleLine = true
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Filter Tabs
+        var selectedTabIndex by remember { mutableIntStateOf(0) }
+        val tabs = listOf("All", "Popular", "New", "Trending")
+        
+        Row(modifier = Modifier.fillMaxWidth()) {
+            tabs.forEachIndexed { index, title ->
+                FilterTab(
+                    title = title,
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
         if (state.isLoading) {
             // Show loading indicator when data is being loaded
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary
-            )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         } else if (state.quizzes.isEmpty()) {
-            Text(
-                text = "No quizzes available. Create your first quiz!",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center)
-            )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = "No quizzes available. Create your first quiz!",
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+            }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier.fillMaxSize()
+            ) {
                 items(state.quizzes) { quiz ->
-                    QuizItem(
+                    LearningChallengeItem(
                         quiz = quiz,
                         isStatsExpanded = state.expandedStatsMap[quiz.id] == true,
                         quizStats = state.quizStatsCache[quiz.id],
@@ -123,9 +212,35 @@ fun HomeScreen(
     }
 }
 
+@Composable
+fun FilterTab(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary
+                else Color.Transparent
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = title,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary
+                   else MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}
+
 @SuppressLint("DefaultLocale")
 @Composable
-fun QuizItem(
+fun LearningChallengeItem(
     quiz: Quiz,
     isStatsExpanded: Boolean,
     quizStats: QuizStats?,
@@ -138,8 +253,11 @@ fun QuizItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onQuizClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(12.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Title row with delete icon
@@ -149,7 +267,7 @@ fun QuizItem(
             ) {
                 Text(
                     text = quiz.title,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
@@ -162,7 +280,8 @@ fun QuizItem(
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete Quiz",
-                        tint = MaterialTheme.colorScheme.error
+                        tint = Color.Gray.copy(alpha = 0.7f),
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
@@ -171,7 +290,8 @@ fun QuizItem(
             Text(
                 text = quiz.description,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 8.dp),
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 4.dp),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -186,24 +306,30 @@ fun QuizItem(
                 Text(
                     text = "Total ${quiz.questionCount} questions",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "Last update: $daysSinceLastUpdate days ago",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.Gray
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Stats button
             Button(
                 onClick = onToggleStats,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
-                Text(text = if (isStatsExpanded) "Close Stats" else "View Stats")
+                Text(
+                    text = "View Stats",
+                    fontWeight = FontWeight.Medium
+                )
             }
             
             // Animated stats section
