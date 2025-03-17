@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "c302f2b11f8db090a7499c95ffc26bd7",
+    "identityHash": "154398c85112b1e4d3a241a59eca3ce8",
     "entities": [
       {
         "tableName": "quizzes",
@@ -263,12 +263,72 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "quiz_progress",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER NOT NULL, `currentQuestionIndex` INTEGER NOT NULL, `answeredQuestions` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`quizId`), FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "quizId",
+            "columnName": "quizId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentQuestionIndex",
+            "columnName": "currentQuestionIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "answeredQuestions",
+            "columnName": "answeredQuestions",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "quizId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_quiz_progress_quizId",
+            "unique": false,
+            "columnNames": [
+              "quizId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quiz_progress_quizId` ON `${TABLE_NAME}` (`quizId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "quizzes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "quizId"
+            ],
+            "referencedColumns": [
+              "quizId"
+            ]
+          }
+        ]
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c302f2b11f8db090a7499c95ffc26bd7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '154398c85112b1e4d3a241a59eca3ce8')"
     ]
   }
 }

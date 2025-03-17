@@ -7,16 +7,13 @@ import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -27,9 +24,18 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppNavigation
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.CurvedBottomNavigation
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavItem
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SummaryViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.BottomNavigationVisibilityState
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -43,18 +49,34 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             YouTubeSummaryTheme {
-                // Initialize ViewModel and NavController for Compose
-                val viewModel: SummaryViewModel = viewModel()
+                val quizViewModel: QuizViewModel = viewModel()
+                val quizCreationViewModel: QuizCreationViewModel = viewModel()
                 val navController = rememberNavController()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestinationRoute = navBackStackEntry?.destination?.route
+                
+                // Observe bottom navigation visibility state
+                val isBottomNavVisible by BottomNavigationVisibilityState.isVisible
+
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Scaffold(
                         bottomBar = {
-                            BottomNavigationBar(navController)
+                            if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true) {
+                                // Animate bottom navigation visibility
+                                AnimatedVisibility(
+                                    visible = isBottomNavVisible,
+                                    enter = slideInVertically(initialOffsetY = { it }),
+                                    exit = slideOutVertically(targetOffsetY = { it })
+                                ) {
+                                    BottomNavigationBar(navController)
+                                }
+                            }
                         }
                     ) { innerPadding ->
                         AppNavigation(
                             navController = navController,
-                            viewModel = viewModel,
+                            viewModel = quizViewModel,
+                            quizViewModel = quizCreationViewModel,
                             modifier = Modifier.padding(innerPadding)
                         )
                     }
@@ -65,37 +87,53 @@ class MainActivity : ComponentActivity() {
     
     @Composable
     private fun BottomNavigationBar(navController: androidx.navigation.NavHostController) {
-        val items = listOf(
-            Triple(AppScreens.Home, "Home", Icons.Filled.Home),
-            Triple(AppScreens.CreateQuiz, "Create Quiz", Icons.Filled.Create),
-            Triple(AppScreens.Settings, "Settings", Icons.Filled.Settings)
+        val navItems = listOf(
+            NavItem(
+                title = "Home",
+                selectedIcon = Icons.Filled.Home,
+                unselectedIcon = Icons.Outlined.Home,
+                route = AppScreens.Home.route
+            ),
+            NavItem(
+                title = "Create Quiz",
+                selectedIcon = Icons.Filled.Add,
+                unselectedIcon = Icons.Filled.Add,
+                route = AppScreens.CreateQuiz.route
+            ),
+            NavItem(
+                title = "Settings",
+                selectedIcon = Icons.Filled.Settings,
+                unselectedIcon = Icons.Filled.Settings,
+                route = AppScreens.Settings.route
+            )
         )
         
-        NavigationBar {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
-            
-            items.forEach { (screen, label, icon) ->
-                NavigationBarItem(
-                    icon = { Icon(icon, contentDescription = label) },
-                    label = { Text(label) },
-                    selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                    onClick = {
-                        navController.navigate(screen.route) {
-                            // Pop up to the start destination of the graph to
-                            // avoid building up a large stack of destinations
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            // Avoid multiple copies of the same destination when
-                            // reselecting the same item
-                            launchSingleTop = true
-                            // Restore state when reselecting a previously selected item
-                            restoreState = true
-                        }
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentDestination = navBackStackEntry?.destination
+        
+        // Find the selected index based on current route
+        val selectedIndex = navItems.indexOfFirst { item ->
+            currentDestination?.hierarchy?.any { it.route == item.route } == true
+        }.takeIf { it >= 0 } ?: 0
+
+        CurvedBottomNavigation(
+            items = navItems,
+            selectedItemIndex = selectedIndex,
+            onItemSelected = { index ->
+                val selectedItem = navItems[index]
+                navController.navigate(selectedItem.route) {
+                    // Pop up to the start destination of the graph to
+                    // avoid building up a large stack of destinations
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
                     }
-                )
+                    // Avoid multiple copies of the same destination when
+                    // reselecting the same item
+                    launchSingleTop = true
+                    // Restore state when reselecting a previously selected item
+                    restoreState = true
+                }
             }
-        }
+        )
     }
 }

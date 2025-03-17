@@ -7,6 +7,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.util.regex.Pattern
 import org.apache.commons.text.StringEscapeUtils
+import javax.inject.Inject
 
 /**
  * A lightweight class for fetching and parsing YouTube video transcripts.
@@ -15,7 +16,7 @@ import org.apache.commons.text.StringEscapeUtils
  * - Parse and clean transcript text
  * - Handle various error cases
  */
-class YouTubeTranscriptLight {
+class YouTubeTranscriptLight @Inject constructor() {
     private val client = OkHttpClient()
     private val baseUrl = "https://www.youtube.com"
 
@@ -207,7 +208,7 @@ class YouTubeTranscriptLight {
         val transcripts = mutableListOf<Transcript>()
         // Regex pattern to extract transcript segments with timing information
         val pattern = Pattern.compile(
-            """<text start="([d.]+)" dur="([d.]+)"[^>]*>(.*?)</text>""",
+            """<text start="([\d.]+)" dur="([\d.]+)"[^>]*>(.*?)</text>""",
             Pattern.DOTALL
         )
         val matcher = pattern.matcher(xml)

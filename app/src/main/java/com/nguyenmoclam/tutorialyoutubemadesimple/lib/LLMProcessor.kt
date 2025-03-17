@@ -2,53 +2,40 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.lib
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.ApiService
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity.Companion.OPENROUTER_API_KEY
-import com.nguyenmoclam.tutorialyoutubemadesimple.Message
-import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterRequest
-import com.nguyenmoclam.tutorialyoutubemadesimple.Question
-import com.nguyenmoclam.tutorialyoutubemadesimple.Topic
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.Message
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterRequest
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Question
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-
+import javax.inject.Inject
 
 /**
  * Processes YouTube video content using Language Learning Models (LLM) to extract and simplify topics and questions.
  * This class handles the interaction with OpenRouter API to analyze video transcripts and generate child-friendly content.
- * 
+ *
  * The processing workflow consists of two main steps:
  * 1. Topic Extraction: Analyzes the video transcript to identify key topics and generate relevant questions
  * 2. Content Simplification: Transforms the extracted content into child-friendly format with ELI5 explanations
  *
  * The class uses OpenRouter's API with Gemini model for natural language processing tasks.
  */
-class LLMProcessor {
+class LLMProcessor @Inject constructor() {
+
     /**
      * Analyzes a video transcript to identify key topics and generate relevant questions.
      * This function serves as the first step in the content processing pipeline.
-     * 
-     * The function performs the following steps:
-     * 1. Constructs a prompt for the LLM to analyze the transcript
-     * 2. Sends the prompt to OpenRouter API using Gemini model
-     * 3. Parses the JSON response into structured Topic objects
-     * 
+     *
      * @param transcript The full text transcript of the YouTube video
      * @param title The title of the YouTube video
      * @return A list of [Topic] objects, each containing a title and up to 3 questions.
      *         Returns at most 5 topics to maintain focus on the most important content.
-     * 
-     * Example usage:
-     * ```kotlin
-     * val processor = LLMProcessor()
-     * val topics = processor.extractTopicsAndQuestions(
-     *     transcript = "Video transcript text...",
-     *     title = "How to Build a Website"
-     * )
-     * ```
      */
     suspend fun extractTopicsAndQuestions(transcript: String, title: String): List<Topic> {
-        // Construct a detailed prompt for the LLM to analyze the video content
-        // The prompt includes specific instructions for JSON formatting and content structure
         val prompt = """
             You are an expert content analyzer. Given a YouTube video transcript, identify at most 5 most interesting topics discussed and generate at most 3 most thought-provoking questions for each topic.
             These questions don't need to be directly asked in the video. It's good to have clarification questions.
@@ -84,7 +71,6 @@ class LLMProcessor {
             The response MUST be a valid JSON object following exactly this structure.
         """.trimIndent()
 
-        // Call the LLM API and parse the response
         val response = callLLM(prompt)
         return parseTopicsFromJson(response)
     }
@@ -92,38 +78,17 @@ class LLMProcessor {
     /**
      * Processes the extracted topics to create child-friendly content.
      * This function serves as the second step in the content processing pipeline.
-     * 
-     * The function performs the following steps:
-     * 1. Combines all topics and questions into a single prompt
-     * 2. Requests the LLM to simplify and explain the content
-     * 3. Processes the response to update the original topics with simplified versions
-     * 
-     * Key features of the processing:
-     * - Rephrases topics and questions in simpler language
-     * - Generates ELI5 (Explain Like I'm 5) answers
-     * - Maintains HTML formatting for better presentation
-     * - Preserves the original content while adding simplified versions
-     * 
+     *
      * @param topics The list of topics extracted from [extractTopicsAndQuestions]
      * @param transcript The original video transcript for context
      * @return A list of processed [Topic] objects with rephrased titles and questions, including simple answers
      *         Returns empty list if input topics is empty
-     * 
-     * Example usage:
-     * ```kotlin
-     * val simplifiedTopics = processor.processContent(
-     *     topics = extractedTopics,
-     *     transcript = videoTranscript
-     * )
-     * ```
      */
     suspend fun processContent(topics: List<Topic>, transcript: String): List<Topic> {
         if (topics.isEmpty()) return emptyList()
 
-        // Combine all topics into a single prompt for batch processing
-        // This approach is more efficient than processing topics individually
         val prompt = """
-            You are a content simplifier for children. Given multiple topics and questions from a YouTube video, 
+            You are a content simplifier for children. Given multiple topics and questions from a YouTube video,
             rephrase each topic title and its questions to be clearer, and provide simple ELI5 (Explain Like I'm 5) answers.
 
             TOPICS AND QUESTIONS:
@@ -182,181 +147,160 @@ class LLMProcessor {
     /**
      * Makes an API call to OpenRouter using the Gemini model.
      * This function handles the communication with the LLM service.
-     * 
-     * The function uses google/gemini-2.0-flash-thinking-exp:free model which is optimized for:
-     * - Fast response times
-     * - Structured output generation
-     * - Natural language understanding
-     * 
-     * @param prompt The formatted prompt to send to the LLM
-     * @return The raw response string from the LLM
      */
     private suspend fun callLLM(prompt: String): String {
-        // Prepare the message in the format expected by OpenRouter API
         val messages = listOf(
             Message(role = "user", content = prompt)
         )
         val request = OpenRouterRequest(
-            model = "google/gemini-2.0-flash-thinking-exp:free",
+            model = "google/gemini-2.0-flash-thinking-exp-1219:free",
             messages = messages
         )
         val authHeader = "Bearer $OPENROUTER_API_KEY"
-        
-        // Make the API call and extract the response content
+
         val response = ApiService.openRouterApi.createCompletion(authHeader, request)
         return response.choices.firstOrNull()?.message?.content ?: ""
     }
 
     /**
-     * Parses the JSON response from the initial topic extraction into Topic objects.
-     * This function handles the complex task of converting raw JSON into structured data.
-     * 
-     * Key features:
-     * - Handles both raw JSON and JSON within code blocks
-     * - Enforces topic and question limits
-     * - Provides null safety through careful parsing
-     * - Maintains data integrity during transformation
-     * 
+     * Parses the JSON response from the initial topic extraction into Topic objects using kotlinx.serialization.
+     *
      * @param jsonResponse The JSON string response from the LLM
      * @return A list of [Topic] objects, limited to 5 topics with 3 questions each
-     * @throws Exception if JSON parsing fails or required fields are missing
      */
     private fun parseTopicsFromJson(jsonResponse: String): List<Topic> {
-        // Clean the JSON response by removing any markdown code block markers
         val cleanJson = if (jsonResponse.contains("```")) {
             jsonResponse.substringAfter("```json").substringBefore("```").trim()
         } else {
             jsonResponse.trim()
         }
 
-        // Parse the JSON string into a structured object
-        val json = Json.parseToJsonElement(cleanJson).jsonObject
-        val topicsArray = json["topics"]?.jsonArray ?: return emptyList()
+        return try {
+            val json = Json.parseToJsonElement(cleanJson).jsonObject
+            val topicsArray = json["topics"]?.jsonArray ?: return emptyList()
 
-        // Enforce the maximum limit of 5 topics
-        val limitedTopicsArray = if (topicsArray.size > 5) topicsArray.take(5) else topicsArray
+            val limitedTopicsArray = if (topicsArray.size > 5) topicsArray.take(5) else topicsArray
 
-        // Transform each JSON topic element into a Topic object
-        return limitedTopicsArray.mapNotNull { topicElement ->
-            val topicObj = topicElement.jsonObject
-            
-            // Extract required fields with null safety
-            val title = topicObj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
-            val questionsArray = topicObj["questions"]?.jsonArray ?: return@mapNotNull null
+            limitedTopicsArray.mapNotNull { topicElement ->
+                val topicObj = topicElement.jsonObject
+                val title = topicObj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                val questionsArray = topicObj["questions"]?.jsonArray ?: return@mapNotNull null
 
-            // Enforce the maximum limit of 3 questions per topic
-            val limitedQuestionsArray =
-                if (questionsArray.size > 3) questionsArray.take(3) else questionsArray
+                val limitedQuestionsArray =
+                    if (questionsArray.size > 3) questionsArray.take(3) else questionsArray
 
-            // Transform question elements into Question objects
-            val questions = limitedQuestionsArray.map { questionElement ->
-                questionElement.jsonPrimitive.content.let { Question(it) }
+                val questions = limitedQuestionsArray.map { questionElement ->
+                    questionElement.jsonPrimitive.content.let { Question(it) }
+                }
+                Topic(title = title, questions = questions)
             }
-
-            Topic(title = title, questions = questions)
+        } catch (e: Exception) {
+            println("parseTopicsFromJson error: ${e.message}")
+            emptyList()
         }
     }
 
     /**
-     * Processes the JSON response from the content simplification into updated Topic objects.
-     * This function handles the complex task of matching and updating original topics with their simplified versions.
-     * 
-     * The processing involves:
-     * 1. Cleaning and parsing the JSON response
-     * 2. Creating a lookup map for efficient topic matching
-     * 3. Processing each original topic with its simplified version
-     * 4. Maintaining original content when processing fails
-     * 
-     * @param originalTopics The original list of topics to be processed
+     * Parses the JSON response from the content simplification into updated Topic objects using kotlinx.serialization.
+     *
+     * @param originalTopics The original list of topics
      * @param jsonResponse The JSON string response from the LLM containing simplified content
-     * @return A list of [Topic] objects with updated content (rephrased titles, questions, and answers)
-     *         If processing fails for any topic, returns the original topic unchanged
      */
     private fun parseBatchProcessedContent(
         originalTopics: List<Topic>,
         jsonResponse: String
     ): List<Topic> {
-        // Clean the JSON response by removing any markdown code block markers
         val cleanJson = if (jsonResponse.contains("```")) {
             jsonResponse.substringAfter("```json").substringBefore("```").trim()
         } else {
             jsonResponse.trim()
         }
 
-        // Parse the JSON string into a structured object
-        val json = Json.parseToJsonElement(cleanJson).jsonObject
-        val topicsArray = json["topics"]?.jsonArray ?: return originalTopics
+        return try {
+            val json = Json.parseToJsonElement(cleanJson).jsonObject
+            val topicsArray = json["topics"]?.jsonArray ?: return originalTopics
 
-        // Create a map for efficient lookup of processed topics by their original title
-        val processedTopicsMap = topicsArray.associate { topicElement ->
-            val topicObj = topicElement.jsonObject
-            val originalTitle = topicObj["original_title"]?.jsonPrimitive?.content ?: ""
-            val rephrasedTitle =
-                topicObj["rephrased_title"]?.jsonPrimitive?.content ?: originalTitle
-            val questionsArray = topicObj["questions"]?.jsonArray
+            val processedTopicsMap = topicsArray.associate { topicElement ->
+                val topicObj = topicElement.jsonObject
+                val originalTitle = topicObj["original_title"]?.jsonPrimitive?.content ?: ""
+                val rephrasedTitle =
+                    topicObj["rephrased_title"]?.jsonPrimitive?.content ?: originalTitle
+                val questionsArray = topicObj["questions"]?.jsonArray
 
-            originalTitle to Pair(rephrasedTitle, questionsArray)
-        }
-
-        // Process each original topic with its corresponding simplified version
-        return originalTopics.map { originalTopic ->
-            // Look up the processed version of the topic
-            val (rephrasedTitle, questionsArray) = processedTopicsMap[originalTopic.title]
-                ?: return@map originalTopic // Keep original if no processed version found
-
-            // Process each question in the topic
-            val processedQuestions = originalTopic.questions.map { originalQuestion ->
-                // Find the processed version of the question
-                val processedQuestion = questionsArray
-                    ?.find { it.jsonObject["original"]?.jsonPrimitive?.content == originalQuestion.original }
-                    ?.jsonObject
-
-                // Create a new Question object with processed content
-                Question(
-                    original = originalQuestion.original,
-                    rephrased = processedQuestion?.get("rephrased")?.jsonPrimitive?.content
-                        ?: originalQuestion.original,
-                    answer = processedQuestion?.get("answer")?.jsonPrimitive?.content ?: ""
-                )
+                originalTitle to Pair(rephrasedTitle, questionsArray)
             }
 
-            // Create a new Topic object with processed content
-            originalTopic.copy(
-                rephrased_title = rephrasedTitle,
-                questions = processedQuestions
-            )
+            originalTopics.map { originalTopic ->
+                val (rephrasedTitle, questionsArray) = processedTopicsMap[originalTopic.title]
+                    ?: return@map originalTopic
+
+                val processedQuestions = originalTopic.questions.map { originalQuestion ->
+                    val processedQuestion = questionsArray
+                        ?.find {
+                            it.jsonObject["original"]?.jsonPrimitive?.content == originalQuestion.original
+                        }
+                        ?.jsonObject
+
+                    Question(
+                        original = originalQuestion.original,
+                        rephrased = processedQuestion?.get("rephrased")?.jsonPrimitive?.content
+                            ?: originalQuestion.original,
+                        answer = processedQuestion?.get("answer")?.jsonPrimitive?.content ?: ""
+                    )
+                }
+
+                originalTopic.copy(
+                    rephrased_title = rephrasedTitle,
+                    questions = processedQuestions
+                )
+            }
+        } catch (e: Exception) {
+            println("parseBatchProcessedContent error: ${e.message}")
+            originalTopics
+        }
+    }
+
+    private fun parseKeyPointsFromJson(jsonStr: String): List<String> {
+        return try {
+            val json = Json.parseToJsonElement(jsonStr).jsonObject
+            json["key_points"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
+        } catch (e: Exception) {
+            println("parseKeyPointsFromJson error: ${e.message}")
+            emptyList()
         }
     }
 
     suspend fun extractKeyPoints(transcript: String, language: String): List<String> {
         val prompt = """
-        You are an expert content analyzer. Given a YouTube video transcript, identify the key points or important facts discussed in the video. These key points will be used to generate questions later.
+            You are an expert content analyzer. Given a YouTube video transcript, identify the key points or important facts discussed in the video. These key points will be used to generate questions later.
 
-        TRANSCRIPT:
-        $transcript
+            TRANSCRIPT:
+            $transcript
 
-        LANGUAGE:
-        $language
+            LANGUAGE:
+            $language
 
-        INSTRUCTIONS:
-        1. Identify at most 10 key points or important facts from the transcript.
-        2. Each key point should be concise and clear.
-        3. Format the response as a valid JSON object with the following structure:
-
-        {
-          "key_points": [
-            "Key point 1",
-            "Key point 2",
-            ...
-          ]
-        }
-
-        Ensure the response is a valid JSON object following the specified structure.
-    """.trimIndent()
+            INSTRUCTIONS:
+            1. Identify at most 10 key points or important facts.
+            2. Each key point should be concise and clear.
+            3. Format the response as a valid JSON object with the following structure:
+               {
+                 "key_points": [
+                   "Key point 1",
+                   "Key point 2"
+                 ]
+               }
+            Ensure the response is a valid JSON object following the specified structure.
+        """.trimIndent()
 
         val response = callLLM(prompt)
-        val json = Json.parseToJsonElement(response).jsonObject
-        return json["key_points"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
+        val cleanJson = if (response.contains("```")) {
+            response.substringAfter("```json").substringBefore("```").trim()
+        } else {
+            response.trim()
+        }
+
+        return parseKeyPointsFromJson(cleanJson)
     }
 
     suspend fun generateQuestionsFromKeyPoints(
@@ -367,62 +311,125 @@ class LLMProcessor {
     ): String {
         val keyPointsText = keyPoints.joinToString("\n")
         val prompt = """
-        You are an expert in creating educational questions. Given a list of key points from a YouTube video transcript, generate questions based on these key points. The questions should be in the specified language, of the specified type, and limited to the specified number.
+            You are an expert in creating educational questions. Given a list of key points from a YouTube video transcript, generate questions based on these key points. The questions should be in the specified language, of the specified type, and limited to the specified number.
 
-        KEY POINTS:
-        $keyPointsText
+            KEY POINTS:
+            $keyPointsText
 
-        LANGUAGE:
-        $language
+            LANGUAGE:
+            $language
 
-        QUESTION TYPE:
-        $questionType
+            QUESTION TYPE:
+            $questionType
 
-        NUMBER OF QUESTIONS:
-        $numberOfQuestions
+            NUMBER OF QUESTIONS:
+            $numberOfQuestions
 
-        INSTRUCTIONS:
-        1. Generate exactly $numberOfQuestions questions based on the provided key points.
-        2. All questions and answers must be in $language.
-        3. For multiple-choice questions:
-            - Provide 4 options labeled as A, B, C, D.
-            - Indicate the correct answer(s) using the labels (e.g., "A" or ["A", "C"]).
-            - For single-answer questions, there should be exactly one correct answer.
-            - For multiple-answer questions, there can be more than one correct answer.
-        4. For True/False questions:
-           - Provide a statement and indicate whether it is true or false.
-        5. Ensure the questions are directly related to the key points.
-        6. Format the response as a valid JSON object with the following structure:
+            INSTRUCTIONS:
+            1. Generate exactly $numberOfQuestions questions based on the provided key points.
+            2. All questions and answers must be in $language.
+            3. For multiple-choice questions:
+                - Provide 4 options labeled as A, B, C, D.
+                - Indicate the correct answer(s) using the labels (e.g., "A" or ["A", "C"]).
+                - For single-answer questions, there should be exactly one correct answer.
+                - For multiple-answer questions, there can be more than one correct answer.
+            4. For True/False questions:
+               - Provide a statement and indicate whether it is true or false.
+            5. Ensure the questions are directly related to the key points.
+            6. Format the response as a valid JSON object with the following structure:
 
-        For multiple-choice questions:
-        {
-          "questions": [
+            For multiple-choice questions:
             {
-              "question": "Question text",
-              "options": {
-                "A": "Option 1",
-                "B": "Option 2",
-                "C": "Option 3",
-                "D": "Option 4"
-                },
-                "correct_answers": ["A"]  // or ["A", "C"] for multiple answers
+              "questions": [
+                {
+                  "question": "Question text",
+                  "options": {
+                    "A": "Option 1",
+                    "B": "Option 2",
+                    "C": "Option 3",
+                    "D": "Option 4"
+                  },
+                  "correct_answers": ["A"] // or ["A", "C"] for multiple answers
+                }
+              ]
             }
-          ]
-        }
 
-        For True/False questions:
-        {
-          "questions": [
+            For True/False questions:
             {
-              "statement": "Statement text",
-              "is_true": true/false
+              "questions": [
+                {
+                  "statement": "Statement text",
+                  "is_true": true/false
+                }
+              ]
             }
-          ]
-        }
 
-        Ensure the response is a valid JSON object following the specified structure.
-    """.trimIndent()
+            Ensure the response is a valid JSON object following the specified structure.
+        """.trimIndent()
 
         return callLLM(prompt)
+    }
+
+    fun parseQuizQuestions(jsonResponse: String): Pair<List<MultipleChoiceQuestion>, List<TrueFalseQuestion>> {
+        val cleanJson = if (jsonResponse.contains("```")) {
+            jsonResponse.substringAfter("```json").substringBefore("```").trim()
+        } else {
+            jsonResponse.trim()
+        }
+
+        return try {
+            parseQuestionsFromJson(cleanJson)
+        } catch (e: Exception) {
+            println("parseQuizQuestions error: ${e.message}")
+            Pair(emptyList(), emptyList())
+        }
+    }
+
+    private fun parseQuestionsFromJson(jsonStr: String): Pair<List<MultipleChoiceQuestion>, List<TrueFalseQuestion>> {
+        val json = Json.parseToJsonElement(jsonStr).jsonObject
+        val questionsArray = json["questions"]?.jsonArray ?: return Pair(emptyList(), emptyList())
+
+        val multipleChoiceQuestions = mutableListOf<MultipleChoiceQuestion>()
+        val trueFalseQuestions = mutableListOf<TrueFalseQuestion>()
+
+        questionsArray.forEach { questionElement ->
+            val questionObj = questionElement.jsonObject
+
+            when {
+                // Multiple-choice
+                questionObj.containsKey("options") -> {
+                    val question = questionObj["question"]?.jsonPrimitive?.content ?: return@forEach
+                    val optionsObj = questionObj["options"]?.jsonObject ?: return@forEach
+                    val correctAnswersArray = questionObj["correct_answers"]?.jsonArray ?: return@forEach
+
+                    val options = optionsObj.entries.associate {
+                        it.key to it.value.jsonPrimitive.content
+                    }
+                    val correctAnswers = correctAnswersArray.map { it.jsonPrimitive.content }
+
+                    multipleChoiceQuestions.add(
+                        MultipleChoiceQuestion(
+                            question = question,
+                            options = options,
+                            correctAnswers = correctAnswers
+                        )
+                    )
+                }
+                // True/False
+                questionObj.containsKey("statement") -> {
+                    val statement = questionObj["statement"]?.jsonPrimitive?.content ?: return@forEach
+                    val isTrue = questionObj["is_true"]?.jsonPrimitive?.content?.toBoolean() ?: return@forEach
+
+                    trueFalseQuestions.add(
+                        TrueFalseQuestion(
+                            statement = statement,
+                            isTrue = isTrue
+                        )
+                    )
+                }
+            }
+        }
+
+        return Pair(multipleChoiceQuestions, trueFalseQuestions)
     }
 }
