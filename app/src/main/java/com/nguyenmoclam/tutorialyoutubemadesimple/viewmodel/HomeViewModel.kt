@@ -2,19 +2,15 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.QuizStats
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.state.QuizStateManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.DeleteQuizUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetAllQuizzesUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetDaysSinceLastUpdateUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetQuizStatsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,25 +20,18 @@ class HomeViewModel @Inject constructor(
     private val getAllQuizzesUseCase: GetAllQuizzesUseCase,
     private val getQuizStatsUseCase: GetQuizStatsUseCase,
     private val getDaysSinceLastUpdateUseCase: GetDaysSinceLastUpdateUseCase,
-    private val deleteQuizUseCase: DeleteQuizUseCase
+    private val deleteQuizUseCase: DeleteQuizUseCase,
+    private val quizStateManager: QuizStateManager
 ) : ViewModel() {
 
     // UI state for the Home screen
     private val _state = MutableStateFlow(HomeViewState())
     val state: StateFlow<HomeViewState> = _state
 
-    // StateFlow of all quizzes
-    private val quizzesFlow: StateFlow<List<Quiz>> = getAllQuizzesUseCase()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-
     init {
-        // Combine quizzes flow with state to update the UI state
+        // Observe quiz state manager and refresh data when needed
         viewModelScope.launch {
-            quizzesFlow.collect { quizzes ->
+            quizStateManager.quizzes.collect { quizzes ->
                 _state.update { currentState ->
                     currentState.copy(
                         quizzes = quizzes,
@@ -50,6 +39,21 @@ class HomeViewModel @Inject constructor(
                     )
                 }
             }
+        }
+
+        viewModelScope.launch {
+            quizStateManager.needsRefresh.collect { needsRefresh ->
+                if (needsRefresh) {
+                    refreshQuizzes()
+                }
+            }
+        }
+    }
+
+    fun refreshQuizzes() {
+        viewModelScope.launch {
+            val quizzes = getAllQuizzesUseCase().first()
+            quizStateManager.updateQuizzes(quizzes)
         }
     }
 
@@ -75,11 +79,19 @@ class HomeViewModel @Inject constructor(
                 // Use the domain use case to get quiz statistics
                 val stats = getQuizStatsUseCase(quizId)
                 
-                // Update the state with the new stats
-                _state.update { currentState ->
-                    val updatedCache = currentState.quizStatsCache.toMutableMap()
-                    updatedCache[quizId] = stats
-                    currentState.copy(quizStatsCache = updatedCache)
+                // Update the state with the new stats only if not null
+                // This ensures we don't display stats for quizzes that haven't been attempted
+                if (stats != null) {
+                    _state.update { currentState ->
+                        val updatedCache = currentState.quizStatsCache.toMutableMap()
+                        updatedCache[quizId] = stats
+                        currentState.copy(quizStatsCache = updatedCache)
+                    }
+                } else {
+                    // If stats is null, we still want to mark it as processed
+                    // but we don't add null to the cache
+                    // This ensures the UI will show "No quiz attempts recorded yet"
+                    _state.update { it }
                 }
             } catch (e: Exception) {
                 // Error handling is now encapsulated in the use case
@@ -103,7 +115,7 @@ class HomeViewModel @Inject constructor(
             // Use the domain use case to delete the quiz
             deleteQuizUseCase(quizId)
             
-            // Clean up cached data in the state
+            // Clean up cached data in the state and mark for refresh
             _state.update { currentState ->
                 val expandedMap = currentState.expandedStatsMap.toMutableMap()
                 expandedMap.remove(quizId)
@@ -117,6 +129,7 @@ class HomeViewModel @Inject constructor(
                     showDeleteConfirmDialog = null
                 )
             }
+            quizStateManager.markForRefresh()
         }
     }
 

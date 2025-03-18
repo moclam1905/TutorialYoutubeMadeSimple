@@ -75,6 +75,11 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
     
+    // Trigger refresh when screen becomes active
+    LaunchedEffect(Unit) {
+        viewModel.refreshQuizzes()
+    }
+    
     // Add scroll state tracking
     val lazyListState = rememberLazyListState()
     val isScrollingUp = remember {

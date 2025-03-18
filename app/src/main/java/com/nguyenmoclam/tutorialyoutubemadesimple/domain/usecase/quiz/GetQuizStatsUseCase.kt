@@ -5,7 +5,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.QuizRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.QuizStats
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
-import kotlin.random.Random
 
 /**
  * Use case for retrieving quiz statistics.
@@ -13,45 +12,62 @@ import kotlin.random.Random
  */
 class GetQuizStatsUseCase @Inject constructor(
     private val quizRepository: QuizRepository,
-    private val quizProgressDao: QuizProgressDao
+    private val quizProgressDao: QuizProgressDao,
+    private val checkQuizAnswerUseCase: CheckQuizAnswerUseCase
 ) {
     /**
      * Execute the use case to get quiz statistics.
      *
      * @param quizId The ID of the quiz to retrieve statistics for
-     * @return QuizStats containing completion score and time elapsed
+     * @return QuizStats containing completion score and time elapsed, or null if no data available
      */
-    suspend operator fun invoke(quizId: Long): QuizStats {
+    suspend operator fun invoke(quizId: Long): QuizStats? {
         try {
             // Fetch quiz progress for this quiz
             val progress = quizRepository.getProgressForQuizAsFlow(quizId).first()
-            
+
             // Calculate statistics if we have progress
             return if (progress != null && progress.isNotEmpty()) {
-                // Calculate completion percentage (how many questions answered)
+                // Get the quiz and its questions
                 val quiz = quizRepository.getQuizById(quizId)
                 val totalQuestions = quiz?.questionCount ?: 1
-                val answeredCount = progress.size
-                val completionScore = answeredCount.toFloat() / totalQuestions
                 
-                // Get the last updated timestamp from the progress entity
+                // Get questions for this quiz
+                val questions = quizRepository.getQuestionsForQuiz(quizId).first()
+                
+                // Count correct answers
+                var correctAnswersCount = 0
+                
+                // Check each answered question against the correct answer
+                progress.forEach { (index, answer) ->
+                    if (index < questions.size) {
+                        val question = questions[index]
+                        if (checkQuizAnswerUseCase(question, answer)) {
+                            correctAnswersCount++
+                        }
+                    }
+                }
+                
+                // Calculate average score as correct answers / total questions
+                val averageScore = correctAnswersCount.toFloat() / totalQuestions
+                
+                // Get the completion time from the progress entity
                 val progressEntity = quizProgressDao.getProgressForQuiz(quizId)
-                val lastUpdated = progressEntity?.lastUpdated ?: System.currentTimeMillis()
-                val timeElapsed = (System.currentTimeMillis() - lastUpdated) / 1000
-                
-                QuizStats(completionScore, timeElapsed.toInt())
+                val timeElapsed = if (progressEntity?.completionTime != null && progressEntity.completionTime > 0) {
+                    ((progressEntity.completionTime) / 1000).toInt()
+                } else {
+                    // Fallback to a default value if no completion time is available
+                    0
+                }
+
+                QuizStats(averageScore, timeElapsed)
             } else {
-                // No progress yet, use placeholder values with some randomization for demo purposes
-                // In a real app, you would show actual zeros or a message indicating no data
-                val randomScore = Random.nextFloat() * (0.95f - 0.65f) + 0.65f
-                val randomTime = (30..120).random()
-                QuizStats(randomScore, randomTime)
+                // No progress yet, return null to indicate no data is available
+                null
             }
         } catch (e: Exception) {
-            // Handle error - use placeholder values with randomization for demo purposes
-            val randomScore = Random.nextFloat() * (0.9f - 0.7f) + 0.65f
-            val randomTime = (45..90).random()
-            return QuizStats(randomScore, randomTime)
+            // Handle error - return null to indicate no data is available
+            return null
         }
     }
 }

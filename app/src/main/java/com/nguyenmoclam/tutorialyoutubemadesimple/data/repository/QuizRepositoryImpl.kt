@@ -55,10 +55,9 @@ class QuizRepositoryImpl @Inject constructor(
     override suspend fun deleteQuiz(quizId: Long) {
         quizDao.deleteQuizById(quizId)
     }
-    
-    override suspend fun getProgressForQuiz(quizId: Long): Map<Int, String>? {
-        val progressEntity = quizProgressDao.getProgressForQuiz(quizId)
-        return progressEntity?.answeredQuestions?.mapKeys { it.key.toInt() }
+
+    override suspend fun getQuizProgressEntity(quizId: Long): QuizProgressEntity? {
+        return quizProgressDao.getProgressForQuiz(quizId)
     }
     
     override fun getProgressForQuizAsFlow(quizId: Long): Flow<Map<Int, String>?> {
@@ -75,19 +74,27 @@ class QuizRepositoryImpl @Inject constructor(
         }
     }
     
-    override suspend fun saveQuizProgress(quizId: Long, currentQuestionIndex: Int, answeredQuestions: Map<Int, String>) {
+    override suspend fun saveQuizProgress(quizId: Long, currentQuestionIndex: Int, answeredQuestions: Map<Int, String>, completionTime: Long) {
         // Convert Map<Int, String> to Map<String, String> for storage
         val stringKeyMap = answeredQuestions.mapKeys { it.key.toString() }
+        
+        // Check if progress already exists to preserve completion time if not provided
+        val existingProgress = quizProgressDao.getProgressForQuiz(quizId)
+        val finalCompletionTime = if (completionTime > 0) {
+            completionTime
+        } else {
+            // Otherwise, preserve the existing completion time if available
+            existingProgress?.completionTime ?: 0L
+        }
         
         val progressEntity = QuizProgressEntity(
             quizId = quizId,
             currentQuestionIndex = currentQuestionIndex,
             answeredQuestions = stringKeyMap,
-            lastUpdated = System.currentTimeMillis()
+            lastUpdated = System.currentTimeMillis(),
+            completionTime = finalCompletionTime
         )
         
-        // Check if progress already exists
-        val existingProgress = quizProgressDao.getProgressForQuiz(quizId)
         if (existingProgress != null) {
             quizProgressDao.updateProgress(progressEntity)
         } else {

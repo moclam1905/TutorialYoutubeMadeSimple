@@ -5,6 +5,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -22,20 +25,15 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppNavigation
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.CurvedBottomNavigation
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavItem
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.BottomNavigationVisibilityState
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.BottomNavigationVisibilityState
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -54,14 +52,16 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestinationRoute = navBackStackEntry?.destination?.route
-                
+
                 // Observe bottom navigation visibility state
                 val isBottomNavVisible by BottomNavigationVisibilityState.isVisible
 
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Scaffold(
                         bottomBar = {
-                            if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true) {
+                            if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true
+                                && currentDestinationRoute != AppScreens.Splash.route
+                            ) {
                                 // Animate bottom navigation visibility
                                 AnimatedVisibility(
                                     visible = isBottomNavVisible,
@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     @Composable
     private fun BottomNavigationBar(navController: androidx.navigation.NavHostController) {
         val navItems = listOf(
@@ -107,10 +107,10 @@ class MainActivity : ComponentActivity() {
                 route = AppScreens.Settings.route
             )
         )
-        
+
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
-        
+
         // Find the selected index based on current route
         val selectedIndex = navItems.indexOfFirst { item ->
             currentDestination?.hierarchy?.any { it.route == item.route } == true

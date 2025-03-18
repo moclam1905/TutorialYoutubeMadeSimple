@@ -1,5 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.progress
 
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizProgressEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.QuizRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -27,7 +28,7 @@ class GetQuizProgressUseCase @Inject constructor(
      * @param quizId The ID of the quiz to retrieve progress for
      * @return Quiz progress as a map of question indices to answers
      */
-    suspend fun getProgress(quizId: Long): Map<Int, String>? {
-        return quizRepository.getProgressForQuiz(quizId)
+    suspend fun getProgressEntity(quizId: Long): QuizProgressEntity? {
+        return quizRepository.getQuizProgressEntity(quizId)
     }
 }

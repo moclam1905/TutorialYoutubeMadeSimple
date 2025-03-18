@@ -297,8 +297,6 @@ fun QuizDetailScreen(
                         }
                     }
                 )
-
-                //Spacer(modifier = Modifier.weight(1f))
             }
         },
         contentContent = {
@@ -308,13 +306,21 @@ fun QuizDetailScreen(
                         TopAppBar(
                             title = { Text("Quiz Details") },
                             navigationIcon = {
+                                val isDrawerOpen = slidingNavState.isMenuOpened
+                                val icon =
+                                    if (isDrawerOpen) Icons.Default.Close else Icons.Default.Menu
+
                                 IconButton(onClick = {
                                     scope.launch {
-                                        // Open the sliding menu
-                                        slidingNavState.dragProgress = 1f
+                                        //slidingNavState.dragProgress = 1f
+                                        if (isDrawerOpen) {
+                                            slidingNavState.closeMenu()
+                                        } else {
+                                            slidingNavState.openMenu()
+                                        }
                                     }
                                 }) {
-                                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                                    Icon(icon, contentDescription = "Menu")
                                 }
                             }
                         )

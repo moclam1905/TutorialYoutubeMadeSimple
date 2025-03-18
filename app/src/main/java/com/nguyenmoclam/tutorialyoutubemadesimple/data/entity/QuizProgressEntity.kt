@@ -34,5 +34,8 @@ data class QuizProgressEntity(
     // Map of question index to selected answer
     val answeredQuestions: Map<String, String> = emptyMap(),
     
-    val lastUpdated: Long = System.currentTimeMillis()
+    val lastUpdated: Long = System.currentTimeMillis(),
+    
+    // Time when the quiz was completed (0 if not completed)
+    val completionTime: Long = 0
 )
