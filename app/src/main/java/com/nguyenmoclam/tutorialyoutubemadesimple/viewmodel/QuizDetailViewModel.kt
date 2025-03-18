@@ -119,31 +119,31 @@ class QuizDetailViewModel @Inject constructor(
                 }
 
                 // Load quiz progress if available using use case
-                val progress = getQuizProgressUseCase.getProgress(quizId)
-                val answeredQuestions = progress ?: emptyMap()
-                val currentQuestionIndex = if (progress != null && progress.isNotEmpty()) {
+                val progressEntity = getQuizProgressUseCase.getProgressEntity(quizId)
+                val answeredQuestions =
+                    progressEntity?.answeredQuestions?.mapKeys { it.key.toInt() } ?: emptyMap()
+                val currentQuestionIndex = if (answeredQuestions.isNotEmpty()) {
                     // If we have progress, use the highest question index as the current index
-                    progress.keys.maxOrNull() ?: 0
+                    answeredQuestions.keys.maxOrNull() ?: 0
                 } else {
                     0
                 }
 
-                // Determine if quiz is completed based on answered questions
+                // Determine if quiz is completed based on answered questions and completion time
                 val quizCompleted =
-                    questionsList.size == answeredQuestions.size && questionsList.isNotEmpty()
+                    progressEntity?.completionTime != null && progressEntity.completionTime > 0
 
-                // If quiz is completed but we don't have time data, set reasonable defaults
-                // This ensures getQuizCompletionTimeInSeconds() will work for loaded quizzes
-                val startTime = if (quizCompleted && state.startTime == 0L) {
-                    // Use lastUpdated timestamp from progress entity minus a default time (e.g., 5 minutes)
-                    System.currentTimeMillis() - (5 * 60 * 1000)
+                // Get start time and completion time from progress entity
+                val startTime = if (quizCompleted) {
+                    // If completed, calculate start time from completion time and last updated
+                    progressEntity.lastUpdated.minus(progressEntity.completionTime)
                 } else {
                     state.startTime
                 }
 
-                val completionTime = if (quizCompleted && state.completionTime == 0L) {
-                    // Use current time as completion time for already completed quizzes
-                    System.currentTimeMillis()
+                val completionTime = if (quizCompleted) {
+                    // If completed, use the stored completion time
+                    progressEntity.completionTime
                 } else {
                     state.completionTime
                 }
@@ -211,7 +211,13 @@ class QuizDetailViewModel @Inject constructor(
         // Save progress to database if we have a valid quiz ID
         state.quiz?.id?.let { quizId ->
             viewModelScope.launch {
-                saveQuizProgressUseCase(quizId, questionIndex, updatedAnswers)
+                // Calculate the elapsed time (duration) if quiz is completed
+                val elapsedTime = if (state.quizCompleted && state.startTime > 0) {
+                    System.currentTimeMillis() - state.startTime
+                } else {
+                    0L
+                }
+                saveQuizProgressUseCase(quizId, questionIndex, updatedAnswers, elapsedTime)
             }
         }
     }
@@ -262,7 +268,13 @@ class QuizDetailViewModel @Inject constructor(
         // Save progress to database if we have a valid quiz ID
         state.quiz?.id?.let { quizId ->
             viewModelScope.launch {
-                saveQuizProgressUseCase(quizId, questionIndex, updatedAnswers)
+                // Calculate the elapsed time (duration) if quiz is completed
+                val elapsedTime = if (state.quizCompleted && state.startTime > 0) {
+                    System.currentTimeMillis() - state.startTime
+                } else {
+                    0L
+                }
+                saveQuizProgressUseCase(quizId, questionIndex, updatedAnswers, elapsedTime)
             }
         }
     }
@@ -341,7 +353,12 @@ class QuizDetailViewModel @Inject constructor(
      */
     fun getQuizCompletionTimeInSeconds(): Int {
         return if (state.quizCompleted && state.startTime > 0 && state.completionTime > 0) {
-            ((state.completionTime - state.startTime) / 1000).toInt()
+            val elapsedTime = state.completionTime - state.startTime
+            if (elapsedTime < 0) {
+                (state.completionTime / 1000).toInt()
+            } else {
+                ((state.completionTime - state.startTime) / 1000).toInt()
+            }
         } else {
             0
         }
@@ -422,10 +439,26 @@ class QuizDetailViewModel @Inject constructor(
         )
 
         if (completionResult.isCompleted && !state.quizCompleted) {
+            val currentTime = System.currentTimeMillis()
             state = state.copy(
                 quizCompleted = true,
-                completionTime = completionResult.completionTime
+                completionTime = currentTime
             )
+            state.quiz?.id?.let { quizId ->
+                viewModelScope.launch {
+                    val elapsedTime = if (state.startTime > 0) {
+                        currentTime - state.startTime
+                    } else {
+                        0L
+                    }
+                    saveQuizProgressUseCase(
+                        quizId,
+                        state.currentQuestionIndex,
+                        state.answeredQuestions,
+                        elapsedTime
+                    )
+                }
+            }
         }
     }
 

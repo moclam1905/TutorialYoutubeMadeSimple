@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "154398c85112b1e4d3a241a59eca3ce8",
+    "identityHash": "9b183835de085c04dea8dd57e12c1172",
     "entities": [
       {
         "tableName": "quizzes",
@@ -266,7 +266,7 @@
       },
       {
         "tableName": "quiz_progress",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER NOT NULL, `currentQuestionIndex` INTEGER NOT NULL, `answeredQuestions` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`quizId`), FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER NOT NULL, `currentQuestionIndex` INTEGER NOT NULL, `answeredQuestions` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `completionTime` INTEGER NOT NULL, PRIMARY KEY(`quizId`), FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "quizId",
@@ -289,6 +289,12 @@
           {
             "fieldPath": "lastUpdated",
             "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completionTime",
+            "columnName": "completionTime",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -328,7 +334,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '154398c85112b1e4d3a241a59eca3ce8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9b183835de085c04dea8dd57e12c1172')"
     ]
   }
 }

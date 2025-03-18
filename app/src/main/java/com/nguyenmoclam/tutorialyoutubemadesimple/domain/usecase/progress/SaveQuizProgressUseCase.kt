@@ -16,12 +16,14 @@ class SaveQuizProgressUseCase @Inject constructor(
      * @param quizId The ID of the quiz to save progress for
      * @param currentQuestionIndex The current question index
      * @param answeredQuestions Map of question indices to answers
+     * @param completionTime The time when the quiz was completed (0 if not completed)
      */
     suspend operator fun invoke(
         quizId: Long,
         currentQuestionIndex: Int,
-        answeredQuestions: Map<Int, String>
+        answeredQuestions: Map<Int, String>,
+        completionTime: Long = 0
     ) {
-        quizRepository.saveQuizProgress(quizId, currentQuestionIndex, answeredQuestions)
+        quizRepository.saveQuizProgress(quizId, currentQuestionIndex, answeredQuestions, completionTime)
     }
 }
