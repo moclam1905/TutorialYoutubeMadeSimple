@@ -3,7 +3,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.tr
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.util.evaluate
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.evaluate
 
 /**
  * A transformation that applies elevation to the root content based on the drag progress.
