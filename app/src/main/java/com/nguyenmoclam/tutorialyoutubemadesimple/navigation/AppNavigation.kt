@@ -17,6 +17,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SplashScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 
 /**
  * Main navigation component for the app.
@@ -28,6 +29,7 @@ fun AppNavigation(
     navController: NavHostController,
     viewModel: QuizViewModel,
     quizViewModel: QuizCreationViewModel,
+    settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -47,7 +49,7 @@ fun AppNavigation(
             ResultScreen(viewModel = viewModel, navController = navController)
         }
         composable(AppScreens.Settings.route) {
-            SettingScreen()
+            SettingScreen(viewModel = settingsViewModel)
         }
         composable(
             route = AppScreens.QuizDetail.route + "/{quizId}",

@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -117,6 +118,14 @@ fun CurvedBottomNavigation(
     ) { index ->
         if (containerWidth == 0f) 0f
         else (index * itemWidth) + (itemWidth / 2f)
+    }
+    val surfaceColor = MaterialTheme.colorScheme.surface
+
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5
+    val shadowColor = if (isDark) {
+        android.graphics.Color.argb(70, 255, 255, 255)
+    } else {
+        android.graphics.Color.argb(70, 0, 0, 0)
     }
 
     Box(
@@ -211,14 +220,14 @@ fun CurvedBottomNavigation(
             drawIntoCanvas { canvas ->
                 val shadowPaint = Paint().apply { isAntiAlias = true }
                 shadowPaint.asFrameworkPaint().apply {
-                    color = android.graphics.Color.argb(70, 0, 0, 0)
+                    color = shadowColor
                     maskFilter = BlurMaskFilter(20f, BlurMaskFilter.Blur.NORMAL)
                 }
                 canvas.drawPath(path, shadowPaint)
             }
 
 
-            drawPath(path = path, color = Color.White)
+            drawPath(path = path, color = surfaceColor)
 
 
             // -----------------------
@@ -227,7 +236,7 @@ fun CurvedBottomNavigation(
             drawIntoCanvas { canvas ->
                 val circleShadowPaint = Paint().apply { isAntiAlias = true }
                 circleShadowPaint.asFrameworkPaint().apply {
-                    color = android.graphics.Color.argb(70, 0, 0, 0)
+                    color = shadowColor
                     maskFilter = BlurMaskFilter(20f, BlurMaskFilter.Blur.NORMAL)
                 }
                 canvas.drawCircle(
@@ -238,7 +247,7 @@ fun CurvedBottomNavigation(
             }
 
             drawCircle(
-                color = Color.White,
+                color = surfaceColor,
                 radius = fabRadiusPx,
                 center = Offset(currentCenterX, fabCenterY)
             )

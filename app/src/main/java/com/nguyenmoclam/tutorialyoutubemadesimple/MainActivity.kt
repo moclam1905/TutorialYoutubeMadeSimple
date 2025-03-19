@@ -8,6 +8,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -33,6 +34,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavItem
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.BottomNavigationVisibilityState
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -46,7 +48,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            YouTubeSummaryTheme {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            val themeMode = settingsViewModel.settingsState.themeMode
+            
+            // Determine dark theme based on settings
+            val isDarkTheme = when (themeMode) {
+                "dark" -> true
+                "light" -> false
+                else -> isSystemInDarkTheme() // "system" option
+            }
+            
+            YouTubeSummaryTheme(darkTheme = isDarkTheme) {
                 val quizViewModel: QuizViewModel = viewModel()
                 val quizCreationViewModel: QuizCreationViewModel = viewModel()
                 val navController = rememberNavController()
@@ -77,6 +89,7 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             viewModel = quizViewModel,
                             quizViewModel = quizCreationViewModel,
+                            settingsViewModel = settingsViewModel,
                             modifier = Modifier.padding(innerPadding)
                         )
                     }
