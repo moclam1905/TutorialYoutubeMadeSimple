@@ -43,7 +43,12 @@ fun AppNavigation(
             HomeScreen(navController = navController)
         }
         composable(AppScreens.CreateQuiz.route) {
-            CreateQuizScreen(viewModel = viewModel, navController = navController, quizViewModel = quizViewModel)
+            CreateQuizScreen(
+                viewModel = viewModel,
+                navController = navController,
+                quizViewModel = quizViewModel,
+                settingsViewModel = settingsViewModel
+            )
         }
         composable(AppScreens.Result.route) {
             ResultScreen(viewModel = viewModel, navController = navController)
@@ -53,7 +58,9 @@ fun AppNavigation(
         }
         composable(
             route = AppScreens.QuizDetail.route + "/{quizId}",
-            arguments = listOf(navArgument("quizId") { type = NavType.LongType; defaultValue = -1L })
+            arguments = listOf(navArgument("quizId") {
+                type = NavType.LongType; defaultValue = -1L
+            })
         ) { backStackEntry ->
             val quizId = backStackEntry.arguments?.getLong("quizId") ?: -1L
             QuizDetailScreen(
@@ -76,7 +83,7 @@ sealed class AppScreens(val route: String) {
     object Result : AppScreens("result")
     object Settings : AppScreens("settings")
     object QuizDetail : AppScreens("quiz_detail")
-    
+
     fun withArgs(vararg args: String): String {
         return buildString {
             append(route)

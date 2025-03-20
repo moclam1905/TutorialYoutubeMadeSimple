@@ -2,14 +2,15 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.auth
 
 import android.content.Context
 import android.content.Intent
-import androidx.activity.result.ActivityResultLauncher
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Task
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resumeWithException
@@ -22,22 +23,27 @@ class AuthManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private lateinit var googleSignInClient: GoogleSignInClient
-    
+
     init {
         initGoogleSignIn()
     }
-    
+
     /**
      * Initialize Google Sign-In client
      */
     private fun initGoogleSignIn() {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
+            .requestScopes(
+                Scope("https://www.googleapis.com/auth/youtube.readonly"),
+                Scope("https://www.googleapis.com/auth/youtube.force-ssl"),
+                Scope("https://www.googleapis.com/auth/youtubepartner")
+            )
             .build()
-        
+
         googleSignInClient = GoogleSignIn.getClient(context, gso)
     }
-    
+
     /**
      * Check if user is currently signed in
      */
@@ -45,14 +51,14 @@ class AuthManager @Inject constructor(
         val account = GoogleSignIn.getLastSignedInAccount(context)
         return account != null
     }
-    
+
     /**
      * Get the sign-in intent to launch with ActivityResultLauncher
      */
     fun getSignInIntent(): Intent {
         return googleSignInClient.signInIntent
     }
-    
+
     /**
      * Handle the sign-in result
      */
@@ -64,12 +70,12 @@ class AuthManager @Inject constructor(
             null
         }
     }
-    
+
     /**
      * Sign out the current user
      */
     suspend fun signOut() {
-        return kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             googleSignInClient.signOut().addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     continuation.resume(Unit) {}
@@ -79,7 +85,7 @@ class AuthManager @Inject constructor(
             }
         }
     }
-    
+
     /**
      * Get the current signed-in account
      */

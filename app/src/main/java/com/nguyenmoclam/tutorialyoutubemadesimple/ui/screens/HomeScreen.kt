@@ -40,15 +40,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -74,33 +76,33 @@ fun HomeScreen(
     navController: NavHostController
 ) {
     val state by viewModel.state.collectAsState()
-    
+
     // Trigger refresh when screen becomes active
     LaunchedEffect(Unit) {
         viewModel.refreshQuizzes()
     }
-    
+
     // Add scroll state tracking
     val lazyListState = rememberLazyListState()
     val isScrollingUp = remember {
         derivedStateOf {
             if (lazyListState.firstVisibleItemIndex > 0) {
                 // When scrolled past the first item, check scroll direction
-                lazyListState.firstVisibleItemScrollOffset == 0 || 
-                lazyListState.isScrollInProgress.not()
+                lazyListState.firstVisibleItemScrollOffset == 0 ||
+                        lazyListState.isScrollInProgress.not()
             } else {
                 // Always show navigation when at the top
                 true
             }
         }
     }
-    
+
     // Share scroll state with MainActivity
     LaunchedEffect(isScrollingUp.value) {
         // Update the BottomNavigationVisibilityState singleton
         BottomNavigationVisibilityState.isVisible.value = isScrollingUp.value
     }
-    
+
     // Delete Confirmation Dialog
     state.showDeleteConfirmDialog?.let { quizId ->
         AlertDialog(
@@ -123,98 +125,113 @@ fun HomeScreen(
             }
         )
     }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Learning Hub Title
-        Text(
-            text = "Learning Hub",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
-        
-        Text(
-            text = "Explore programming challenges",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Search Bar
-        OutlinedTextField(
-            value = "",
-            onValueChange = { },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search challenges...") },
-            leadingIcon = { 
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search"
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Learning Hub") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-            },
-            shape = RoundedCornerShape(8.dp),
-            singleLine = true
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Filter Tabs
-        var selectedTabIndex by remember { mutableIntStateOf(0) }
-        val tabs = listOf("All", "Popular", "New", "Trending")
-        
-        Row(modifier = Modifier.fillMaxWidth()) {
-            tabs.forEachIndexed { index, title ->
-                FilterTab(
-                    title = title,
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-            }
+            )
         }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        if (state.isLoading) {
-            // Show loading indicator when data is being loaded
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        } else if (state.quizzes.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "No quizzes available. Create your first quiz!",
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
-            }
-        } else {
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(state.quizzes) { quiz ->
-                    LearningChallengeItem(
-                        quiz = quiz,
-                        isStatsExpanded = state.expandedStatsMap[quiz.id] == true,
-                        quizStats = state.quizStatsCache[quiz.id],
-                        onToggleStats = { viewModel.toggleStatsExpanded(quiz.id) },
-                        onDeleteQuiz = { viewModel.showDeleteQuizDialog(quiz.id) },
-                        daysSinceLastUpdate = viewModel.getDaysSinceLastUpdate(quiz.lastUpdated),
-                        onQuizClick = { navController.navigate(AppScreens.QuizDetail.withArgs(quiz.id.toString())) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+
+            Text(
+                text = "Explore programming challenges",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Search Bar
+            OutlinedTextField(
+                value = "",
+                onValueChange = { },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search challenges...") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search"
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                },
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Filter Tabs
+            var selectedTabIndex by remember { mutableIntStateOf(0) }
+            val tabs = listOf("All", "Popular", "New", "Trending")
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                tabs.forEachIndexed { index, title ->
+                    FilterTab(
+                        title = title,
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (state.isLoading) {
+                // Show loading indicator when data is being loaded
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else if (state.quizzes.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "No quizzes available. Create your first quiz!",
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = lazyListState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(state.quizzes) { quiz ->
+                        LearningChallengeItem(
+                            quiz = quiz,
+                            isStatsExpanded = state.expandedStatsMap[quiz.id] == true,
+                            quizStats = state.quizStatsCache[quiz.id],
+                            onToggleStats = { viewModel.toggleStatsExpanded(quiz.id) },
+                            onDeleteQuiz = { viewModel.showDeleteQuizDialog(quiz.id) },
+                            daysSinceLastUpdate = viewModel.getDaysSinceLastUpdate(quiz.lastUpdated),
+                            onQuizClick = {
+                                navController.navigate(
+                                    AppScreens.QuizDetail.withArgs(
+                                        quiz.id.toString()
+                                    )
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
     }
+
+
 }
 
 @Composable
@@ -237,7 +254,7 @@ fun FilterTab(
         Text(
             text = title,
             color = if (selected) MaterialTheme.colorScheme.onPrimary
-                   else MaterialTheme.colorScheme.onSurface,
+            else MaterialTheme.colorScheme.onSurface,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
         )
     }
@@ -290,7 +307,7 @@ fun LearningChallengeItem(
                     )
                 }
             }
-            
+
             // Description
             Text(
                 text = quiz.description,
@@ -300,9 +317,9 @@ fun LearningChallengeItem(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Question count and last update info
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -320,9 +337,9 @@ fun LearningChallengeItem(
                     color = Color.Gray
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Stats button
             Button(
                 onClick = onToggleStats,
@@ -336,15 +353,23 @@ fun LearningChallengeItem(
                     fontWeight = FontWeight.Medium
                 )
             }
-            
+
             // Animated stats section
             val visibleState = remember { MutableTransitionState(false) }
             visibleState.targetState = isStatsExpanded
-            
+
             AnimatedVisibility(
                 visibleState = visibleState,
-                enter = fadeIn(animationSpec = tween(300)) + expandVertically(animationSpec = tween(300)),
-                exit = fadeOut(animationSpec = tween(300)) + shrinkVertically(animationSpec = tween(300))
+                enter = fadeIn(animationSpec = tween(300)) + expandVertically(
+                    animationSpec = tween(
+                        300
+                    )
+                ),
+                exit = fadeOut(animationSpec = tween(300)) + shrinkVertically(
+                    animationSpec = tween(
+                        300
+                    )
+                )
             ) {
                 Column(
                     modifier = Modifier
@@ -361,11 +386,11 @@ fun LearningChallengeItem(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
                     Divider()
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     if (quizStats != null) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -382,9 +407,9 @@ fun LearningChallengeItem(
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically

@@ -58,6 +58,16 @@ android {
     hilt {
         enableAggregatingTask = false
     }
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE"
+            )
+        }
+    }
 }
 
 dependencies {
@@ -96,9 +106,12 @@ dependencies {
     // DataStore dependencies
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore.preferences.core)
-    
-    // Google Sign-In dependencies
-    implementation(libs.play.services.auth)
+
+    implementation (libs.play.services.auth.v2070)
+    implementation (libs.google.api.client.android)
+    implementation (libs.google.http.client.gson)
+    implementation (libs.google.api.client.gson)
+    implementation (libs.google.api.services.youtube)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

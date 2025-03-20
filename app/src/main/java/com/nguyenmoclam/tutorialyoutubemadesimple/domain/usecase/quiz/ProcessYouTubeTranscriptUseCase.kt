@@ -1,6 +1,16 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz
 
+import android.content.Context
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.http.javanet.NetHttpTransport
+import com.google.api.client.json.gson.GsonFactory
+import com.google.api.services.youtube.YouTube
+import com.nguyenmoclam.tutorialyoutubemadesimple.auth.AuthManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.YouTubeTranscriptLight
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -8,7 +18,9 @@ import javax.inject.Inject
  * This follows the Clean Architecture principle of having use cases represent business logic.
  */
 class ProcessYouTubeTranscriptUseCase @Inject constructor(
-    private val youTubeTranscriptLight: YouTubeTranscriptLight
+    private val youTubeTranscriptLight: YouTubeTranscriptLight,
+    private val authManager: AuthManager,
+    @ApplicationContext private val context: Context
 ) {
     /**
      * Data class to hold transcript processing results
@@ -17,7 +29,7 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
         val text: String,
         val error: String? = null
     )
-    
+
     /**
      * Execute the use case to process a YouTube video transcript.
      *
@@ -27,16 +39,72 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
      */
     suspend operator fun invoke(
         videoId: String,
-        languages: List<String> = listOf("en")
+        languages: List<String> = listOf("en"),
+        transcriptMode: String
     ): TranscriptResult {
         return try {
-            val transcripts = youTubeTranscriptLight.getTranscript(videoId, languages)
-            val transcriptContent = transcripts.joinToString(" ") { it.text }
-            TranscriptResult(text = transcriptContent)
+            if (authManager.isUserSignedIn() && transcriptMode == "google") {
+                val transcriptText = fetchTranscriptFromGoogleApi(videoId)
+                TranscriptResult(text = transcriptText)
+            } else {
+                val transcripts = youTubeTranscriptLight.getTranscript(videoId, languages)
+                val transcriptContent = transcripts.joinToString(" ") { it.text }
+                TranscriptResult(text = transcriptContent)
+            }
         } catch (e: YouTubeTranscriptLight.TranscriptError) {
             TranscriptResult(text = "", error = e.javaClass.simpleName)
         } catch (e: Exception) {
             TranscriptResult(text = "", error = e.message ?: "Unknown error")
         }
     }
+
+    private suspend fun fetchTranscriptFromGoogleApi(videoId: String): String =
+        withContext(Dispatchers.IO) {
+            val account: GoogleSignInAccount = authManager.getCurrentAccount()
+                ?: throw IllegalStateException("No Google account found")
+
+            val credential = GoogleAccountCredential.usingOAuth2(
+                context,
+                listOf(
+                    "https://www.googleapis.com/auth/youtube.readonly",
+                    "https://www.googleapis.com/auth/youtube.force-ssl",
+                    "https://www.googleapis.com/auth/youtubepartner"
+                )
+            ).apply {
+                selectedAccount = account.account
+            }
+
+
+            val youtube = YouTube.Builder(
+                NetHttpTransport(),
+                GsonFactory.getDefaultInstance(),
+                credential
+            ).setApplicationName("TutorialYoutubeMadeSimple")
+                .build()
+
+            val captionListResponse = youtube.captions()
+                .list("snippet", videoId)
+                .execute()
+            val captions = captionListResponse.items
+
+            if (captions.isNullOrEmpty()) {
+                throw YouTubeTranscriptLight.TranscriptError.NoTranscriptAvailable()
+            }
+
+            val desiredLanguageCode = "en"
+            val filteredCaptions = captions.filter { caption ->
+                (caption.snippet.language == desiredLanguageCode) && (caption.snippet.isAutoSynced == false)
+            }
+
+            val chosenCaption = filteredCaptions.firstOrNull() ?: captions.first()
+            // error : "The permissions associated with the request are not sufficient to download the caption track.
+            // The request might not be properly authorized,
+            // or the video order might not have enabled third-party contributions for this caption."
+            val captionDownload = youtube.captions()
+                .download(chosenCaption.id)
+                .executeMediaAsInputStream()
+
+            captionDownload.bufferedReader().use { it.readText() }
+        }
+
 }

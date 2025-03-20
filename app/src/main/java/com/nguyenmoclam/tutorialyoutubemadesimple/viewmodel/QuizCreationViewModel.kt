@@ -40,9 +40,9 @@ enum class ProcessingCreateStep(val messageRes: Int) {
     fun getMessage(context: Context): String {
         return if (messageRes != 0) context.getString(messageRes) else ""
     }
-    
+
     fun getProgressPercentage(): Float {
-        return when(this) {
+        return when (this) {
             NONE -> 0f
             FETCH_METADATA -> 10f
             FETCH_TRANSCRIPT -> 30f
@@ -96,14 +96,19 @@ class QuizCreationViewModel @Inject constructor(
         return when (errorType) {
             "VideoNotFound" ->
                 context.getString(R.string.error_video_not_found)
+
             "TranscriptsDisabled" ->
                 context.getString(R.string.error_transcripts_disabled)
+
             "NoTranscriptAvailable" ->
                 context.getString(R.string.error_no_transcript)
+
             "NetworkError" ->
                 context.getString(R.string.error_network)
+
             "LanguageNotFound" ->
                 context.getString(R.string.error_language_not_found)
+
             else -> context.getString(R.string.error_generic)
         }
     }
@@ -115,7 +120,8 @@ class QuizCreationViewModel @Inject constructor(
         generateQuestions: Boolean,
         selectedLanguage: String,
         questionType: String,
-        numberOfQuestions: Int
+        numberOfQuestions: Int,
+        transcriptMode: String
     ) {
         state = QuizState(isLoading = true, currentStep = ProcessingCreateStep.FETCH_METADATA)
 
@@ -130,23 +136,26 @@ class QuizCreationViewModel @Inject constructor(
                 apiKey = youtubeApiKey,
                 defaultTitle = context.getString(R.string.default_no_title)
             )
-            
+
             if (metadata.error != null) {
                 throw IllegalStateException(metadata.error)
             }
-            
+
             val fetchedTitle = metadata.title
             val fetchedThumb = metadata.thumbnailUrl
             val fetchedDescription = metadata.description
 
             // Process transcript using the use case
             state = state.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT)
-            val transcriptResult = processYouTubeTranscriptUseCase(videoId)
-            
+            val transcriptResult = processYouTubeTranscriptUseCase(
+                videoId = videoId,
+                languages = listOf("en"), transcriptMode = transcriptMode
+            )
+
             if (transcriptResult.error != null) {
                 throw IllegalStateException(handleTranscriptError(transcriptResult.error))
             }
-            
+
             val transcriptContent = transcriptResult.text
 
             // Create quiz domain model
@@ -167,26 +176,38 @@ class QuizCreationViewModel @Inject constructor(
             val quizId = createQuizUseCase(quiz)
 
             // Save transcript to database
-            saveTranscriptUseCase(Transcript(
-                quizId = quizId,
-                content = transcriptContent,
-                language = selectedLanguage
-            ))
+            saveTranscriptUseCase(
+                Transcript(
+                    quizId = quizId,
+                    content = transcriptContent,
+                    language = selectedLanguage
+                )
+            )
 
             val newState = if (generateSummary && generateQuestions) {
                 supervisorScope {
-                    state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
-                    
+                    state =
+                        state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
+
                     val summaryDeferred = async {
-                        val result = generateQuizSummaryUseCase(fetchedTitle, fetchedThumb, transcriptContent)
+                        val result = generateQuizSummaryUseCase(
+                            fetchedTitle,
+                            fetchedThumb,
+                            transcriptContent
+                        )
                         if (result.error != null) {
                             throw IllegalStateException(result.error)
                         }
                         result.content
                     }
-                    
+
                     val questionsDeferred = async {
-                        val result = generateQuestionsUseCase(transcriptContent, selectedLanguage, questionType, numberOfQuestions)
+                        val result = generateQuestionsUseCase(
+                            transcriptContent,
+                            selectedLanguage,
+                            questionType,
+                            numberOfQuestions
+                        )
                         if (result.error != null) {
                             throw IllegalStateException(result.error)
                         }
@@ -195,18 +216,20 @@ class QuizCreationViewModel @Inject constructor(
                         saveKeyPointsUseCase(keyPoints, quizId)
                         result.content
                     }
-                    
+
                     try {
                         val summary = summaryDeferred.await()
                         val questionsJson = questionsDeferred.await()
-                        
+
                         state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
                         // Save summary to database using domain model and use case
-                        createQuizSummaryUseCase(Summary(
-                            quizId = quizId,
-                            content = summary
-                        ))
-                        
+                        createQuizSummaryUseCase(
+                            Summary(
+                                quizId = quizId,
+                                content = summary
+                            )
+                        )
+
                         // Save topics and content questions from the LLM processing
                         // This data is used to generate the summary but was not previously saved
                         val topics = generateQuizSummaryUseCase.getLastProcessedTopics()
@@ -227,21 +250,25 @@ class QuizCreationViewModel @Inject constructor(
                     }
                 }
             } else if (generateSummary) {
-                state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
-                val summaryResult = generateQuizSummaryUseCase(fetchedTitle, fetchedThumb, transcriptContent)
-                
+                state =
+                    state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
+                val summaryResult =
+                    generateQuizSummaryUseCase(fetchedTitle, fetchedThumb, transcriptContent)
+
                 if (summaryResult.error != null) {
                     throw IllegalStateException(summaryResult.error)
                 }
-                
+
                 val summary = summaryResult.content
-                
+
                 state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
                 // Save summary to database using domain model and use case
-                createQuizSummaryUseCase(Summary(
-                    quizId = quizId,
-                    content = summary
-                ))
+                createQuizSummaryUseCase(
+                    Summary(
+                        quizId = quizId,
+                        content = summary
+                    )
+                )
 
                 state.copy(
                     isLoading = false,
@@ -250,20 +277,26 @@ class QuizCreationViewModel @Inject constructor(
                     quizIdInserted = quizId
                 )
             } else if (generateQuestions) {
-                state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
-                val questionsResult = generateQuestionsUseCase(transcriptContent, selectedLanguage, questionType, numberOfQuestions)
-                
+                state =
+                    state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
+                val questionsResult = generateQuestionsUseCase(
+                    transcriptContent,
+                    selectedLanguage,
+                    questionType,
+                    numberOfQuestions
+                )
+
                 if (questionsResult.error != null) {
                     throw IllegalStateException(questionsResult.error)
                 }
-                
+
                 val questionsJson = questionsResult.content
-                
+
                 state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
                 // Save key points extracted during question generation
                 val keyPoints = generateQuestionsUseCase.getLastExtractedKeyPoints()
                 saveKeyPointsUseCase(keyPoints, quizId)
-                
+
                 // Parse and save questions using domain model and use cases
                 val questions = parseQuestionsUseCase(questionsJson, quizId)
                 createQuizQuestionsUseCase(questions)
