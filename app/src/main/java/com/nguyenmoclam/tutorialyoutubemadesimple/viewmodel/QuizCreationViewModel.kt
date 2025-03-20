@@ -18,6 +18,10 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GenerateQu
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.ParseQuestionsUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.ProcessYouTubeTranscriptUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.summary.CreateQuizSummaryUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.topic.SaveTopicsUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.SaveTranscriptUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Transcript
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.keypoint.SaveKeyPointsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -59,7 +63,10 @@ class QuizCreationViewModel @Inject constructor(
     private val generateQuestionsUseCase: GenerateQuestionsUseCase,
     private val parseQuestionsUseCase: ParseQuestionsUseCase,
     private val createQuizSummaryUseCase: CreateQuizSummaryUseCase,
-    private val createQuizQuestionsUseCase: CreateQuizQuestionsUseCase
+    private val createQuizQuestionsUseCase: CreateQuizQuestionsUseCase,
+    private val saveTranscriptUseCase: SaveTranscriptUseCase,
+    private val saveTopicsUseCase: SaveTopicsUseCase,
+    private val saveKeyPointsUseCase: SaveKeyPointsUseCase
 ) : ViewModel() {
 
     data class QuizState(
@@ -147,6 +154,7 @@ class QuizCreationViewModel @Inject constructor(
                 title = fetchedTitle,
                 description = fetchedDescription,
                 videoUrl = videoUrlOrId,
+                thumbnailUrl = fetchedThumb,
                 language = selectedLanguage,
                 questionType = questionType,
                 questionCount = numberOfQuestions,
@@ -157,6 +165,13 @@ class QuizCreationViewModel @Inject constructor(
 
             // Insert quiz and get its ID using the use case
             val quizId = createQuizUseCase(quiz)
+
+            // Save transcript to database
+            saveTranscriptUseCase(Transcript(
+                quizId = quizId,
+                content = transcriptContent,
+                language = selectedLanguage
+            ))
 
             val newState = if (generateSummary && generateQuestions) {
                 supervisorScope {
@@ -175,6 +190,9 @@ class QuizCreationViewModel @Inject constructor(
                         if (result.error != null) {
                             throw IllegalStateException(result.error)
                         }
+                        // Save key points extracted during question generation
+                        val keyPoints = generateQuestionsUseCase.getLastExtractedKeyPoints()
+                        saveKeyPointsUseCase(keyPoints, quizId)
                         result.content
                     }
                     
@@ -188,6 +206,11 @@ class QuizCreationViewModel @Inject constructor(
                             quizId = quizId,
                             content = summary
                         ))
+                        
+                        // Save topics and content questions from the LLM processing
+                        // This data is used to generate the summary but was not previously saved
+                        val topics = generateQuizSummaryUseCase.getLastProcessedTopics()
+                        saveTopicsUseCase(topics, quizId)
 
                         // Parse and save questions using domain model and use cases
                         val questions = parseQuestionsUseCase(questionsJson, quizId)
@@ -237,6 +260,10 @@ class QuizCreationViewModel @Inject constructor(
                 val questionsJson = questionsResult.content
                 
                 state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
+                // Save key points extracted during question generation
+                val keyPoints = generateQuestionsUseCase.getLastExtractedKeyPoints()
+                saveKeyPointsUseCase(keyPoints, quizId)
+                
                 // Parse and save questions using domain model and use cases
                 val questions = parseQuestionsUseCase(questionsJson, quizId)
                 createQuizQuestionsUseCase(questions)
@@ -259,5 +286,4 @@ class QuizCreationViewModel @Inject constructor(
         }
     }
 
-    // All helper methods have been replaced with use cases
 }

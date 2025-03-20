@@ -1,5 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz
 
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.HtmlGenerator
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.Section
@@ -14,6 +15,13 @@ import javax.inject.Inject
 class GenerateQuizSummaryUseCase @Inject constructor(
     private val llmProcessor: LLMProcessor
 ) {
+    // Store the last processed topics for later retrieval
+    private var lastProcessedTopics: List<Topic> = emptyList()
+    
+    /**
+     * Get the last processed topics from the most recent summary generation
+     */
+    fun getLastProcessedTopics(): List<Topic> = lastProcessedTopics
     /**
      * Data class to hold summary generation results
      */
@@ -41,6 +49,8 @@ class GenerateQuizSummaryUseCase @Inject constructor(
                 ?: return@withContext SummaryResult(content = "", error = "No topics could be extracted")
 
             val processedTopics = llmProcessor.processContent(topics, transcriptContent)
+            // Store the processed topics for later retrieval
+            lastProcessedTopics = processedTopics
             val sections = processedTopics.map { topic ->
                 Section(
                     title = topic.rephrased_title.ifEmpty { topic.title },

@@ -12,6 +12,13 @@ import javax.inject.Inject
 class GenerateQuestionsUseCase @Inject constructor(
     private val llmProcessor: LLMProcessor
 ) {
+    // Store the last extracted key points for later retrieval
+    private var lastExtractedKeyPoints: List<String> = emptyList()
+    
+    /**
+     * Get the last extracted key points from the most recent question generation
+     */
+    fun getLastExtractedKeyPoints(): List<String> = lastExtractedKeyPoints
     /**
      * Data class to hold question generation results
      */
@@ -37,6 +44,9 @@ class GenerateQuestionsUseCase @Inject constructor(
     ): QuestionsResult = withContext(Dispatchers.IO) {
         try {
             val keyPoints = llmProcessor.extractKeyPoints(transcriptContent, language)
+            // Store the extracted key points for later retrieval
+            lastExtractedKeyPoints = keyPoints
+            
             val questionsJson = llmProcessor.generateQuestionsFromKeyPoints(
                 keyPoints = keyPoints,
                 language = language,

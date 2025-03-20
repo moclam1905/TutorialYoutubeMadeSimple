@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 1,
-    "identityHash": "6c40ba761b8045194543eb009a423348",
+    "version": 3,
+    "identityHash": "7f1646755a308d31fb54c3bda841353a",
     "entities": [
       {
         "tableName": "quizzes",
@@ -527,66 +527,12 @@
             ]
           }
         ]
-      },
-      {
-        "tableName": "key_points",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`keyPointId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `quizId` INTEGER NOT NULL, `content` TEXT NOT NULL, FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        "fields": [
-          {
-            "fieldPath": "keyPointId",
-            "columnName": "keyPointId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "quizId",
-            "columnName": "quizId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "content",
-            "columnName": "content",
-            "affinity": "TEXT",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": true,
-          "columnNames": [
-            "keyPointId"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_key_points_quizId",
-            "unique": false,
-            "columnNames": [
-              "quizId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_key_points_quizId` ON `${TABLE_NAME}` (`quizId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "quizzes",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "quizId"
-            ],
-            "referencedColumns": [
-              "quizId"
-            ]
-          }
-        ]
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6c40ba761b8045194543eb009a423348')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7f1646755a308d31fb54c3bda841353a')"
     ]
   }
 }
