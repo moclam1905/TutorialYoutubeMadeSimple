@@ -1,12 +1,28 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.*
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.tasks.Task
+import com.nguyenmoclam.tutorialyoutubemadesimple.auth.AuthManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.GetSettingsUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAppLanguageUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAutoNextQuestionUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetConnectionTimeoutUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetConnectionTypeUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetDataSaverModeUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetGoogleSignInUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetMaxRetryCountUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetQuestionOrderUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetRetryPolicyUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetShowAnswerAfterWrongUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetThemeModeUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetTranscriptModeUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -33,7 +49,8 @@ class SettingsViewModel @Inject constructor(
     private val setDataSaverModeUseCase: SetDataSaverModeUseCase,
     private val setConnectionTypeUseCase: SetConnectionTypeUseCase,
     private val setConnectionTimeoutUseCase: SetConnectionTimeoutUseCase,
-    private val setRetryPolicyUseCase: SetRetryPolicyUseCase
+    private val setRetryPolicyUseCase: SetRetryPolicyUseCase,
+    private val authManager: AuthManager
 ) : ViewModel() {
 
     // Network utilities
@@ -111,9 +128,42 @@ class SettingsViewModel @Inject constructor(
     // Google account settings
     fun setGoogleSignIn(signedIn: Boolean) {
         viewModelScope.launch {
-            setGoogleSignInUseCase(signedIn)
-            settingsState = settingsState.copy(isGoogleSignedIn = signedIn)
+            if (signedIn) {
+                // We don't actually sign in here - this will be triggered by the activity result
+                // The UI will show the Google Sign-In button which will launch the sign-in intent
+            } else {
+                // Sign out
+                authManager.signOut()
+                setGoogleSignInUseCase(false)
+                settingsState = settingsState.copy(isGoogleSignedIn = false)
+            }
         }
+    }
+    
+    /**
+     * Process the Google Sign-In result
+     */
+    fun handleSignInResult(task: Task<GoogleSignInAccount>) {
+        val account = authManager.handleSignInResult(task)
+        viewModelScope.launch {
+            if (account != null) {
+                // Sign-in successful
+                setGoogleSignInUseCase(true)
+                settingsState = settingsState.copy(isGoogleSignedIn = true)
+                
+                // If transcript mode is anonymous, switch to google
+                if (settingsState.transcriptMode == "anonymous") {
+                    setTranscriptMode("google")
+                }
+            }
+        }
+    }
+    
+    /**
+     * Get sign-in intent for launching Google Sign-In
+     */
+    fun getSignInIntent(): Intent {
+        return authManager.getSignInIntent()
     }
     
     fun setTranscriptMode(mode: String) {
@@ -125,6 +175,8 @@ class SettingsViewModel @Inject constructor(
     
     fun clearAccountData() {
         viewModelScope.launch {
+            // Sign out from Google
+            authManager.signOut()
             setGoogleSignInUseCase(false)
             setTranscriptModeUseCase("anonymous")
             settingsState = settingsState.copy(

@@ -96,6 +96,9 @@ dependencies {
     // DataStore dependencies
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore.preferences.core)
+    
+    // Google Sign-In dependencies
+    implementation(libs.play.services.auth)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

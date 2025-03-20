@@ -211,10 +211,11 @@ fun GoogleAccountSettings(
     state: SettingsState,
     onGoogleSignInChanged: (Boolean) -> Unit,
     onTranscriptModeChanged: (String) -> Unit,
-    onClearAccountDataClick: () -> Unit
+    onClearAccountDataClick: () -> Unit,
+    onSignInClick: () -> Unit = {}
 ) {
     Column {
-        // Google sign-in toggle
+        // Google account status and sign-in/out buttons
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -222,11 +223,29 @@ fun GoogleAccountSettings(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Google Sign-In")
-            Switch(
-                checked = state.isGoogleSignedIn,
-                onCheckedChange = onGoogleSignInChanged
-            )
+            Column {
+                Text("Google Account", fontWeight = FontWeight.Medium)
+                Text(
+                    text = if (state.isGoogleSignedIn) "Signed In" else "Not Signed In",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (state.isGoogleSignedIn) 
+                        MaterialTheme.colorScheme.primary 
+                    else 
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+            
+            TextButton(
+                onClick = { 
+                    if (state.isGoogleSignedIn) {
+                        onGoogleSignInChanged(false) // Sign out
+                    } else {
+                        onSignInClick() // Launch sign-in flow
+                    }
+                }
+            ) {
+                Text(if (state.isGoogleSignedIn) "Sign Out" else "Sign In")
+            }
         }
         
         Divider(modifier = Modifier.padding(vertical = 8.dp))

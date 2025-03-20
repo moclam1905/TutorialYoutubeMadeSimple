@@ -1,5 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.AppInfoSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.DataManagementSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.GoogleAccountSettings
@@ -58,6 +61,14 @@ fun SettingScreen(
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
+    
+    // Set up the Google Sign-In activity result launcher
+    val signInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        viewModel.handleSignInResult(task)
+    }
     
     Scaffold(
         topBar = {
@@ -112,7 +123,8 @@ fun SettingScreen(
                     state = state,
                     onGoogleSignInChanged = viewModel::setGoogleSignIn,
                     onTranscriptModeChanged = viewModel::setTranscriptMode,
-                    onClearAccountDataClick = viewModel::clearAccountData
+                    onClearAccountDataClick = viewModel::clearAccountData,
+                    onSignInClick = { signInLauncher.launch(viewModel.getSignInIntent()) }
                 )
             }
             
