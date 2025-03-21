@@ -221,7 +221,11 @@ fun CreateQuizScreen(
                     }
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (currentStep < 3) "Next" else "Create Quiz")
+                        Text(
+                            if (currentStep < 3) context.getString(R.string.next_button) else context.getString(
+                                R.string.create_quiz_title
+                            )
+                        )
                         if (currentStep < 3) {
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(Icons.Filled.ArrowForward, contentDescription = "Next")

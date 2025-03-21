@@ -37,6 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsState
+import kotlin.math.log10
+import kotlin.math.pow
 
 /**
  * Theme settings component that allows selecting between light, dark, and system theme modes
@@ -53,9 +55,9 @@ fun ThemeSettings(
 
     Column(modifier = Modifier.selectableGroup()) {
         val themeOptions = listOf(
-            "light" to "Light Mode",
-            "dark" to "Dark Mode",
-            "system" to "System Default"
+            "light" to context.getString(R.string.light_mode),
+            "dark" to context.getString(R.string.dark_mode),
+            "system" to context.getString(R.string.system_default)
         )
 
         themeOptions.forEach { (value, label) ->
@@ -135,8 +137,8 @@ fun QuizConfigSettings(
 
         Column(modifier = Modifier.selectableGroup()) {
             val orderOptions = listOf(
-                "sequential" to "Sequential",
-                "shuffle" to "Random (Shuffle)"
+                "sequential" to context.getString(R.string.sequential),
+                "shuffle" to context.getString(R.string.random_shuffle)
             )
 
             orderOptions.forEach { (value, label) ->
@@ -236,7 +238,9 @@ fun GoogleAccountSettings(
             Column {
                 Text(context.getString(R.string.google_account), fontWeight = FontWeight.Medium)
                 Text(
-                    text = if (state.isGoogleSignedIn) "Signed In" else "Not Signed In",
+                    text = if (state.isGoogleSignedIn) context.getString(R.string.signed_in) else context.getString(
+                        R.string.not_signed_in
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (state.isGoogleSignedIn)
                         MaterialTheme.colorScheme.primary
@@ -254,7 +258,11 @@ fun GoogleAccountSettings(
                     }
                 }
             ) {
-                Text(if (state.isGoogleSignedIn) "Sign Out" else "Sign In")
+                Text(
+                    if (state.isGoogleSignedIn) context.getString(R.string.sign_out) else context.getString(
+                        R.string.sign_in
+                    )
+                )
             }
         }
 
@@ -266,8 +274,8 @@ fun GoogleAccountSettings(
 
         Column(modifier = Modifier.selectableGroup()) {
             val modeOptions = listOf(
-                "google" to "Use Google Account",
-                "anonymous" to "Anonymous Mode"
+                "google" to context.getString(R.string.use_google_account),
+                "anonymous" to context.getString(R.string.anonymous_mode)
             )
 
             modeOptions.forEach { (value, label) ->
@@ -302,7 +310,7 @@ fun GoogleAccountSettings(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Clear Account Data",
+                text = context.getString(R.string.clear_account_data),
                 color = MaterialTheme.colorScheme.error
             )
         }
@@ -415,7 +423,9 @@ fun NetworkSettings(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (state.isNetworkAvailable) "Connected" else "No Connection",
+                    text = if (state.isNetworkAvailable) context.getString(R.string.connected) else context.getString(
+                        R.string.no_connection
+                    ),
                     color = if (state.isNetworkAvailable) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
                 )
             }
@@ -434,7 +444,7 @@ fun NetworkSettings(
             Column {
                 Text(context.getString(R.string.data_saver_mode))
                 Text(
-                    "Reduces data usage by loading lower quality content",
+                    context.getString(R.string.reduce_data_usage),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -456,8 +466,8 @@ fun NetworkSettings(
 
         Column(modifier = Modifier.selectableGroup()) {
             val connectionOptions = listOf(
-                "any" to "Allow Mobile Data",
-                "wifi_only" to "Wi-Fi Only"
+                "any" to context.getString(R.string.allow_mobile_data),
+                "wifi_only" to context.getString(R.string.wifi_only)
             )
 
             connectionOptions.forEach { (value, label) ->
@@ -506,9 +516,9 @@ fun NetworkSettings(
 
         Column(modifier = Modifier.selectableGroup()) {
             val policyOptions = listOf(
-                "none" to "No Retry",
-                "linear" to "Linear Backoff",
-                "exponential" to "Exponential Backoff"
+                "none" to context.getString(R.string.no_retry),
+                "linear" to context.getString(R.string.linear_backoff),
+                "exponential" to context.getString(R.string.exponential_backoff)
             )
 
             policyOptions.forEach { (value, label) ->
@@ -542,11 +552,15 @@ fun LanguageSettings(
     state: SettingsState,
     onAppLanguageChanged: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var selectedLanguage by remember { mutableStateOf("") }
+    
     Column(modifier = Modifier.selectableGroup()) {
         val languageOptions = listOf(
-            "en" to "English",
-            "vi" to "Tiếng Việt",
-            "system" to "System Default"
+            "en" to context.getString(R.string.english),
+            "vi" to context.getString(R.string.vietnamese),
+            "system" to context.getString(R.string.system_default)
         )
 
         languageOptions.forEach { (value, label) ->
@@ -555,7 +569,12 @@ fun LanguageSettings(
                     .fillMaxWidth()
                     .selectable(
                         selected = state.appLanguage == value,
-                        onClick = { onAppLanguageChanged(value) }
+                        onClick = { 
+                            if (value != state.appLanguage) {
+                                selectedLanguage = value
+                                showConfirmDialog = true
+                            }
+                        }
                     )
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -568,6 +587,30 @@ fun LanguageSettings(
                 Text(label)
             }
         }
+    }
+    
+    // Confirmation dialog
+    if (showConfirmDialog) {
+        AlertDialog(
+            title = { Text(context.getString(R.string.language_change_title)) },
+            text = { Text(context.getString(R.string.language_change_message)) },
+            onDismissRequest = { showConfirmDialog = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onAppLanguageChanged(selectedLanguage)
+                        showConfirmDialog = false
+                    }
+                ) {
+                    Text(context.getString(R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text(context.getString(R.string.cancel))
+                }
+            }
+        )
     }
 }
 
@@ -651,11 +694,11 @@ private fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"
 
     val units = arrayOf("B", "KB", "MB", "GB")
-    val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt()
+    val digitGroups = (log10(bytes.toDouble()) / log10(1024.0)).toInt()
 
     return String.format(
         "%.1f %s",
-        bytes / Math.pow(1024.0, digitGroups.toDouble()),
+        bytes / 1024.0.pow(digitGroups.toDouble()),
         units[digitGroups]
     )
 }

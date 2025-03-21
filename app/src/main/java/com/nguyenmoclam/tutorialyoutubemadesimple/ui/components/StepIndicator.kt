@@ -13,17 +13,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Divider
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 
 /**
  * Displays a step indicator showing the current progress in the quiz creation process.
@@ -33,13 +34,14 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun StepIndicator(currentStep: Int, totalSteps: Int) {
+    val context = LocalContext.current
     Column(modifier = Modifier.fillMaxWidth()) {
         // Step title with improved styling
         Text(
             text = when (currentStep) {
-                1 -> "Step 1: Enter YouTube Video"
-                2 -> "Step 2: Configure Quiz"
-                3 -> "Step 3: Select Output"
+                1 -> context.getString(R.string.step_1_enter_video)
+                2 -> context.getString(R.string.step_2_configure_quiz)
+                3 -> context.getString(R.string.step_3_select_output)
                 else -> ""
             },
             fontSize = 22.sp,
@@ -95,9 +97,9 @@ fun StepIndicator(currentStep: Int, totalSteps: Int) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = when (i) {
-                            1 -> "Enter Video"
-                            2 -> "Configure"
-                            3 -> "Output"
+                            1 -> context.getString(R.string.enter_video)
+                            2 -> context.getString(R.string.configure)
+                            3 -> context.getString(R.string.output)
                             else -> ""
                         },
                         fontSize = 12.sp,

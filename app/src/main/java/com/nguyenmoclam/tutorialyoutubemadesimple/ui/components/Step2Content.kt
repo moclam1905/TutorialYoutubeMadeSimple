@@ -27,10 +27,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 
 /**
  * Content for Step 2: Quiz configuration (question type and count).
@@ -46,6 +48,7 @@ fun Step2Content(
     manualQuestionCount: String,
     onManualQuestionCountChange: (String) -> Unit
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -56,7 +59,7 @@ fun Step2Content(
         Column(modifier = Modifier.padding(20.dp)) {
             // Question type selection
             Text(
-                "Question Type:", 
+                context.getString(R.string.question_type),
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.primary
@@ -82,7 +85,7 @@ fun Step2Content(
                     RadioOptionItem(
                         selected = questionType == "multiple-choice",
                         onClick = { onQuestionTypeChange("multiple-choice") },
-                        label = "Multiple Choice",
+                        label = context.getString(R.string.multiple_choice),
                         modifier = Modifier.weight(1f)
                     )
 
@@ -100,7 +103,7 @@ fun Step2Content(
                     RadioOptionItem(
                         selected = questionType == "true-false",
                         onClick = { onQuestionTypeChange("true-false") },
-                        label = "True/False",
+                        label = context.getString(R.string.true_false),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -110,7 +113,7 @@ fun Step2Content(
             
             // Question count mode selection
             Text(
-                "Number of Questions:", 
+                context.getString(R.string.number_of_questions),
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.primary
@@ -143,7 +146,7 @@ fun Step2Content(
                         onClick = null
                     )
                     Text(
-                        text = "Auto Generate",
+                        text = context.getString(R.string.auto_generate),
                         modifier = Modifier.padding(start = 8.dp),
                         fontWeight = if (questionCountMode == "auto") FontWeight.Medium else FontWeight.Normal
                     )
@@ -156,7 +159,7 @@ fun Step2Content(
                 
                 Column(modifier = Modifier.padding(start = 32.dp)) {
                     Text(
-                        "Question Level:",
+                        context.getString(R.string.question_level),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
@@ -182,8 +185,8 @@ fun Step2Content(
                         LevelRadioOption(
                             selected = questionLevel == "low",
                             onClick = { onQuestionLevelChange("low") },
-                            title = "Low",
-                            subtitle = "5 questions",
+                            title = context.getString(R.string.low),
+                            subtitle = context.getString(R.string.five_questions),
                             modifier = Modifier.weight(1f)
                         )
                         
@@ -191,8 +194,8 @@ fun Step2Content(
                         LevelRadioOption(
                             selected = questionLevel == "medium",
                             onClick = { onQuestionLevelChange("medium") },
-                            title = "Medium",
-                            subtitle = "10 questions",
+                            title = context.getString(R.string.medium),
+                            subtitle = context.getString(R.string.ten_questions),
                             modifier = Modifier.weight(1f)
                         )
                         
@@ -200,8 +203,8 @@ fun Step2Content(
                         LevelRadioOption(
                             selected = questionLevel == "high",
                             onClick = { onQuestionLevelChange("high") },
-                            title = "High",
-                            subtitle = "15 questions",
+                            title = context.getString(R.string.high),
+                            subtitle = context.getString(R.string.fifteen_questions),
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -254,7 +257,7 @@ fun Step2Content(
                             onManualQuestionCountChange(value)
                         }
                     },
-                    label = { Text("Number of questions (1-50)") },
+                    label = { Text(context.getString(R.string.number_of_questions_range)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier
                         .fillMaxWidth()

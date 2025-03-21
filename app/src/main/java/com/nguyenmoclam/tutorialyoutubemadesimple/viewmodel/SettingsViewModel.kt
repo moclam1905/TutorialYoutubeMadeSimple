@@ -1,14 +1,18 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.tasks.Task
+import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
 import com.nguyenmoclam.tutorialyoutubemadesimple.auth.AuthManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.GetSettingsUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAppLanguageUseCase
@@ -31,6 +35,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -302,6 +307,19 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             setAppLanguageUseCase(language)
             settingsState = settingsState.copy(appLanguage = language)
+            
+            // Apply language change immediately
+            val localeList = when (language) {
+                "en" -> LocaleListCompat.create(Locale("en"))
+                "vi" -> LocaleListCompat.create(Locale("vi"))
+                else -> LocaleListCompat.getEmptyLocaleList() // System default
+            }
+            AppCompatDelegate.setApplicationLocales(localeList)
+            // Proper activity restart with application context
+            val intent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            context.startActivity(intent)
         }
     }
     

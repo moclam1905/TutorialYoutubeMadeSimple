@@ -114,6 +114,8 @@ dependencies {
     implementation (libs.google.api.client.gson)
     implementation (libs.google.api.services.youtube)
 
+    implementation(libs.androidx.appcompat)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -218,7 +218,7 @@ fun QuizDetailScreen(
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        text = "Quiz",
+                        text = context.getString(R.string.quiz),
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -374,7 +374,7 @@ fun QuizDetailScreen(
                                                 )
                                             } else {
                                                 // Coming from HomeScreen - use a generic loading message
-                                                "Loading quiz details..."
+                                                context.getString(R.string.loading_quiz_details)
                                             },
                                             style = MaterialTheme.typography.bodyLarge,
                                             textAlign = TextAlign.Center
@@ -607,7 +607,11 @@ fun QuizContent(
             .verticalScroll(rememberScrollState())
     ) {
         Text(
-            text = "Question ${currentQuestionIndex + 1} of ${quizQuestions.size}",
+            text = context.getString(
+                R.string.question_index,
+                currentQuestionIndex + 1,
+                quizQuestions.size
+            ),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -731,7 +735,7 @@ fun QuizContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "True",
+                            text = context.getString(R.string.true_txt),
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
                         )
@@ -788,7 +792,7 @@ fun QuizContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "False",
+                            text = context.getString(R.string.false_txt),
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
                         )

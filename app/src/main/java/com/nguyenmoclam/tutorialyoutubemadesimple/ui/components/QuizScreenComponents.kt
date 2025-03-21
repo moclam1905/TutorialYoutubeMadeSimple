@@ -50,7 +50,7 @@ fun StartQuizScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "Ready to Start Quiz",
+                text = context.getString(R.string.quiz_ready_to_start),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -59,7 +59,7 @@ fun StartQuizScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "This quiz contains $questionCount questions.",
+                text = context.getString(R.string.quiz_question_count, questionCount),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
@@ -67,7 +67,7 @@ fun StartQuizScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Your time will be tracked from when you start until you complete all questions.",
+                text = context.getString(R.string.quiz_time_tracking_info),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
@@ -113,7 +113,7 @@ fun QuizResultsScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Complete the quiz to see your results.",
+            text = context.getString(R.string.quiz_complete_message),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -133,21 +133,21 @@ fun QuizResultsScreen(
 
         // Correct answers section
         QuestionStatusList(
-            title = "Các câu hỏi đã trả lời đúng",
+            title = context.getString(R.string.quiz_correct_questions),
             questionIndices = correctQuestionIndices,
             quizQuestions = quizQuestions
         )
 
         // Incorrect answers section
         QuestionStatusList(
-            title = "Các câu hỏi đã trả lời sai",
+            title = context.getString(R.string.quiz_incorrect_questions),
             questionIndices = incorrectQuestionIndices,
             quizQuestions = quizQuestions
         )
 
         // Skipped questions section
         QuestionStatusList(
-            title = "Các câu hỏi đã bỏ qua",
+            title = context.getString(R.string.quiz_skipped_questions),
             questionIndices = skippedQuestionIndices,
             quizQuestions = quizQuestions
         )

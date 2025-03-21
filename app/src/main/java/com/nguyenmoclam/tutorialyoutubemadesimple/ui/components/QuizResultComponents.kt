@@ -16,9 +16,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import java.util.concurrent.TimeUnit
@@ -34,13 +36,14 @@ fun QuizResultsSummaryCard(
     skippedQuestions: Int,
     completionTimeSeconds: Int
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Quiz Results",
+                text = context.getString(R.string.quiz_results_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -50,7 +53,7 @@ fun QuizResultsSummaryCard(
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Correct",
+                        text = context.getString(R.string.quiz_results_correct),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
@@ -62,7 +65,7 @@ fun QuizResultsSummaryCard(
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Incorrect",
+                        text = context.getString(R.string.quiz_results_incorrect),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
@@ -74,7 +77,7 @@ fun QuizResultsSummaryCard(
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Skipped",
+                        text = context.getString(R.string.quiz_results_skipped),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
@@ -97,7 +100,7 @@ fun QuizResultsSummaryCard(
             }
             
             Text(
-                text = "Completion Time: $timeFormatted",
+                text = context.getString(R.string.quiz_completion_time, timeFormatted),
                 style = MaterialTheme.typography.bodyLarge
             )
         }
@@ -113,6 +116,7 @@ fun QuestionStatusList(
     questionIndices: List<Int>,
     quizQuestions: List<Any>
 ) {
+    val context = LocalContext.current
     if (questionIndices.isNotEmpty()) {
         Text(
             text = title,
@@ -134,7 +138,7 @@ fun QuestionStatusList(
                 val questionText = when (question) {
                     is MultipleChoiceQuestion -> question.question
                     is TrueFalseQuestion -> question.statement
-                    else -> "Question ${index + 1}"
+                    else -> context.getString(R.string.question_number, index + 1)
                 }
                 
                 Text(

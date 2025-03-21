@@ -57,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.QuizStats
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
@@ -76,7 +78,7 @@ fun HomeScreen(
     navController: NavHostController
 ) {
     val state by viewModel.state.collectAsState()
-
+    val context = LocalContext.current
     // Trigger refresh when screen becomes active
     LaunchedEffect(Unit) {
         viewModel.refreshQuizzes()
@@ -107,20 +109,20 @@ fun HomeScreen(
     state.showDeleteConfirmDialog?.let { quizId ->
         AlertDialog(
             onDismissRequest = { viewModel.hideDeleteQuizDialog() },
-            title = { Text("Delete Quiz") },
-            text = { Text("Are you sure you want to delete this quiz?") },
+            title = { Text(context.getString(R.string.delete_quiz)) },
+            text = { Text(context.getString(R.string.delete_quiz_confirmation)) },
             confirmButton = {
                 TextButton(
                     onClick = { viewModel.deleteQuiz(quizId) }
                 ) {
-                    Text("Delete")
+                    Text(context.getString(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { viewModel.hideDeleteQuizDialog() }
                 ) {
-                    Text("Cancel")
+                    Text(context.getString(R.string.cancel))
                 }
             }
         )
@@ -129,7 +131,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Learning Hub") },
+                title = { Text(context.getString(R.string.learning_hub)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -145,7 +147,7 @@ fun HomeScreen(
         ) {
 
             Text(
-                text = "Explore programming challenges",
+                text = context.getString(R.string.explore_challenges),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -157,7 +159,7 @@ fun HomeScreen(
                 value = "",
                 onValueChange = { },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search challenges...") },
+                placeholder = { Text(context.getString(R.string.search_challenges)) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -172,7 +174,12 @@ fun HomeScreen(
 
             // Filter Tabs
             var selectedTabIndex by remember { mutableIntStateOf(0) }
-            val tabs = listOf("All", "Popular", "New", "Trending")
+            val tabs = listOf(
+                context.getString(R.string.all),
+                context.getString(R.string.popular),
+                context.getString(R.string.new_filter),
+                context.getString(R.string.trending)
+            )
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 tabs.forEachIndexed { index, title ->
@@ -197,7 +204,7 @@ fun HomeScreen(
             } else if (state.quizzes.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "No quizzes available. Create your first quiz!",
+                        text = context.getString(R.string.no_quizzes_available),
                         fontSize = 18.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
@@ -271,6 +278,7 @@ fun LearningChallengeItem(
     daysSinceLastUpdate: Int,
     onQuizClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -326,13 +334,13 @@ fun LearningChallengeItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Total ${quiz.questionCount} questions",
+                    text = context.getString(R.string.total_questions, quiz.questionCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Last update: $daysSinceLastUpdate days ago",
+                    text = context.getString(R.string.last_update, daysSinceLastUpdate),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -349,7 +357,7 @@ fun LearningChallengeItem(
                 )
             ) {
                 Text(
-                    text = "View Stats",
+                    text = context.getString(R.string.view_stats),
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -382,7 +390,7 @@ fun LearningChallengeItem(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Quiz Statistics",
+                        text = context.getString(R.string.quiz_statistics),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -397,7 +405,7 @@ fun LearningChallengeItem(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Average Score:",
+                                text = context.getString(R.string.average_score),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.weight(1f)
                             )
@@ -415,19 +423,22 @@ fun LearningChallengeItem(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Average Completion Time:",
+                                text = context.getString(R.string.average_completion_time),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
-                                text = "${quizStats.timeElapsedSeconds} seconds",
+                                text = context.getString(
+                                    R.string.time_elapsed_seconds,
+                                    quizStats.timeElapsedSeconds
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     } else {
                         Text(
-                            text = "No quiz attempts recorded yet",
+                            text = context.getString(R.string.no_quiz_attempts),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,

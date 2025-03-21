@@ -40,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -175,17 +174,17 @@ fun CurvedBottomNavigation(
 
         // Create a single Path instance and reuse it for all drawing operations
         val path = remember { Path() }
-        
+
         // Create reusable Paint objects outside the drawing scope
         val shadowPaint = remember {
-            Paint().apply { 
-                isAntiAlias = true 
+            Paint().apply {
+                isAntiAlias = true
                 asFrameworkPaint().apply {
                     maskFilter = BlurMaskFilter(20f, BlurMaskFilter.Blur.NORMAL)
                 }
             }
         }
-        
+
         Canvas(modifier = canvasModifier) {
             if (containerWidth == 0f) return@Canvas
 
@@ -233,7 +232,7 @@ fun CurvedBottomNavigation(
                 lineTo(0f, size.height)
                 close()
             }
-            
+
             // -----------------------
             //     DRAW SHADOW
             // -----------------------

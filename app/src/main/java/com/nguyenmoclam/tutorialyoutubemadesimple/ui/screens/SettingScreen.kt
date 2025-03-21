@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NetworkWifi
-import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
@@ -39,15 +38,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.AppInfoSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.DataManagementSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.GoogleAccountSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.LanguageSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkSettings
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.QuizConfigSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 
@@ -61,7 +61,8 @@ fun SettingScreen(
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
-    
+    val context = LocalContext.current
+
     // Set up the Google Sign-In activity result launcher
     val signInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -69,11 +70,11 @@ fun SettingScreen(
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         viewModel.handleSignInResult(task)
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(context.getString(R.string.settings_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -90,14 +91,14 @@ fun SettingScreen(
         ) {
             // Theme Settings Section
             SettingsSection(
-                title = "Theme",
+                title = context.getString(R.string.theme),
                 icon = Icons.Default.Settings
             ) {
                 ThemeSettings(state, viewModel::setThemeMode)
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
 //            // Quiz Configuration Section
 //            SettingsSection(
 //                title = "Quiz Configuration",
@@ -113,10 +114,10 @@ fun SettingScreen(
 //            }
 //
 //            Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Google Account Section
             SettingsSection(
-                title = "Google Account",
+                title = context.getString(R.string.google_account),
                 icon = Icons.Default.AccountCircle
             ) {
                 GoogleAccountSettings(
@@ -127,12 +128,12 @@ fun SettingScreen(
                     onSignInClick = { signInLauncher.launch(viewModel.getSignInIntent()) }
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Data Management Section
             SettingsSection(
-                title = "Data Management",
+                title = context.getString(R.string.data_management),
                 icon = Icons.Default.Storage
             ) {
                 var showClearQuizHistoryDialog by remember { mutableStateOf(false) }
@@ -149,8 +150,8 @@ fun SettingScreen(
                 // Clear Quiz History Dialog
                 if (showClearQuizHistoryDialog) {
                     AlertDialog(
-                        title = { Text("Xác nhận xóa lịch sử") },
-                        text = { Text("Bạn có chắc chắn muốn xóa toàn bộ lịch sử bài kiểm tra? Hành động này không thể hoàn tác.") },
+                        title = { Text(context.getString(R.string.confirm_delete_history)) },
+                        text = { Text(context.getString(R.string.delete_history_message)) },
                         onDismissRequest = { showClearQuizHistoryDialog = false },
                         confirmButton = {
                             TextButton(
@@ -159,12 +160,12 @@ fun SettingScreen(
                                     showClearQuizHistoryDialog = false
                                 }
                             ) {
-                                Text("Xóa")
+                                Text(context.getString(R.string.delete))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { showClearQuizHistoryDialog = false }) {
-                                Text("Hủy")
+                                Text(context.getString(R.string.cancel))
                             }
                         }
                     )
@@ -173,8 +174,8 @@ fun SettingScreen(
                 // Reset Learning Progress Dialog
                 if (showResetLearningProgressDialog) {
                     AlertDialog(
-                        title = { Text("Xác nhận đặt lại tiến độ") },
-                        text = { Text("Bạn có chắc chắn muốn đặt lại toàn bộ tiến độ học tập? Hành động này không thể hoàn tác.") },
+                        title = { Text(context.getString(R.string.confirm_reset_progress)) },
+                        text = { Text(context.getString(R.string.reset_progress_message)) },
                         onDismissRequest = { showResetLearningProgressDialog = false },
                         confirmButton = {
                             TextButton(
@@ -183,12 +184,12 @@ fun SettingScreen(
                                     showResetLearningProgressDialog = false
                                 }
                             ) {
-                                Text("Đặt lại")
+                                Text(context.getString(R.string.reset))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { showResetLearningProgressDialog = false }) {
-                                Text("Hủy")
+                                Text(context.getString(R.string.cancel))
                             }
                         }
                     )
@@ -197,8 +198,8 @@ fun SettingScreen(
                 // Clear Cache Dialog
                 if (showClearCacheDialog) {
                     AlertDialog(
-                        title = { Text("Xác nhận xóa bộ nhớ đệm") },
-                        text = { Text("Bạn có chắc chắn muốn xóa toàn bộ bộ nhớ đệm? Hành động này không thể hoàn tác.") },
+                        title = { Text(context.getString(R.string.confirm_clear_cache)) },
+                        text = { Text(context.getString(R.string.clear_cache_message)) },
                         onDismissRequest = { showClearCacheDialog = false },
                         confirmButton = {
                             TextButton(
@@ -207,23 +208,23 @@ fun SettingScreen(
                                     showClearCacheDialog = false
                                 }
                             ) {
-                                Text("Xóa")
+                                Text(context.getString(R.string.delete))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { showClearCacheDialog = false }) {
-                                Text("Hủy")
+                                Text(context.getString(R.string.cancel))
                             }
                         }
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Network Settings Section
             SettingsSection(
-                title = "Network Settings",
+                title = context.getString(R.string.network_settings),
                 icon = Icons.Default.NetworkWifi
             ) {
                 NetworkSettings(
@@ -234,12 +235,12 @@ fun SettingScreen(
                     onRetryPolicyChanged = viewModel::setRetryPolicy
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Language Settings Section
             SettingsSection(
-                title = "Language",
+                title = context.getString(R.string.language),
                 icon = Icons.Default.Language
             ) {
                 LanguageSettings(
@@ -247,12 +248,12 @@ fun SettingScreen(
                     onAppLanguageChanged = viewModel::setAppLanguage
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // App Information Section
             SettingsSection(
-                title = "App Information",
+                title = context.getString(R.string.app_information),
                 icon = Icons.Default.Info
             ) {
                 AppInfoSettings(
@@ -263,26 +264,26 @@ fun SettingScreen(
                     onLicenseInfoClick = { /* Open License Info */ }
                 )
             }
-            
+
             // Reset All Settings button
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             TextButton(
                 onClick = { showResetDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "Reset All Settings",
+                    context.getString(R.string.reset_all_settings),
                     color = MaterialTheme.colorScheme.error
                 )
             }
         }
-        
+
         // Reset settings confirmation dialog
         if (showResetDialog) {
             AlertDialog(
-                title = { Text("Reset All Settings") },
-                text = { Text("Are you sure you want to reset all settings to default values? This action cannot be undone.") },
+                title = { Text(context.getString(R.string.reset_settings_title)) },
+                text = { Text(context.getString(R.string.reset_settings_message)) },
                 onDismissRequest = { showResetDialog = false },
                 confirmButton = {
                     TextButton(
@@ -301,12 +302,12 @@ fun SettingScreen(
                             showResetDialog = false
                         }
                     ) {
-                        Text("Reset")
+                        Text(context.getString(R.string.reset))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showResetDialog = false }) {
-                        Text("Cancel")
+                        Text(context.getString(R.string.cancel))
                     }
                 }
             )
@@ -347,11 +348,11 @@ fun SettingsSection(
                     fontWeight = FontWeight.Bold
                 )
             }
-            
+
             Divider()
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Section content
             content()
         }

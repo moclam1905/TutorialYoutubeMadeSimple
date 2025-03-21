@@ -21,7 +21,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.core.splashscreen.SplashScreen
+import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -29,23 +29,29 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppNavigation
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.CurvedBottomNavigation
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavItem
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.BottomNavigationVisibilityState
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LanguageChangeHelper
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SplashViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Locale
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     companion object {
         const val YOUTUBE_API_KEY: String = BuildConfig.YOUTUBE_API_KEY
         const val OPENROUTER_API_KEY: String = BuildConfig.OPENROUTER_API_KEY
+    }
+
+    val languageChangeHelper by lazy {
+        LanguageChangeHelper()
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -66,6 +72,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
             val themeMode = settingsViewModel.settingsState.themeMode
+            val appLanguage = settingsViewModel.settingsState.appLanguage
+
+            // Apply language settings
+            val localeList = when (appLanguage) {
+                "en" -> LocaleListCompat.create(Locale("en"))
+                "vi" -> LocaleListCompat.create(Locale("vi"))
+                else -> LocaleListCompat.getEmptyLocaleList() // System default
+            }
+            languageChangeHelper.changeLanguage(applicationContext, localeList[0]?.language ?: "en")
 
             // Determine dark theme based on settings
             val isDarkTheme = when (themeMode) {
@@ -163,4 +178,5 @@ class MainActivity : ComponentActivity() {
             }
         )
     }
+
 }
