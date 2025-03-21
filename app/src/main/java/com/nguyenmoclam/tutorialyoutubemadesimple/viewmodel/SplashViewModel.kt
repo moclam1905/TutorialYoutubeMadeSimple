@@ -23,7 +23,7 @@ class SplashViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        private const val MINIMUM_SPLASH_DURATION = 2000L // 1 second minimum display time
+        private const val MINIMUM_SPLASH_DURATION = 2000L // 2 seconds minimum display time
     }
 
     private val networkUtils = NetworkUtils(context)

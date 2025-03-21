@@ -98,21 +98,21 @@ fun SettingScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Quiz Configuration Section
-            SettingsSection(
-                title = "Quiz Configuration",
-                icon = Icons.Default.Quiz
-            ) {
-                QuizConfigSettings(
-                    state = state,
-                    onQuestionOrderChanged = viewModel::setQuestionOrder,
-                    onMaxRetryCountChanged = viewModel::setMaxRetryCount,
-                    onShowAnswerAfterWrongChanged = viewModel::setShowAnswerAfterWrong,
-                    onAutoNextQuestionChanged = viewModel::setAutoNextQuestion
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
+//            // Quiz Configuration Section
+//            SettingsSection(
+//                title = "Quiz Configuration",
+//                icon = Icons.Default.Quiz
+//            ) {
+//                QuizConfigSettings(
+//                    state = state,
+//                    onQuestionOrderChanged = viewModel::setQuestionOrder,
+//                    onMaxRetryCountChanged = viewModel::setMaxRetryCount,
+//                    onShowAnswerAfterWrongChanged = viewModel::setShowAnswerAfterWrong,
+//                    onAutoNextQuestionChanged = viewModel::setAutoNextQuestion
+//                )
+//            }
+//
+//            Spacer(modifier = Modifier.height(16.dp))
             
             // Google Account Section
             SettingsSection(

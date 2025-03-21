@@ -29,6 +29,9 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -54,6 +57,7 @@ import kotlin.math.roundToInt
 /**
  * Data class representing a navigation item in the bottom navigation bar
  */
+@Immutable
 data class NavItem(
     val title: String,
     val selectedIcon: ImageVector,
@@ -72,6 +76,7 @@ data class NavItem(
 /**
  * Simple data class to represent a point with x and y coordinates
  */
+@Stable
 data class PointF(val x: Float, val y: Float)
 
 @Composable
@@ -101,9 +106,11 @@ fun CurvedBottomNavigation(
         label = "CurvedNavTransition"
     )
 
-    // Pre-calculate item width to avoid recalculation in animation
-    val itemWidth = remember(containerWidth, items.size) {
-        if (containerWidth == 0f) 0f else containerWidth / items.size
+    // Use derivedStateOf to calculate item width only when dependencies change
+    val itemWidth by remember(containerWidth, items.size) {
+        derivedStateOf {
+            if (containerWidth == 0f) 0f else containerWidth / items.size
+        }
     }
 
     // Animate center X position with optimized spring animation
@@ -111,7 +118,8 @@ fun CurvedBottomNavigation(
         transitionSpec = {
             spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
+                stiffness = Spring.StiffnessMediumLow,  // Increased stiffness for faster animation
+                visibilityThreshold = 0.01f  // Add threshold to terminate animation earlier
             )
         },
         label = "CenterXAnimation"
@@ -165,6 +173,19 @@ fun CurvedBottomNavigation(
         val controlPointXOffset2 = remember(fabRadiusPx) { fabRadiusPx * 1.5f }
         val controlPointYOffset2 = remember(fabRadiusPx) { fabRadiusPx / 4f }
 
+        // Create a single Path instance and reuse it for all drawing operations
+        val path = remember { Path() }
+        
+        // Create reusable Paint objects outside the drawing scope
+        val shadowPaint = remember {
+            Paint().apply { 
+                isAntiAlias = true 
+                asFrameworkPaint().apply {
+                    maskFilter = BlurMaskFilter(20f, BlurMaskFilter.Blur.NORMAL)
+                }
+            }
+        }
+        
         Canvas(modifier = canvasModifier) {
             if (containerWidth == 0f) return@Canvas
 
@@ -193,8 +214,8 @@ fun CurvedBottomNavigation(
                 y = bottomNavOffsetY + controlPointYOffset1
             )
 
-            // Reuse the same Path instance to avoid garbage collection
-            val path = Path().apply {
+            path.reset() // Clear the path before redefining it
+            path.apply {
                 moveTo(0f, bottomNavOffsetY)
                 lineTo(firstCurveStart.x, firstCurveStart.y)
                 cubicTo(
@@ -212,37 +233,28 @@ fun CurvedBottomNavigation(
                 lineTo(0f, size.height)
                 close()
             }
-
+            
             // -----------------------
             //     DRAW SHADOW
             // -----------------------
             // Draw the same path but with a blur mask filter to create the shadow.
             drawIntoCanvas { canvas ->
-                val shadowPaint = Paint().apply { isAntiAlias = true }
-                shadowPaint.asFrameworkPaint().apply {
-                    color = shadowColor
-                    maskFilter = BlurMaskFilter(20f, BlurMaskFilter.Blur.NORMAL)
-                }
+                // Just update the color without creating new Paint objects
+                shadowPaint.asFrameworkPaint().color = shadowColor
                 canvas.drawPath(path, shadowPaint)
             }
 
-
             drawPath(path = path, color = surfaceColor)
-
 
             // -----------------------
             //  DRAW FAB SHADOW
             // -----------------------
             drawIntoCanvas { canvas ->
-                val circleShadowPaint = Paint().apply { isAntiAlias = true }
-                circleShadowPaint.asFrameworkPaint().apply {
-                    color = shadowColor
-                    maskFilter = BlurMaskFilter(20f, BlurMaskFilter.Blur.NORMAL)
-                }
+                // Reuse the same paint object for the circle shadow
                 canvas.drawCircle(
                     Offset(currentCenterX, fabCenterY),
                     fabRadiusPx,
-                    circleShadowPaint
+                    shadowPaint
                 )
             }
 
@@ -308,11 +320,16 @@ fun CurvedBottomNavigation(
                     val spacerHeight = remember { 4.dp }
                     val emptySpacerHeight = remember { 28.dp }
 
-                    // Animate scale with optimized tween animation
+                    // Animate scale with optimized tween animation and visibility threshold
                     val iconScale by animateFloatAsState(
                         targetValue = if (isSelected) 1.5f else 1f,
-                        animationSpec = animSpec,
-                        label = "IconScaleAnimation"
+                        animationSpec = tween(
+                            durationMillis = 100,
+                            delayMillis = 0,
+                            easing = androidx.compose.animation.core.FastOutSlowInEasing
+                        ),
+                        label = "IconScaleAnimation",
+                        visibilityThreshold = 0.01f
                     )
 
                     // Create a stable interaction source that won't be recreated on recomposition

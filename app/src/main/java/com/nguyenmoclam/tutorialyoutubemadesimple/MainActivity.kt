@@ -21,6 +21,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -35,6 +38,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.BottomNavigationVis
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SplashViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -47,17 +51,29 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Get SplashViewModel instance
+        val splashViewModel = ViewModelProvider(this)[SplashViewModel::class.java]
+
+        // Handle the splash screen transition
+        val splashScreen = installSplashScreen()
+
+        // Keep the splash screen visible until initialization is complete
+        splashScreen.setKeepOnScreenCondition {
+            !splashViewModel.state.value.isInitialized
+        }
+
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
             val themeMode = settingsViewModel.settingsState.themeMode
-            
+
             // Determine dark theme based on settings
             val isDarkTheme = when (themeMode) {
                 "dark" -> true
                 "light" -> false
                 else -> isSystemInDarkTheme() // "system" option
             }
-            
+
             YouTubeSummaryTheme(darkTheme = isDarkTheme) {
                 val quizViewModel: QuizViewModel = viewModel()
                 val quizCreationViewModel: QuizCreationViewModel = viewModel()
@@ -71,9 +87,7 @@ class MainActivity : ComponentActivity() {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Scaffold(
                         bottomBar = {
-                            if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true
-                                && currentDestinationRoute != AppScreens.Splash.route
-                            ) {
+                            if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true) {
                                 // Animate bottom navigation visibility
                                 AnimatedVisibility(
                                     visible = isBottomNavVisible,
