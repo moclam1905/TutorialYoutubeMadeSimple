@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
@@ -96,6 +97,9 @@ fun QuizDetailScreen(
     quizId: Long = -1L,
     quizDetailViewModel: QuizDetailViewModel = hiltViewModel()
 ) {
+
+    val context = LocalContext.current
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var materialsExpanded by remember { mutableStateOf(true) }
@@ -224,7 +228,7 @@ fun QuizDetailScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-                    label = { Text("Dashboard") },
+                    label = { Text(context.getString(R.string.dashboard_tab)) },
                     selected = false,
                     onClick = {
                         scope.launch {
@@ -241,7 +245,7 @@ fun QuizDetailScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.MenuBook, contentDescription = "Materials") },
-                    label = { Text("Materials") },
+                    label = { Text(context.getString(R.string.materials_tab)) },
                     badge = {
                         if (materialsExpanded) {
                             Icon(Icons.Default.ExpandLess, contentDescription = "Collapse")
@@ -262,7 +266,7 @@ fun QuizDetailScreen(
                                     contentDescription = "Summary"
                                 )
                             },
-                            label = { Text("Summary") },
+                            label = { Text(context.getString(R.string.summary_tab)) },
                             selected = selectedContentIndex == 0,
                             onClick = {
                                 scope.launch {
@@ -274,7 +278,7 @@ fun QuizDetailScreen(
 
                         NavigationDrawerItem(
                             icon = { Icon(Icons.Default.Quiz, contentDescription = "Questions") },
-                            label = { Text("Questions") },
+                            label = { Text(context.getString(R.string.questions_tab)) },
                             selected = selectedContentIndex == 1,
                             onClick = {
                                 scope.launch {
@@ -288,7 +292,7 @@ fun QuizDetailScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                    label = { Text("Settings") },
+                    label = { Text(context.getString(R.string.settings_tab)) },
                     selected = false,
                     onClick = {
                         scope.launch {
@@ -304,7 +308,7 @@ fun QuizDetailScreen(
                 topBar = {
                     if (!quizViewModel.state.isLoading && !quizDetailViewModel.state.isLoading) {
                         TopAppBar(
-                            title = { Text("Quiz Details") },
+                            title = { Text(context.getString(R.string.quiz_details_title)) },
                             navigationIcon = {
                                 val isDrawerOpen = slidingNavState.isMenuOpened
                                 val icon =
@@ -412,7 +416,7 @@ fun QuizDetailScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("No summary available")
+                                        Text(context.getString(R.string.no_summary_available))
                                     }
                                 }
                             } else {
@@ -542,7 +546,7 @@ fun QuizDetailScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("No questions available")
+                                        Text(context.getString(R.string.no_questions_available))
                                     }
                                 }
                             }
@@ -595,6 +599,7 @@ fun QuizContent(
     onSkipQuestion: () -> Unit,
     onNextQuestion: () -> Unit
 ) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -824,7 +829,7 @@ fun QuizContent(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = currentQuestionIndex < quizQuestions.size - 1
                 ) {
-                    Text("Next Question")
+                    Text(context.getString(R.string.next_question_button))
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(Icons.Default.ArrowForward, contentDescription = "Next")
                 }
@@ -837,7 +842,7 @@ fun QuizContent(
                         onClick = onSkipQuestion,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Skip Question")
+                        Text(context.getString(R.string.skip_question_button))
                     }
 
                     Button(
@@ -845,7 +850,7 @@ fun QuizContent(
                         modifier = Modifier.weight(1f),
                         enabled = selectedAnswer.isNotEmpty()
                     ) {
-                        Text("Submit Answer")
+                        Text(context.getString(R.string.submit_answer_button))
                     }
                 }
             }

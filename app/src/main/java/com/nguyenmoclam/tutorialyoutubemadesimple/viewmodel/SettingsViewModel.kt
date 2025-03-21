@@ -23,9 +23,11 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetRet
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetShowAnswerAfterWrongUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetThemeModeUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetTranscriptModeUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.repository.GetQuizRepositoryUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -50,6 +52,7 @@ class SettingsViewModel @Inject constructor(
     private val setConnectionTypeUseCase: SetConnectionTypeUseCase,
     private val setConnectionTimeoutUseCase: SetConnectionTimeoutUseCase,
     private val setRetryPolicyUseCase: SetRetryPolicyUseCase,
+    private val getQuizRepositoryUseCase: GetQuizRepositoryUseCase,
     private val authManager: AuthManager
 ) : ViewModel() {
 
@@ -86,6 +89,8 @@ class SettingsViewModel @Inject constructor(
                 settingsState = settingsState.copy(isNetworkAvailable = isAvailable)
             }
         }
+
+        updateStorageInfo()
     }
     
     // Theme settings
@@ -189,23 +194,77 @@ class SettingsViewModel @Inject constructor(
     // Data management
     fun clearQuizHistory() {
         viewModelScope.launch {
-            // Here you would call repository methods to clear quiz history from Room database
-            // For now, we'll just update the UI state
-            settingsState = settingsState.copy(quizCount = 0)
+            try {
+                val quizRepository = getQuizRepositoryUseCase()
+                val quizzes = quizRepository.getAllQuizzes().first()
+                
+                // Delete all quizzes
+                quizzes.forEach { quiz ->
+                    quizRepository.deleteQuiz(quiz.id)
+                }
+                
+                // Update UI state
+                settingsState = settingsState.copy(quizCount = 0, usedStorageBytes = 0)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
     
     fun resetLearningProgress() {
         viewModelScope.launch {
-            // Here you would call repository methods to reset learning progress in Room database
+            try {
+                val quizRepository = getQuizRepositoryUseCase()
+                val quizzes = quizRepository.getAllQuizzes().first()
+                
+                // Delete progress for all quizzes
+                quizzes.forEach { quiz ->
+                    quizRepository.deleteProgressForQuiz(quiz.id)
+                }
+                
+                // Update UI state
+                updateStorageInfo()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
     
     fun clearCache() {
         viewModelScope.launch {
-            // Here you would implement cache clearing logic
-            // For now, we'll just update the UI state
-            settingsState = settingsState.copy(usedStorageBytes = 0)
+            try {
+                val quizRepository = getQuizRepositoryUseCase()
+                val quizzes = quizRepository.getAllQuizzes().first()
+                
+                // Delete transcripts, topics, and key points for all quizzes
+                quizzes.forEach { quiz ->
+                    quizRepository.deleteTranscriptForQuiz(quiz.id)
+                    quizRepository.deleteTopicsForQuiz(quiz.id)
+                    quizRepository.deleteKeyPointsForQuiz(quiz.id)
+                }
+                
+                // Update UI state
+                updateStorageInfo()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun updateStorageInfo() {
+        viewModelScope.launch {
+            try {
+                val quizRepository = getQuizRepositoryUseCase()
+                val quizCount = quizRepository.getQuizCount()
+                val usedStorageBytes = quizRepository.getUsedStorageBytes()
+
+                settingsState = settingsState.copy(
+                    quizCount = quizCount,
+                    usedStorageBytes = usedStorageBytes
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
     

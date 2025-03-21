@@ -180,4 +180,79 @@ class QuizRepositoryImpl @Inject constructor(
     override suspend fun deleteKeyPointsForQuiz(quizId: Long) {
         keyPointDao.deleteKeyPointsForQuiz(quizId)
     }
+    
+    override suspend fun getQuizCount(): Int {
+        return quizDao.getQuizCount()
+    }
+    
+    override suspend fun getUsedStorageBytes(): Long {
+        var totalBytes: Long = 0
+        
+        try {
+            // Calculate size of quizzes table
+            val quizzes = quizDao.getAllQuizzes().first()
+            quizzes.forEach { quiz ->
+                // Add fixed overhead for each entity (IDs, timestamps, etc.)
+                totalBytes += 40 // Estimated overhead per entity
+                
+                // Calculate string fields
+                totalBytes += (quiz.title.length + quiz.description.length + quiz.videoUrl.length + 
+                        quiz.thumbnailUrl.length + quiz.language.length + quiz.questionType.length) * 2 // UTF-16 encoding
+            }
+            
+            // Calculate size of questions table
+            val questions = questionDao.getAllQuestions().first()
+            questions.forEach { question ->
+                totalBytes += 32 // Estimated overhead
+                totalBytes += question.questionText.length * 2
+                question.options.forEach { option ->
+                    totalBytes += option.length * 2
+                }
+                totalBytes += question.correctAnswer.length * 2
+            }
+            
+            // Calculate size of summaries table
+            val summaries = summaryDao.getAllSummaries().first()
+            summaries.forEach { summary ->
+                totalBytes += 24 // Estimated overhead
+                totalBytes += summary.content.length * 2
+            }
+            
+            // Calculate size of transcripts table
+            val transcripts = transcriptDao.getAllTranscripts().first()
+            transcripts.forEach { transcript ->
+                totalBytes += 32 // Estimated overhead
+                totalBytes += transcript.content.length * 2
+            }
+            
+            // Calculate size of key_points table
+            val keyPoints = keyPointDao.getAllKeyPoints().first()
+            keyPoints.forEach { keyPoint ->
+                totalBytes += 24 // Estimated overhead
+                totalBytes += keyPoint.content.length * 2
+            }
+            
+            // Calculate size of topics table
+            val topics = topicDao.getAllTopics().first()
+            topics.forEach { topic ->
+                totalBytes += 32 // Estimated overhead
+                totalBytes += (topic.title.length + topic.rephrasedTitle.length) * 2
+            }
+            
+            // Calculate size of content_questions table
+            val contentQuestions = contentQuestionDao.getAllQuestions().first()
+            contentQuestions.forEach { question ->
+                totalBytes += 40 // Estimated overhead
+                totalBytes += (question.original.length + question.rephrased.length + question.answer.length) * 2
+            }
+            
+            // Add database overhead (indices, metadata, etc.)
+            totalBytes = (totalBytes * 1.2).toLong() // Add 20% for database overhead
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Return a fallback value or the last calculated value
+        }
+        
+        return totalBytes
+    }
 }

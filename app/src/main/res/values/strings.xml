@@ -26,6 +26,17 @@
     <string name="summarize_button">Summarize Video</string>
     <string name="back_button">Back</string>
     <string name="export_share_button">Export HTML and Share</string>
+    <string name="retry_button">Retry</string>
+    <string name="delete_button">Delete</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="apply_button">Apply</string>
+    <string name="exit_button">Exit</string>
+    <string name="continue_quiz_button">Continue Quiz</string>
+    <string name="start_quiz_button">Start Quiz</string>
+    <string name="retry_quiz_button">Retry Quiz</string>
+    <string name="next_question_button">Next Question</string>
+    <string name="skip_question_button">Skip Question</string>
+    <string name="submit_answer_button">Submit Answer</string>
     
     <!-- Loading states -->
     <string name="loading_summary">Summarizing…</string>
@@ -36,9 +47,70 @@
     <string name="step_summary">Extracting and processing topics using LLM…</string>
     <string name="step_questions">Processing questions content…</string>
     <string name="step_create_quiz">Processing quiz content…</string>
+    
     <!-- Exit Dialog -->
     <string name="exit_dialog_title">Exit Summary</string>
     <string name="exit_dialog_message">Are you sure you want to exit? Your progress will be lost.</string>
     <string name="exit_dialog_confirm">Yes, Exit</string>
     <string name="exit_dialog_cancel">Cancel</string>
+    
+    <!-- Quiz Dialog -->
+    <string name="exit_quiz_dialog_title">Exit Quiz?</string>
+    <string name="exit_quiz_dialog_message">If you exit now, your progress will be saved but your timer will be reset when you return.</string>
+    <string name="delete_quiz_dialog_title">Delete Quiz</string>
+    <string name="delete_quiz_dialog_message">Are you sure you want to delete this quiz?</string>
+    <string name="theme_change_dialog_title">Xác nhận thay đổi theme</string>
+    <string name="theme_change_dialog_message">Bạn có muốn thay đổi theme? Thay đổi sẽ được áp dụng ngay lập tức.</string>
+    
+    <!-- Screen Titles -->
+    <string name="settings_title">Settings</string>
+    <string name="learning_hub_title">Learning Hub</string>
+    <string name="create_quiz_title">Create Quiz</string>
+    <string name="quiz_details_title">Quiz Details</string>
+    <string name="reset_settings_title">Reset All Settings</string>
+    <string name="reset_settings_message">Are you sure you want to reset all settings to default values? This action cannot be undone.</string>
+    
+    <!-- Input Fields -->
+    <string name="search_placeholder">Search challenges...</string>
+    <string name="enter_youtube_url">Enter YouTube Video URL</string>
+    <string name="youtube_url_example">Example: https://youtu.be/VIDEO_ID</string>
+    <string name="number_of_questions_label">Number of questions (1-50)</string>
+    
+    <!-- Tab Labels -->
+    <string name="dashboard_tab">Dashboard</string>
+    <string name="materials_tab">Materials</string>
+    <string name="summary_tab">Summary</string>
+    <string name="questions_tab">Questions</string>
+    <string name="settings_tab">Settings</string>
+    
+    <!-- Content Labels -->
+    <string name="select_language">Select Language:</string>
+    <string name="select_output_content">Select Output Content:</string>
+    <string name="generate_summary">Generate Summary</string>
+    <string name="generate_questions">Generate Questions</string>
+    <string name="no_summary_available">No summary available</string>
+    <string name="no_questions_available">No questions available</string>
+    
+    <!-- Settings Labels -->
+    <string name="question_order">Question Order</string>
+    <string name="maximum_retry_count">Maximum Retry Count: %1$d</string>
+    <string name="show_answer_after_wrong">Show Answer After Wrong</string>
+    <string name="auto_next_question">Auto Next Question</string>
+    <string name="google_account">Google Account</string>
+    <string name="transcript_mode">Transcript Mode</string>
+    <string name="storage_usage">Storage Usage</string>
+    <string name="storage_used">Used: %1$s</string>
+    <string name="quizzes_count">Quizzes: %1$d</string>
+    <string name="clear_quiz_history">Clear Quiz History</string>
+    <string name="reset_learning_progress">Reset Learning Progress</string>
+    <string name="clear_cache">Clear Cache</string>
+    <string name="data_saver_mode">Data Saver Mode</string>
+    <string name="connection_type">Connection Type</string>
+    <string name="connection_timeout">Connection Timeout: %1$d seconds</string>
+    <string name="retry_policy">Retry Policy</string>
+    <string name="app_version">Version: %1$s</string>
+    <string name="github_repository">GitHub Repository</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="contact_information">Contact Information</string>
+    <string name="license_information">License Information</string>
 </resources>

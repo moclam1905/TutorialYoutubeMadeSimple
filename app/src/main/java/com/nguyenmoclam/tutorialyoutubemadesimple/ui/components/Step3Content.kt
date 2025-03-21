@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 
 /**
  * Content for Step 3: Output options (summary and/or questions).
@@ -28,6 +30,7 @@ fun Step3Content(
     onGenerateQuestionsChange: (Boolean) -> Unit,
     isLoading: Boolean
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -35,7 +38,7 @@ fun Step3Content(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Select Output Content:", fontWeight = FontWeight.Medium)
+            Text(context.getString(R.string.select_output_content), fontWeight = FontWeight.Medium)
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -47,7 +50,7 @@ fun Step3Content(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Generate Summary")
+                Text(context.getString(R.string.generate_summary))
                 Switch(
                     checked = generateSummary,
                     onCheckedChange = onGenerateSummaryChange,
@@ -63,7 +66,7 @@ fun Step3Content(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Generate Questions")
+                Text(context.getString(R.string.generate_questions))
                 Switch(
                     checked = generateQuestions,
                     onCheckedChange = onGenerateQuestionsChange,

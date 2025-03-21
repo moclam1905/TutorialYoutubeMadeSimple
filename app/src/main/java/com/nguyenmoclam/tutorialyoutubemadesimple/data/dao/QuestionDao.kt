@@ -19,6 +19,9 @@ interface QuestionDao {
 
     @Query("SELECT * FROM questions WHERE questionId = :questionId")
     suspend fun getQuestionById(questionId: Long): QuestionEntity?
+    
+    @Query("SELECT * FROM questions")
+    fun getAllQuestions(): Flow<List<QuestionEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertQuestion(question: QuestionEntity): Long

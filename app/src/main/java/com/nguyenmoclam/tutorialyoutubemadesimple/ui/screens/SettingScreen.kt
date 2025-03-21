@@ -135,12 +135,88 @@ fun SettingScreen(
                 title = "Data Management",
                 icon = Icons.Default.Storage
             ) {
+                var showClearQuizHistoryDialog by remember { mutableStateOf(false) }
+                var showResetLearningProgressDialog by remember { mutableStateOf(false) }
+                var showClearCacheDialog by remember { mutableStateOf(false) }
+
                 DataManagementSettings(
                     state = state,
-                    onClearQuizHistoryClick = viewModel::clearQuizHistory,
-                    onResetLearningProgressClick = viewModel::resetLearningProgress,
-                    onClearCacheClick = viewModel::clearCache
+                    onClearQuizHistoryClick = { showClearQuizHistoryDialog = true },
+                    onResetLearningProgressClick = { showResetLearningProgressDialog = true },
+                    onClearCacheClick = { showClearCacheDialog = true }
                 )
+
+                // Clear Quiz History Dialog
+                if (showClearQuizHistoryDialog) {
+                    AlertDialog(
+                        title = { Text("Xác nhận xóa lịch sử") },
+                        text = { Text("Bạn có chắc chắn muốn xóa toàn bộ lịch sử bài kiểm tra? Hành động này không thể hoàn tác.") },
+                        onDismissRequest = { showClearQuizHistoryDialog = false },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    viewModel.clearQuizHistory()
+                                    showClearQuizHistoryDialog = false
+                                }
+                            ) {
+                                Text("Xóa")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showClearQuizHistoryDialog = false }) {
+                                Text("Hủy")
+                            }
+                        }
+                    )
+                }
+
+                // Reset Learning Progress Dialog
+                if (showResetLearningProgressDialog) {
+                    AlertDialog(
+                        title = { Text("Xác nhận đặt lại tiến độ") },
+                        text = { Text("Bạn có chắc chắn muốn đặt lại toàn bộ tiến độ học tập? Hành động này không thể hoàn tác.") },
+                        onDismissRequest = { showResetLearningProgressDialog = false },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    viewModel.resetLearningProgress()
+                                    showResetLearningProgressDialog = false
+                                }
+                            ) {
+                                Text("Đặt lại")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showResetLearningProgressDialog = false }) {
+                                Text("Hủy")
+                            }
+                        }
+                    )
+                }
+
+                // Clear Cache Dialog
+                if (showClearCacheDialog) {
+                    AlertDialog(
+                        title = { Text("Xác nhận xóa bộ nhớ đệm") },
+                        text = { Text("Bạn có chắc chắn muốn xóa toàn bộ bộ nhớ đệm? Hành động này không thể hoàn tác.") },
+                        onDismissRequest = { showClearCacheDialog = false },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    viewModel.clearCache()
+                                    showClearCacheDialog = false
+                                }
+                            ) {
+                                Text("Xóa")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showClearCacheDialog = false }) {
+                                Text("Hủy")
+                            }
+                        }
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))

@@ -27,6 +27,12 @@ interface TopicDao {
     suspend fun getTopicById(topicId: Long): TopicEntity?
     
     /**
+     * Get all topics.
+     */
+    @Query("SELECT * FROM topics")
+    fun getAllTopics(): Flow<List<TopicEntity>>
+    
+    /**
      * Insert a topic into the database.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)

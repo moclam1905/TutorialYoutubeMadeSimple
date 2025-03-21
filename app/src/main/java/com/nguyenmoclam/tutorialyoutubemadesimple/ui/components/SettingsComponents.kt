@@ -32,8 +32,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsState
 
 /**
@@ -47,6 +49,7 @@ fun ThemeSettings(
     var showConfirmDialog by remember { mutableStateOf(false) }
     var selectedTheme by remember { mutableStateOf("") }
     var previewTheme by remember { mutableStateOf(state.themeMode) }
+    val context = LocalContext.current
 
     Column(modifier = Modifier.selectableGroup()) {
         val themeOptions = listOf(
@@ -54,7 +57,7 @@ fun ThemeSettings(
             "dark" to "Dark Mode",
             "system" to "System Default"
         )
-        
+
         themeOptions.forEach { (value, label) ->
             Row(
                 modifier = Modifier
@@ -82,12 +85,12 @@ fun ThemeSettings(
 
     if (showConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showConfirmDialog = false
                 previewTheme = state.themeMode
             },
-            title = { Text("Xác nhận thay đổi theme") },
-            text = { Text("Bạn có muốn thay đổi theme? Thay đổi sẽ được áp dụng ngay lập tức.") },
+            title = { Text(context.getString(R.string.theme_change_dialog_title)) },
+            text = { Text(context.getString(R.string.theme_change_dialog_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -95,17 +98,17 @@ fun ThemeSettings(
                         showConfirmDialog = false
                     }
                 ) {
-                    Text("Áp dụng")
+                    Text(context.getString(R.string.apply_button))
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         showConfirmDialog = false
                         previewTheme = state.themeMode
                     }
                 ) {
-                    Text("Hủy")
+                    Text(context.getString(R.string.cancel_button))
                 }
             }
         )
@@ -123,17 +126,19 @@ fun QuizConfigSettings(
     onShowAnswerAfterWrongChanged: (Boolean) -> Unit,
     onAutoNextQuestionChanged: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
+
     Column {
         // Question order setting
-        Text("Question Order", fontWeight = FontWeight.Medium)
+        Text(context.getString(R.string.question_order), fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Column(modifier = Modifier.selectableGroup()) {
             val orderOptions = listOf(
                 "sequential" to "Sequential",
                 "shuffle" to "Random (Shuffle)"
             )
-            
+
             orderOptions.forEach { (value, label) ->
                 Row(
                     modifier = Modifier
@@ -154,13 +159,16 @@ fun QuizConfigSettings(
                 }
             }
         }
-        
+
         Divider(modifier = Modifier.padding(vertical = 8.dp))
-        
+
         // Max retry count setting
-        Text("Maximum Retry Count: ${state.maxRetryCount}", fontWeight = FontWeight.Medium)
+        Text(
+            context.getString(R.string.maximum_retry_count, state.maxRetryCount),
+            fontWeight = FontWeight.Medium
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Slider(
             value = state.maxRetryCount.toFloat(),
             onValueChange = { onMaxRetryCountChanged(it.toInt()) },
@@ -168,9 +176,9 @@ fun QuizConfigSettings(
             steps = 2,
             colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
         )
-        
+
         Divider(modifier = Modifier.padding(vertical = 8.dp))
-        
+
         // Show answer after wrong setting
         Row(
             modifier = Modifier
@@ -179,13 +187,13 @@ fun QuizConfigSettings(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Show Answer After Wrong")
+            Text(context.getString(R.string.show_answer_after_wrong))
             Switch(
                 checked = state.showAnswerAfterWrong,
                 onCheckedChange = onShowAnswerAfterWrongChanged
             )
         }
-        
+
         // Auto next question setting
         Row(
             modifier = Modifier
@@ -194,7 +202,7 @@ fun QuizConfigSettings(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Auto Next Question")
+            Text(context.getString(R.string.auto_next_question))
             Switch(
                 checked = state.autoNextQuestion,
                 onCheckedChange = onAutoNextQuestionChanged
@@ -214,6 +222,8 @@ fun GoogleAccountSettings(
     onClearAccountDataClick: () -> Unit,
     onSignInClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
     Column {
         // Google account status and sign-in/out buttons
         Row(
@@ -224,19 +234,19 @@ fun GoogleAccountSettings(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text("Google Account", fontWeight = FontWeight.Medium)
+                Text(context.getString(R.string.google_account), fontWeight = FontWeight.Medium)
                 Text(
                     text = if (state.isGoogleSignedIn) "Signed In" else "Not Signed In",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (state.isGoogleSignedIn) 
-                        MaterialTheme.colorScheme.primary 
-                    else 
+                    color = if (state.isGoogleSignedIn)
+                        MaterialTheme.colorScheme.primary
+                    else
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
-            
+
             TextButton(
-                onClick = { 
+                onClick = {
                     if (state.isGoogleSignedIn) {
                         onGoogleSignInChanged(false) // Sign out
                     } else {
@@ -247,19 +257,19 @@ fun GoogleAccountSettings(
                 Text(if (state.isGoogleSignedIn) "Sign Out" else "Sign In")
             }
         }
-        
+
         Divider(modifier = Modifier.padding(vertical = 8.dp))
-        
+
         // Transcript mode setting
-        Text("Transcript Mode", fontWeight = FontWeight.Medium)
+        Text(context.getString(R.string.transcript_mode), fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Column(modifier = Modifier.selectableGroup()) {
             val modeOptions = listOf(
                 "google" to "Use Google Account",
                 "anonymous" to "Anonymous Mode"
             )
-            
+
             modeOptions.forEach { (value, label) ->
                 Row(
                     modifier = Modifier
@@ -280,9 +290,9 @@ fun GoogleAccountSettings(
                 }
             }
         }
-        
+
         Divider(modifier = Modifier.padding(vertical = 8.dp))
-        
+
         // Clear account data button
         Row(
             modifier = Modifier
@@ -309,6 +319,8 @@ fun DataManagementSettings(
     onResetLearningProgressClick: () -> Unit,
     onClearCacheClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Column {
         // Storage usage info
         Card(
@@ -320,15 +332,15 @@ fun DataManagementSettings(
             )
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Storage Usage", fontWeight = FontWeight.Medium)
+                Text(context.getString(R.string.storage_usage), fontWeight = FontWeight.Medium)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Used: ${formatBytes(state.usedStorageBytes)}")
-                Text("Quizzes: ${state.quizCount}")
+                Text(context.getString(R.string.storage_used, formatBytes(state.usedStorageBytes)))
+                Text(context.getString(R.string.quizzes_count, state.quizCount))
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Data management actions
         Column {
             Row(
@@ -338,11 +350,11 @@ fun DataManagementSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Clear Quiz History")
+                Text(context.getString(R.string.clear_quiz_history))
             }
-            
+
             Divider()
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -350,11 +362,11 @@ fun DataManagementSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Reset Learning Progress")
+                Text(context.getString(R.string.reset_learning_progress))
             }
-            
+
             Divider()
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -362,7 +374,7 @@ fun DataManagementSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Clear Cache")
+                Text(context.getString(R.string.clear_cache))
             }
         }
     }
@@ -379,6 +391,8 @@ fun NetworkSettings(
     onConnectionTimeoutChanged: (Int) -> Unit,
     onRetryPolicyChanged: (String) -> Unit
 ) {
+    val context = LocalContext.current
+
     Column {
         // Network status indicator
         Card(
@@ -387,7 +401,7 @@ fun NetworkSettings(
                 .padding(vertical = 8.dp),
             colors = CardDefaults.cardColors(
                 containerColor = if (state.isNetworkAvailable) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.errorContainer
+                else MaterialTheme.colorScheme.errorContainer
             )
         ) {
             Row(
@@ -406,9 +420,9 @@ fun NetworkSettings(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Data saver mode toggle
         Row(
             modifier = Modifier
@@ -418,7 +432,7 @@ fun NetworkSettings(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text("Data Saver Mode")
+                Text(context.getString(R.string.data_saver_mode))
                 Text(
                     "Reduces data usage by loading lower quality content",
                     style = MaterialTheme.typography.bodySmall,
@@ -430,19 +444,22 @@ fun NetworkSettings(
                 onCheckedChange = onDataSaverModeChanged
             )
         }
-        
+
         Divider(modifier = Modifier.padding(vertical = 8.dp))
-        
+
         // Connection type setting
-        Text("Connection Type", style = MaterialTheme.typography.titleMedium)
+        Text(
+            context.getString(R.string.connection_type),
+            style = MaterialTheme.typography.titleMedium
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Column(modifier = Modifier.selectableGroup()) {
             val connectionOptions = listOf(
                 "any" to "Allow Mobile Data",
                 "wifi_only" to "Wi-Fi Only"
             )
-            
+
             connectionOptions.forEach { (value, label) ->
                 Row(
                     modifier = Modifier
@@ -463,13 +480,16 @@ fun NetworkSettings(
                 }
             }
         }
-        
+
         Divider(modifier = Modifier.padding(vertical = 8.dp))
-        
+
         // Connection timeout setting
-        Text("Connection Timeout: ${state.connectionTimeout} seconds", fontWeight = FontWeight.Medium)
+        Text(
+            context.getString(R.string.connection_timeout, state.connectionTimeout),
+            fontWeight = FontWeight.Medium
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Slider(
             value = state.connectionTimeout.toFloat(),
             onValueChange = { onConnectionTimeoutChanged(it.toInt()) },
@@ -477,20 +497,20 @@ fun NetworkSettings(
             steps = 5,
             colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
         )
-        
+
         Divider(modifier = Modifier.padding(vertical = 8.dp))
-        
+
         // Retry policy setting
-        Text("Retry Policy", fontWeight = FontWeight.Medium)
+        Text(context.getString(R.string.retry_policy), fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Column(modifier = Modifier.selectableGroup()) {
             val policyOptions = listOf(
                 "none" to "No Retry",
                 "linear" to "Linear Backoff",
                 "exponential" to "Exponential Backoff"
             )
-            
+
             policyOptions.forEach { (value, label) ->
                 Row(
                     modifier = Modifier
@@ -528,7 +548,7 @@ fun LanguageSettings(
             "vi" to "Tiếng Việt",
             "system" to "System Default"
         )
-        
+
         languageOptions.forEach { (value, label) ->
             Row(
                 modifier = Modifier
@@ -564,10 +584,14 @@ fun AppInfoSettings(
 ) {
     Column {
         // App version
-        Text("Version: $appVersion", style = MaterialTheme.typography.bodyMedium)
-        
+        val context = LocalContext.current
+        Text(
+            context.getString(R.string.app_version, appVersion),
+            style = MaterialTheme.typography.bodyMedium
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Links
         Column {
             Row(
@@ -577,11 +601,11 @@ fun AppInfoSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("GitHub Repository")
+                Text(context.getString(R.string.github_repository))
             }
-            
+
             Divider()
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -589,11 +613,11 @@ fun AppInfoSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Privacy Policy")
+                Text(context.getString(R.string.privacy_policy))
             }
-            
+
             Divider()
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -601,11 +625,11 @@ fun AppInfoSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Contact Information")
+                Text(context.getString(R.string.contact_information))
             }
-            
+
             Divider()
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -613,7 +637,7 @@ fun AppInfoSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("License Information")
+                Text(context.getString(R.string.license_information))
             }
         }
     }
@@ -625,9 +649,13 @@ fun AppInfoSettings(
 @SuppressLint("DefaultLocale")
 private fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"
-    
+
     val units = arrayOf("B", "KB", "MB", "GB")
     val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt()
-    
-    return String.format("%.1f %s", bytes / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
+
+    return String.format(
+        "%.1f %s",
+        bytes / Math.pow(1024.0, digitGroups.toDouble()),
+        units[digitGroups]
+    )
 }

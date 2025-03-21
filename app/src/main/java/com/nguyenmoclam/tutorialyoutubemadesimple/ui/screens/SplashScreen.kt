@@ -36,6 +36,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -52,6 +54,7 @@ fun SplashScreen(
     navController: NavHostController,
     viewModel: SplashViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     var startAnimation by remember { mutableStateOf(false) }
     val alphaAnim by animateFloatAsState(
@@ -99,9 +102,9 @@ fun SplashScreen(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(120.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             // App name
             Text(
                 text = "Tutorial YouTube\nMade Simple",
@@ -110,9 +113,9 @@ fun SplashScreen(
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(48.dp))
-            
+
             // Loading indicator or error message
             AnimatedVisibility(
                 visible = state.isLoading,
@@ -121,7 +124,7 @@ fun SplashScreen(
             ) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
             }
-            
+
             // Error message and retry button
             AnimatedVisibility(
                 visible = state.error != null,
@@ -136,13 +139,13 @@ fun SplashScreen(
                         color = Color.Red,
                         textAlign = TextAlign.Center
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Button(onClick = { viewModel.retryInitialization() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Retry")
                         Spacer(modifier = Modifier.padding(4.dp))
-                        Text("Retry")
+                        Text(context.getString(R.string.retry_button))
                     }
                 }
             }

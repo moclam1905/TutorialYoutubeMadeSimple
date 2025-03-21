@@ -27,6 +27,12 @@ interface KeyPointDao {
     suspend fun getKeyPointById(keyPointId: Long): KeyPointEntity?
     
     /**
+     * Get all key points.
+     */
+    @Query("SELECT * FROM key_points")
+    fun getAllKeyPoints(): Flow<List<KeyPointEntity>>
+    
+    /**
      * Insert a key point into the database.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)

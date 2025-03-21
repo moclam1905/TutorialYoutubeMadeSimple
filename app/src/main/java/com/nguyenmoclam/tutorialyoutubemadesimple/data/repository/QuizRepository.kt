@@ -17,6 +17,8 @@ interface QuizRepository {
     fun getQuestionsForQuiz(quizId: Long): Flow<List<Question>>
     fun getAllQuizzes(): Flow<List<Quiz>>
     suspend fun deleteQuiz(quizId: Long)
+    suspend fun getQuizCount(): Int
+    suspend fun getUsedStorageBytes(): Long
     
     // Quiz progress methods
     suspend fun getQuizProgressEntity(quizId: Long): QuizProgressEntity?

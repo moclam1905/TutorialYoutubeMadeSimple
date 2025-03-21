@@ -19,6 +19,9 @@ interface TranscriptDao {
 
     @Query("SELECT * FROM transcripts WHERE transcriptId = :transcriptId")
     suspend fun getTranscriptById(transcriptId: Long): TranscriptEntity?
+    
+    @Query("SELECT * FROM transcripts")
+    fun getAllTranscripts(): Flow<List<TranscriptEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTranscript(transcript: TranscriptEntity): Long

@@ -27,6 +27,12 @@ interface ContentQuestionDao {
     suspend fun getQuestionById(questionId: Long): ContentQuestionEntity?
     
     /**
+     * Get all content questions.
+     */
+    @Query("SELECT * FROM content_questions")
+    fun getAllQuestions(): Flow<List<ContentQuestionEntity>>
+    
+    /**
      * Insert a question into the database.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)

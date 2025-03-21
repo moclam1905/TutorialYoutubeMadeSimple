@@ -1,6 +1,5 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -21,9 +20,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 
 /**
  * Content for Step 1: YouTube URL input and language selection.
@@ -38,6 +39,7 @@ fun Step1Content(
     onShowLanguageDropdownChange: (Boolean) -> Unit,
     languages: List<String>
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -49,8 +51,8 @@ fun Step1Content(
             OutlinedTextField(
                 value = youtubeUrlValue,
                 onValueChange = onYoutubeUrlChange,
-                label = { Text("Enter YouTube Video URL") },
-                placeholder = { Text("Example: https://youtu.be/VIDEO_ID") },
+                label = { Text(context.getString(R.string.enter_youtube_url)) },
+                placeholder = { Text(context.getString(R.string.youtube_url_example)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
@@ -65,7 +67,7 @@ fun Step1Content(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Language selection
-            Text("Select Language:", fontWeight = FontWeight.Medium)
+            Text(context.getString(R.string.select_language), fontWeight = FontWeight.Medium)
             
             Box {
                 OutlinedTextField(
