@@ -7,6 +7,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.DeleteQuiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetAllQuizzesUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetDaysSinceLastUpdateUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetQuizStatsUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +22,8 @@ class HomeViewModel @Inject constructor(
     private val getQuizStatsUseCase: GetQuizStatsUseCase,
     private val getDaysSinceLastUpdateUseCase: GetDaysSinceLastUpdateUseCase,
     private val deleteQuizUseCase: DeleteQuizUseCase,
-    private val quizStateManager: QuizStateManager
+    private val quizStateManager: QuizStateManager,
+    private val networkUtils: NetworkUtils
 ) : ViewModel() {
 
     // UI state for the Home screen
@@ -52,8 +54,19 @@ class HomeViewModel @Inject constructor(
 
     fun refreshQuizzes() {
         viewModelScope.launch {
-            val quizzes = getAllQuizzesUseCase().first()
-            quizStateManager.updateQuizzes(quizzes)
+            // Check if content should be loaded based on data saver settings
+            if (networkUtils.shouldLoadContent()) {
+                val quizzes = getAllQuizzesUseCase().first()
+                quizStateManager.updateQuizzes(quizzes)
+            } else {
+                // If content should not be loaded, update the state to show the restriction
+                _state.update { currentState ->
+                    currentState.copy(
+                        isLoading = false,
+                        networkRestricted = true
+                    )
+                }
+            }
         }
     }
 
@@ -61,9 +74,9 @@ class HomeViewModel @Inject constructor(
     fun toggleStatsExpanded(quizId: Long) {
         val currentState = _state.value
         val expandedMap = currentState.expandedStatsMap.toMutableMap()
-        val isCurrentlyExpanded = expandedMap[quizId] ?: false
+        val isCurrentlyExpanded = expandedMap[quizId] == true
         expandedMap[quizId] = !isCurrentlyExpanded
-        
+
         _state.update { it.copy(expandedStatsMap = expandedMap) }
 
         // Load stats if expanding and not already cached
@@ -78,7 +91,7 @@ class HomeViewModel @Inject constructor(
             try {
                 // Use the domain use case to get quiz statistics
                 val stats = getQuizStatsUseCase(quizId)
-                
+
                 // Update the state with the new stats only if not null
                 // This ensures we don't display stats for quizzes that haven't been attempted
                 if (stats != null) {
@@ -114,15 +127,15 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Use the domain use case to delete the quiz
             deleteQuizUseCase(quizId)
-            
+
             // Clean up cached data in the state and mark for refresh
             _state.update { currentState ->
                 val expandedMap = currentState.expandedStatsMap.toMutableMap()
                 expandedMap.remove(quizId)
-                
+
                 val statsCache = currentState.quizStatsCache.toMutableMap()
                 statsCache.remove(quizId)
-                
+
                 currentState.copy(
                     expandedStatsMap = expandedMap,
                     quizStatsCache = statsCache,

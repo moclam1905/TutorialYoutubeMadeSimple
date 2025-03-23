@@ -27,7 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -48,7 +48,6 @@ fun Step2Content(
     manualQuestionCount: String,
     onManualQuestionCountChange: (String) -> Unit
 ) {
-    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -59,14 +58,14 @@ fun Step2Content(
         Column(modifier = Modifier.padding(20.dp)) {
             // Question type selection
             Text(
-                context.getString(R.string.question_type),
+                stringResource(R.string.question_type),
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.primary
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Question type options in a styled surface
             Surface(
                 modifier = Modifier
@@ -85,7 +84,7 @@ fun Step2Content(
                     RadioOptionItem(
                         selected = questionType == "multiple-choice",
                         onClick = { onQuestionTypeChange("multiple-choice") },
-                        label = context.getString(R.string.multiple_choice),
+                        label = stringResource(R.string.multiple_choice),
                         modifier = Modifier.weight(1f)
                     )
 
@@ -103,32 +102,32 @@ fun Step2Content(
                     RadioOptionItem(
                         selected = questionType == "true-false",
                         onClick = { onQuestionTypeChange("true-false") },
-                        label = context.getString(R.string.true_false),
+                        label = stringResource(R.string.true_false),
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             // Question count mode selection
             Text(
-                context.getString(R.string.number_of_questions),
+                stringResource(R.string.number_of_questions),
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.primary
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Auto mode option with enhanced styling
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp)),
-                color = if (questionCountMode == "auto") 
+                color = if (questionCountMode == "auto")
                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else 
+                else
                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             ) {
                 Row(
@@ -146,26 +145,26 @@ fun Step2Content(
                         onClick = null
                     )
                     Text(
-                        text = context.getString(R.string.auto_generate),
+                        text = stringResource(R.string.auto_generate),
                         modifier = Modifier.padding(start = 8.dp),
                         fontWeight = if (questionCountMode == "auto") FontWeight.Medium else FontWeight.Normal
                     )
                 }
             }
-            
+
             // Level selection (only visible in auto mode)
             if (questionCountMode == "auto") {
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Column(modifier = Modifier.padding(start = 32.dp)) {
                     Text(
-                        context.getString(R.string.question_level),
+                        stringResource(R.string.question_level),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     // Level options in a styled row
                     Row(
                         modifier = Modifier
@@ -185,42 +184,42 @@ fun Step2Content(
                         LevelRadioOption(
                             selected = questionLevel == "low",
                             onClick = { onQuestionLevelChange("low") },
-                            title = context.getString(R.string.low),
-                            subtitle = context.getString(R.string.five_questions),
+                            title = stringResource(R.string.low),
+                            subtitle = stringResource(R.string.five_questions),
                             modifier = Modifier.weight(1f)
                         )
-                        
+
                         // Medium level option
                         LevelRadioOption(
                             selected = questionLevel == "medium",
                             onClick = { onQuestionLevelChange("medium") },
-                            title = context.getString(R.string.medium),
-                            subtitle = context.getString(R.string.ten_questions),
+                            title = stringResource(R.string.medium),
+                            subtitle = stringResource(R.string.ten_questions),
                             modifier = Modifier.weight(1f)
                         )
-                        
+
                         // High level option
                         LevelRadioOption(
                             selected = questionLevel == "high",
                             onClick = { onQuestionLevelChange("high") },
-                            title = context.getString(R.string.high),
-                            subtitle = context.getString(R.string.fifteen_questions),
+                            title = stringResource(R.string.high),
+                            subtitle = stringResource(R.string.fifteen_questions),
                             modifier = Modifier.weight(1f)
                         )
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Manual mode option with enhanced styling
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp)),
-                color = if (questionCountMode == "manual") 
+                color = if (questionCountMode == "manual")
                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else 
+                else
                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             ) {
                 Row(
@@ -244,11 +243,11 @@ fun Step2Content(
                     )
                 }
             }
-            
+
             // Manual count input (only visible in manual mode)
             if (questionCountMode == "manual") {
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 OutlinedTextField(
                     value = manualQuestionCount,
                     onValueChange = { value ->
@@ -257,7 +256,7 @@ fun Step2Content(
                             onManualQuestionCountChange(value)
                         }
                     },
-                    label = { Text(context.getString(R.string.number_of_questions_range)) },
+                    label = { Text(stringResource(R.string.number_of_questions_range)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier
                         .fillMaxWidth()

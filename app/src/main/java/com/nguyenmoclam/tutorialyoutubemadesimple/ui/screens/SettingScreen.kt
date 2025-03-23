@@ -5,9 +5,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -38,7 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -61,7 +63,6 @@ fun SettingScreen(
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current
 
     // Set up the Google Sign-In activity result launcher
     val signInLauncher = rememberLauncherForActivityResult(
@@ -74,24 +75,28 @@ fun SettingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(context.getString(R.string.settings_title)) },
+                title = { Text(stringResource(R.string.settings_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp)
         ) {
             // Theme Settings Section
             SettingsSection(
-                title = context.getString(R.string.theme),
+                title = stringResource(R.string.theme),
                 icon = Icons.Default.Settings
             ) {
                 ThemeSettings(state, viewModel::setThemeMode)
@@ -117,7 +122,7 @@ fun SettingScreen(
 
             // Google Account Section
             SettingsSection(
-                title = context.getString(R.string.google_account),
+                title = stringResource(R.string.google_account),
                 icon = Icons.Default.AccountCircle
             ) {
                 GoogleAccountSettings(
@@ -133,7 +138,7 @@ fun SettingScreen(
 
             // Data Management Section
             SettingsSection(
-                title = context.getString(R.string.data_management),
+                title = stringResource(R.string.data_management),
                 icon = Icons.Default.Storage
             ) {
                 var showClearQuizHistoryDialog by remember { mutableStateOf(false) }
@@ -150,8 +155,8 @@ fun SettingScreen(
                 // Clear Quiz History Dialog
                 if (showClearQuizHistoryDialog) {
                     AlertDialog(
-                        title = { Text(context.getString(R.string.confirm_delete_history)) },
-                        text = { Text(context.getString(R.string.delete_history_message)) },
+                        title = { Text(stringResource(R.string.confirm_delete_history)) },
+                        text = { Text(stringResource(R.string.delete_history_message)) },
                         onDismissRequest = { showClearQuizHistoryDialog = false },
                         confirmButton = {
                             TextButton(
@@ -160,12 +165,12 @@ fun SettingScreen(
                                     showClearQuizHistoryDialog = false
                                 }
                             ) {
-                                Text(context.getString(R.string.delete))
+                                Text(stringResource(R.string.delete))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { showClearQuizHistoryDialog = false }) {
-                                Text(context.getString(R.string.cancel))
+                                Text(stringResource(R.string.cancel))
                             }
                         }
                     )
@@ -174,8 +179,8 @@ fun SettingScreen(
                 // Reset Learning Progress Dialog
                 if (showResetLearningProgressDialog) {
                     AlertDialog(
-                        title = { Text(context.getString(R.string.confirm_reset_progress)) },
-                        text = { Text(context.getString(R.string.reset_progress_message)) },
+                        title = { Text(stringResource(R.string.confirm_reset_progress)) },
+                        text = { Text(stringResource(R.string.reset_progress_message)) },
                         onDismissRequest = { showResetLearningProgressDialog = false },
                         confirmButton = {
                             TextButton(
@@ -184,12 +189,12 @@ fun SettingScreen(
                                     showResetLearningProgressDialog = false
                                 }
                             ) {
-                                Text(context.getString(R.string.reset))
+                                Text(stringResource(R.string.reset))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { showResetLearningProgressDialog = false }) {
-                                Text(context.getString(R.string.cancel))
+                                Text(stringResource(R.string.cancel))
                             }
                         }
                     )
@@ -198,8 +203,8 @@ fun SettingScreen(
                 // Clear Cache Dialog
                 if (showClearCacheDialog) {
                     AlertDialog(
-                        title = { Text(context.getString(R.string.confirm_clear_cache)) },
-                        text = { Text(context.getString(R.string.clear_cache_message)) },
+                        title = { Text(stringResource(R.string.confirm_clear_cache)) },
+                        text = { Text(stringResource(R.string.clear_cache_message)) },
                         onDismissRequest = { showClearCacheDialog = false },
                         confirmButton = {
                             TextButton(
@@ -208,12 +213,12 @@ fun SettingScreen(
                                     showClearCacheDialog = false
                                 }
                             ) {
-                                Text(context.getString(R.string.delete))
+                                Text(stringResource(R.string.delete))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { showClearCacheDialog = false }) {
-                                Text(context.getString(R.string.cancel))
+                                Text(stringResource(R.string.cancel))
                             }
                         }
                     )
@@ -224,7 +229,7 @@ fun SettingScreen(
 
             // Network Settings Section
             SettingsSection(
-                title = context.getString(R.string.network_settings),
+                title = stringResource(R.string.network_settings),
                 icon = Icons.Default.NetworkWifi
             ) {
                 NetworkSettings(
@@ -240,7 +245,7 @@ fun SettingScreen(
 
             // Language Settings Section
             SettingsSection(
-                title = context.getString(R.string.language),
+                title = stringResource(R.string.language),
                 icon = Icons.Default.Language
             ) {
                 LanguageSettings(
@@ -253,7 +258,7 @@ fun SettingScreen(
 
             // App Information Section
             SettingsSection(
-                title = context.getString(R.string.app_information),
+                title = stringResource(R.string.app_information),
                 icon = Icons.Default.Info
             ) {
                 AppInfoSettings(
@@ -273,17 +278,19 @@ fun SettingScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    context.getString(R.string.reset_all_settings),
+                    stringResource(R.string.reset_all_settings),
                     color = MaterialTheme.colorScheme.error
                 )
             }
+
+            Spacer(modifier = Modifier.height(80.dp))
         }
 
         // Reset settings confirmation dialog
         if (showResetDialog) {
             AlertDialog(
-                title = { Text(context.getString(R.string.reset_settings_title)) },
-                text = { Text(context.getString(R.string.reset_settings_message)) },
+                title = { Text(stringResource(R.string.reset_settings_title)) },
+                text = { Text(stringResource(R.string.reset_settings_message)) },
                 onDismissRequest = { showResetDialog = false },
                 confirmButton = {
                     TextButton(
@@ -302,12 +309,12 @@ fun SettingScreen(
                             showResetDialog = false
                         }
                     ) {
-                        Text(context.getString(R.string.reset))
+                        Text(stringResource(R.string.reset))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showResetDialog = false }) {
-                        Text(context.getString(R.string.cancel))
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )

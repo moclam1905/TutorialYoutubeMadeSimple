@@ -14,9 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 
 /**
@@ -30,7 +30,6 @@ fun Step3Content(
     onGenerateQuestionsChange: (Boolean) -> Unit,
     isLoading: Boolean
 ) {
-    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -38,10 +37,10 @@ fun Step3Content(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(context.getString(R.string.select_output_content), fontWeight = FontWeight.Medium)
-            
+            Text(stringResource(R.string.select_output_content), fontWeight = FontWeight.Medium)
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Summary toggle
             Row(
                 modifier = Modifier
@@ -50,14 +49,14 @@ fun Step3Content(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(context.getString(R.string.generate_summary))
+                Text(stringResource(R.string.generate_summary))
                 Switch(
                     checked = generateSummary,
                     onCheckedChange = onGenerateSummaryChange,
                     enabled = !isLoading
                 )
             }
-            
+
             // Questions toggle
             Row(
                 modifier = Modifier
@@ -66,14 +65,14 @@ fun Step3Content(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(context.getString(R.string.generate_questions))
+                Text(stringResource(R.string.generate_questions))
                 Switch(
                     checked = generateQuestions,
                     onCheckedChange = onGenerateQuestionsChange,
                     enabled = !isLoading
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
         }
     }

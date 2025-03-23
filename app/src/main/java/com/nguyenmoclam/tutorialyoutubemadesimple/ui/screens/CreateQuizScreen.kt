@@ -21,22 +21,26 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
-import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ErrorMessage
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step1Content
@@ -46,7 +50,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StepIndicator
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
-import androidx.compose.material3.TopAppBar
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,7 +69,9 @@ fun CreateQuizScreen(
     var showLanguageDropdown by remember { mutableStateOf(false) }
     val languages = listOf("English", "Tiếng Việt", "Français", "Español", "Deutsch")
 
-    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val errorString = stringResource(R.string.error_occurred)
 
     // Function to validate the current step and move to the next
     fun moveToNextStep() {
@@ -108,6 +114,12 @@ fun CreateQuizScreen(
                     // Navigate to QuizDetailScreen if no error
                     if (quizViewModel.state.errorMessage == null) {
                         navController.navigate(AppScreens.QuizDetail.withArgs("-1"))
+                    } else {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(
+                                quizViewModel.state.errorMessage ?: errorString
+                            )
+                        }
                     }
                 }
             }
@@ -124,13 +136,14 @@ fun CreateQuizScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(context.getString(R.string.create_quiz_title)) },
+                title = { Text(stringResource(R.string.create_quiz_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -197,7 +210,7 @@ fun CreateQuizScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(context.getString(R.string.back_button))
+                            Text(stringResource(R.string.back_button))
                         }
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -222,7 +235,7 @@ fun CreateQuizScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            if (currentStep < 3) context.getString(R.string.next_button) else context.getString(
+                            if (currentStep < 3) stringResource(R.string.next_button) else stringResource(
                                 R.string.create_quiz_title
                             )
                         )

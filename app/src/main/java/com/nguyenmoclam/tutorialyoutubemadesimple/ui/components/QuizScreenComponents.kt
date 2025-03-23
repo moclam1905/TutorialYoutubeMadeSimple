@@ -21,10 +21,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 
 /**
@@ -35,7 +35,6 @@ fun StartQuizScreen(
     questionCount: Int,
     onStartQuiz: () -> Unit
 ) {
-    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -50,7 +49,7 @@ fun StartQuizScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = context.getString(R.string.quiz_ready_to_start),
+                text = stringResource(R.string.quiz_ready_to_start),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -59,7 +58,7 @@ fun StartQuizScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = context.getString(R.string.quiz_question_count, questionCount),
+                text = stringResource(R.string.quiz_question_count, questionCount),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
@@ -67,7 +66,7 @@ fun StartQuizScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = context.getString(R.string.quiz_time_tracking_info),
+                text = stringResource(R.string.quiz_time_tracking_info),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
@@ -80,7 +79,7 @@ fun StartQuizScreen(
             ) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Start")
                 Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                Text(context.getString(R.string.start_quiz_button))
+                Text(stringResource(R.string.start_quiz_button))
             }
         }
     }
@@ -104,7 +103,6 @@ fun QuizResultsScreen(
     skippedQuestionIndices: List<Int>,
     onRetryQuiz: () -> Unit
 ) {
-    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -113,7 +111,7 @@ fun QuizResultsScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = context.getString(R.string.quiz_complete_message),
+            text = stringResource(R.string.quiz_complete_message),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -133,21 +131,21 @@ fun QuizResultsScreen(
 
         // Correct answers section
         QuestionStatusList(
-            title = context.getString(R.string.quiz_correct_questions),
+            title = stringResource(R.string.quiz_correct_questions),
             questionIndices = correctQuestionIndices,
             quizQuestions = quizQuestions
         )
 
         // Incorrect answers section
         QuestionStatusList(
-            title = context.getString(R.string.quiz_incorrect_questions),
+            title = stringResource(R.string.quiz_incorrect_questions),
             questionIndices = incorrectQuestionIndices,
             quizQuestions = quizQuestions
         )
 
         // Skipped questions section
         QuestionStatusList(
-            title = context.getString(R.string.quiz_skipped_questions),
+            title = stringResource(R.string.quiz_skipped_questions),
             questionIndices = skippedQuestionIndices,
             quizQuestions = quizQuestions
         )
@@ -161,7 +159,7 @@ fun QuizResultsScreen(
         ) {
             Icon(Icons.Default.Refresh, contentDescription = "Retry")
             Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-            Text(context.getString(R.string.retry_quiz_button))
+            Text(stringResource(R.string.retry_quiz_button))
         }
     }
 }

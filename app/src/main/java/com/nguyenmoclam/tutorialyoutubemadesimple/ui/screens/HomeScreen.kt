@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -57,7 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,6 +70,8 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.QuizStats
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkAwareImageLoader
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +81,6 @@ fun HomeScreen(
     navController: NavHostController
 ) {
     val state by viewModel.state.collectAsState()
-    val context = LocalContext.current
     // Trigger refresh when screen becomes active
     LaunchedEffect(Unit) {
         viewModel.refreshQuizzes()
@@ -109,20 +111,20 @@ fun HomeScreen(
     state.showDeleteConfirmDialog?.let { quizId ->
         AlertDialog(
             onDismissRequest = { viewModel.hideDeleteQuizDialog() },
-            title = { Text(context.getString(R.string.delete_quiz)) },
-            text = { Text(context.getString(R.string.delete_quiz_confirmation)) },
+            title = { Text(stringResource(R.string.delete_quiz)) },
+            text = { Text(stringResource(R.string.delete_quiz_confirmation)) },
             confirmButton = {
                 TextButton(
                     onClick = { viewModel.deleteQuiz(quizId) }
                 ) {
-                    Text(context.getString(R.string.delete))
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { viewModel.hideDeleteQuizDialog() }
                 ) {
-                    Text(context.getString(R.string.cancel))
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -131,7 +133,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(context.getString(R.string.learning_hub)) },
+                title = { Text(stringResource(R.string.learning_hub)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -143,11 +145,13 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(top = 8.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp)
         ) {
 
             Text(
-                text = context.getString(R.string.explore_challenges),
+                text = stringResource(R.string.explore_challenges),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -159,7 +163,7 @@ fun HomeScreen(
                 value = "",
                 onValueChange = { },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(context.getString(R.string.search_challenges)) },
+                placeholder = { Text(stringResource(R.string.search_challenges)) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -175,10 +179,10 @@ fun HomeScreen(
             // Filter Tabs
             var selectedTabIndex by remember { mutableIntStateOf(0) }
             val tabs = listOf(
-                context.getString(R.string.all),
-                context.getString(R.string.popular),
-                context.getString(R.string.new_filter),
-                context.getString(R.string.trending)
+                stringResource(R.string.all),
+                stringResource(R.string.popular),
+                stringResource(R.string.new_filter),
+                stringResource(R.string.trending)
             )
 
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -201,10 +205,31 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+            } else if (state.networkRestricted) {
+                // Show network restriction message
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = stringResource(R.string.network_restricted),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.content_loading_restricted),
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        )
+                    }
+                }
             } else if (state.quizzes.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = context.getString(R.string.no_quizzes_available),
+                        text = stringResource(R.string.no_quizzes_available),
                         fontSize = 18.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
@@ -278,7 +303,7 @@ fun LearningChallengeItem(
     daysSinceLastUpdate: Int,
     onQuizClick: () -> Unit
 ) {
-    val context = LocalContext.current
+    val networkUtils = LocalNetworkUtils.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -316,6 +341,22 @@ fun LearningChallengeItem(
                 }
             }
 
+            // Add thumbnail if use of NetworkAwareImageLoader is appropriate
+            if (quiz.thumbnailUrl.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                NetworkAwareImageLoader(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    imageUrl = quiz.thumbnailUrl,
+                    contentDescription = quiz.title,
+                    networkUtils = networkUtils,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    onRetryClick = {}
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // Description
             Text(
                 text = quiz.description,
@@ -334,13 +375,13 @@ fun LearningChallengeItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = context.getString(R.string.total_questions, quiz.questionCount),
+                    text = stringResource(R.string.total_questions, quiz.questionCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = context.getString(R.string.last_update, daysSinceLastUpdate),
+                    text = stringResource(R.string.last_update, daysSinceLastUpdate),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -357,7 +398,7 @@ fun LearningChallengeItem(
                 )
             ) {
                 Text(
-                    text = context.getString(R.string.view_stats),
+                    text = stringResource(R.string.view_stats),
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -390,7 +431,7 @@ fun LearningChallengeItem(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = context.getString(R.string.quiz_statistics),
+                        text = stringResource(R.string.quiz_statistics),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -405,7 +446,7 @@ fun LearningChallengeItem(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = context.getString(R.string.average_score),
+                                text = stringResource(R.string.average_score),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.weight(1f)
                             )
@@ -423,12 +464,12 @@ fun LearningChallengeItem(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = context.getString(R.string.average_completion_time),
+                                text = stringResource(R.string.average_completion_time),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
-                                text = context.getString(
+                                text = stringResource(
                                     R.string.time_elapsed_seconds,
                                     quizStats.timeElapsedSeconds
                                 ),
@@ -438,7 +479,7 @@ fun LearningChallengeItem(
                         }
                     } else {
                         Text(
-                            text = context.getString(R.string.no_quiz_attempts),
+                            text = stringResource(R.string.no_quiz_attempts),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,

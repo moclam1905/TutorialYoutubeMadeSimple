@@ -16,7 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,24 +36,23 @@ fun QuizResultsSummaryCard(
     skippedQuestions: Int,
     completionTimeSeconds: Int
 ) {
-    val context = LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = context.getString(R.string.quiz_results_title),
+                text = stringResource(R.string.quiz_results_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = context.getString(R.string.quiz_results_correct),
+                        text = stringResource(R.string.quiz_results_correct),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
@@ -62,10 +61,10 @@ fun QuizResultsSummaryCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = context.getString(R.string.quiz_results_incorrect),
+                        text = stringResource(R.string.quiz_results_incorrect),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
@@ -74,10 +73,10 @@ fun QuizResultsSummaryCard(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
-                
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = context.getString(R.string.quiz_results_skipped),
+                        text = stringResource(R.string.quiz_results_skipped),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
@@ -86,9 +85,9 @@ fun QuizResultsSummaryCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Format completion time
             val hours = TimeUnit.SECONDS.toHours(completionTimeSeconds.toLong())
             val minutes = TimeUnit.SECONDS.toMinutes(completionTimeSeconds.toLong()) % 60
@@ -98,9 +97,9 @@ fun QuizResultsSummaryCard(
             } else {
                 String.format("%d:%02d", minutes, seconds)
             }
-            
+
             Text(
-                text = context.getString(R.string.quiz_completion_time, timeFormatted),
+                text = stringResource(R.string.quiz_completion_time, timeFormatted),
                 style = MaterialTheme.typography.bodyLarge
             )
         }
@@ -116,7 +115,6 @@ fun QuestionStatusList(
     questionIndices: List<Int>,
     quizQuestions: List<Any>
 ) {
-    val context = LocalContext.current
     if (questionIndices.isNotEmpty()) {
         Text(
             text = title,
@@ -125,9 +123,9 @@ fun QuestionStatusList(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Start
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -138,21 +136,21 @@ fun QuestionStatusList(
                 val questionText = when (question) {
                     is MultipleChoiceQuestion -> question.question
                     is TrueFalseQuestion -> question.statement
-                    else -> context.getString(R.string.question_number, index + 1)
+                    else -> stringResource(R.string.question_number, index + 1)
                 }
-                
+
                 Text(
                     text = "${index + 1}. $questionText",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
-                
+
                 if (index < questionIndices.lastIndex) {
                     Divider()
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }

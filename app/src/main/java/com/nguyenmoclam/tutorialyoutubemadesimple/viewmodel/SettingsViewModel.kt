@@ -1,6 +1,5 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatDelegate
@@ -14,6 +13,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.tasks.Task
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
 import com.nguyenmoclam.tutorialyoutubemadesimple.auth.AuthManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.repository.GetQuizRepositoryUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.GetSettingsUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAppLanguageUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAutoNextQuestionUseCase
@@ -27,7 +27,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetRet
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetShowAnswerAfterWrongUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetThemeModeUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetTranscriptModeUseCase
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.repository.GetQuizRepositoryUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -58,16 +57,14 @@ class SettingsViewModel @Inject constructor(
     private val setConnectionTimeoutUseCase: SetConnectionTimeoutUseCase,
     private val setRetryPolicyUseCase: SetRetryPolicyUseCase,
     private val getQuizRepositoryUseCase: GetQuizRepositoryUseCase,
-    private val authManager: AuthManager
+    private val authManager: AuthManager,
+    private var networkUtils: NetworkUtils
 ) : ViewModel() {
 
-    // Network utilities
-    private val networkUtils = NetworkUtils(context)
-    
     // Settings state
     var settingsState by mutableStateOf(SettingsState())
         private set
-    
+
     init {
         // Load settings using the use case
         getSettingsUseCase().onEach { settings ->
@@ -86,8 +83,12 @@ class SettingsViewModel @Inject constructor(
                 appLanguage = settings.appLanguage,
                 isNetworkAvailable = settings.isNetworkAvailable
             )
+
+            // Update data saver setting in NetworkUtils
+            networkUtils.setDataSaverEnabled(settings.dataSaverMode)
+            networkUtils.setConnectionTypeRestriction(settings.connectionType)
         }.launchIn(viewModelScope)
-        
+
         // Observe network connectivity
         viewModelScope.launch {
             networkUtils.observeNetworkConnectivity().collect { isAvailable ->
@@ -97,7 +98,7 @@ class SettingsViewModel @Inject constructor(
 
         updateStorageInfo()
     }
-    
+
     // Theme settings
     fun setThemeMode(mode: String) {
         viewModelScope.launch {
@@ -105,7 +106,7 @@ class SettingsViewModel @Inject constructor(
             settingsState = settingsState.copy(themeMode = mode)
         }
     }
-    
+
     // Quiz configuration settings
     fun setQuestionOrder(order: String) {
         viewModelScope.launch {
@@ -113,28 +114,28 @@ class SettingsViewModel @Inject constructor(
             settingsState = settingsState.copy(questionOrder = order)
         }
     }
-    
+
     fun setMaxRetryCount(count: Int) {
         viewModelScope.launch {
             setMaxRetryCountUseCase(count)
             settingsState = settingsState.copy(maxRetryCount = count)
         }
     }
-    
+
     fun setShowAnswerAfterWrong(show: Boolean) {
         viewModelScope.launch {
             setShowAnswerAfterWrongUseCase(show)
             settingsState = settingsState.copy(showAnswerAfterWrong = show)
         }
     }
-    
+
     fun setAutoNextQuestion(auto: Boolean) {
         viewModelScope.launch {
             setAutoNextQuestionUseCase(auto)
             settingsState = settingsState.copy(autoNextQuestion = auto)
         }
     }
-    
+
     // Google account settings
     fun setGoogleSignIn(signedIn: Boolean) {
         viewModelScope.launch {
@@ -149,7 +150,7 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * Process the Google Sign-In result
      */
@@ -160,7 +161,7 @@ class SettingsViewModel @Inject constructor(
                 // Sign-in successful
                 setGoogleSignInUseCase(true)
                 settingsState = settingsState.copy(isGoogleSignedIn = true)
-                
+
                 // If transcript mode is anonymous, switch to google
                 if (settingsState.transcriptMode == "anonymous") {
                     setTranscriptMode("google")
@@ -168,21 +169,21 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * Get sign-in intent for launching Google Sign-In
      */
     fun getSignInIntent(): Intent {
         return authManager.getSignInIntent()
     }
-    
+
     fun setTranscriptMode(mode: String) {
         viewModelScope.launch {
             setTranscriptModeUseCase(mode)
             settingsState = settingsState.copy(transcriptMode = mode)
         }
     }
-    
+
     fun clearAccountData() {
         viewModelScope.launch {
             // Sign out from Google
@@ -195,19 +196,19 @@ class SettingsViewModel @Inject constructor(
             )
         }
     }
-    
+
     // Data management
     fun clearQuizHistory() {
         viewModelScope.launch {
             try {
                 val quizRepository = getQuizRepositoryUseCase()
                 val quizzes = quizRepository.getAllQuizzes().first()
-                
+
                 // Delete all quizzes
                 quizzes.forEach { quiz ->
                     quizRepository.deleteQuiz(quiz.id)
                 }
-                
+
                 // Update UI state
                 settingsState = settingsState.copy(quizCount = 0, usedStorageBytes = 0)
             } catch (e: Exception) {
@@ -215,18 +216,18 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun resetLearningProgress() {
         viewModelScope.launch {
             try {
                 val quizRepository = getQuizRepositoryUseCase()
                 val quizzes = quizRepository.getAllQuizzes().first()
-                
+
                 // Delete progress for all quizzes
                 quizzes.forEach { quiz ->
                     quizRepository.deleteProgressForQuiz(quiz.id)
                 }
-                
+
                 // Update UI state
                 updateStorageInfo()
             } catch (e: Exception) {
@@ -234,20 +235,20 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun clearCache() {
         viewModelScope.launch {
             try {
                 val quizRepository = getQuizRepositoryUseCase()
                 val quizzes = quizRepository.getAllQuizzes().first()
-                
+
                 // Delete transcripts, topics, and key points for all quizzes
                 quizzes.forEach { quiz ->
                     quizRepository.deleteTranscriptForQuiz(quiz.id)
                     quizRepository.deleteTopicsForQuiz(quiz.id)
                     quizRepository.deleteKeyPointsForQuiz(quiz.id)
                 }
-                
+
                 // Update UI state
                 updateStorageInfo()
             } catch (e: Exception) {
@@ -272,42 +273,50 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-    
+
     // Network settings
     fun setDataSaverMode(enabled: Boolean) {
         viewModelScope.launch {
             setDataSaverModeUseCase(enabled)
             settingsState = settingsState.copy(dataSaverMode = enabled)
+            // Update NetworkUtils with the new data saver setting
+            networkUtils.setDataSaverEnabled(enabled)
         }
     }
-    
+
     fun setConnectionType(type: String) {
         viewModelScope.launch {
             setConnectionTypeUseCase(type)
             settingsState = settingsState.copy(connectionType = type)
+            // Update NetworkUtils with the new connection type restriction
+            networkUtils.setConnectionTypeRestriction(type)
         }
     }
-    
+
     fun setConnectionTimeout(seconds: Int) {
         viewModelScope.launch {
             setConnectionTimeoutUseCase(seconds)
             settingsState = settingsState.copy(connectionTimeout = seconds)
+            // Update timeout in NetworkUtils
+            networkUtils.setConnectionTimeout(seconds)
         }
     }
-    
+
     fun setRetryPolicy(policy: String) {
         viewModelScope.launch {
             setRetryPolicyUseCase(policy)
             settingsState = settingsState.copy(retryPolicy = policy)
+            // Update NetworkUtils with the new retry policy setting
+            networkUtils.setRetryPolicy(policy)
         }
     }
-    
+
     // Language settings
     fun setAppLanguage(language: String) {
         viewModelScope.launch {
             setAppLanguageUseCase(language)
             settingsState = settingsState.copy(appLanguage = language)
-            
+
             // Apply language change immediately
             val localeList = when (language) {
                 "en" -> LocaleListCompat.create(Locale("en"))
@@ -322,7 +331,7 @@ class SettingsViewModel @Inject constructor(
             context.startActivity(intent)
         }
     }
-    
+
     // App information
     fun getAppVersion(): String {
         return try {
@@ -340,28 +349,28 @@ class SettingsViewModel @Inject constructor(
 data class SettingsState(
     // Theme settings
     val themeMode: String = "system", // "light", "dark", or "system"
-    
+
     // Quiz configuration
     val questionOrder: String = "sequential", // "sequential" or "shuffle"
     val maxRetryCount: Int = 1,
     val showAnswerAfterWrong: Boolean = false,
     val autoNextQuestion: Boolean = false,
-    
+
     // Google account
     val isGoogleSignedIn: Boolean = false,
     val transcriptMode: String = "anonymous", // "google" or "anonymous"
-    
+
     // Data management
     val usedStorageBytes: Long = 0,
     val quizCount: Int = 0,
-    
+
     // Network settings
     val isNetworkAvailable: Boolean = true,
     val dataSaverMode: Boolean = false,
     val connectionType: String = "any", // "wifi_only" or "any"
     val connectionTimeout: Int = 30, // in seconds
     val retryPolicy: String = "exponential", // "none", "linear", or "exponential"
-    
+
     // Language
     val appLanguage: String = "system" // "en", "vi", or "system"
 )

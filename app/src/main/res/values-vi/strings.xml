@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Hướng Dẫn Youtube Đơn Giản</string>
+    <string name="app_name">TutorialYoutubeMadeSimple</string>
 
     <!-- Thông báo lỗi -->
     <string name="error_invalid_url">URL/ID video không hợp lệ.</string>
@@ -139,6 +139,7 @@
     <string name="reduce_data_usage">Giảm sử dụng dữ liệu bằng cách tải nội dung chất lượng thấp hơn</string>
     <string name="allow_mobile_data">Cho phép sử dụng dữ liệu di động</string>
     <string name="wifi_only">Chỉ sử dụng Wi-Fi</string>
+    <string name="mobile_data_only">Chỉ dữ liệu di động</string>
     <string name="no_retry">Không thử lại</string>
     <string name="linear_backoff">Lùi tuyến tính</string>
     <string name="exponential_backoff">Lùi hàm mũ</string>
@@ -216,6 +217,16 @@
     <string name="language">Ngôn ngữ</string>
     <string name="app_information">Thông tin ứng dụng</string>
     <string name="reset_all_settings">Đặt lại tất cả cài đặt</string>
+    <string name="restricted_network_error">Lỗi mạng bị giới hạn. Vui lòng kiểm tra cài đặt kết nối của bạn.</string>
+    <string name="no_internet_connection">Không có kết nối internet.</string>
+    <string name="wifi_only_mode_enabled">Chế độ chỉ dùng Wi-Fi đã bật.</string>
+    <string name="mobile_data_only_mode_enabled">Chế độ chỉ dùng dữ liệu di động đã bật.</string>
+    <string name="data_saver_mode_enabled">Chế độ tiết kiệm dữ liệu đã bật.</string>
+    <string name="image_load_error">Lỗi khi tải ảnh.</string>
+    <string name="change_network_settings">Thay đổi cài đặt mạng.</string>
+    <string name="network_restricted">Kết nối mạng bị hạn chế</string>
+    <string name="content_loading_restricted">Việc tải nội dung bị hạn chế do cài đặt tiết kiệm dữ liệu của bạn</string>
+    <string name="error_occurred">Đã xảy ra lỗi</string>
 
 
 </resources>

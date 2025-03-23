@@ -140,6 +140,7 @@
     <string name="reduce_data_usage">Reduces data usage by loading lower quality content</string>
     <string name="allow_mobile_data">Allow Mobile Data</string>
     <string name="wifi_only">Wi-Fi Only</string>
+    <string name="mobile_data_only">Mobile Data Only</string>
     <string name="no_retry">No Retry</string>
     <string name="linear_backoff">Linear Backoff</string>
     <string name="exponential_backoff">Exponential Backoff</string>
@@ -217,5 +218,16 @@
     <string name="language">Language</string>
     <string name="app_information">App Information</string>
     <string name="reset_all_settings">Reset All Settings</string>
+    <string name="restricted_network_error">Network access is restricted.</string>
+    <string name="no_internet_connection">No internet connection.</string>
+    <string name="wifi_only_mode_enabled">Wi-Fi only mode enabled.</string>
+    <string name="mobile_data_only_mode_enabled">Mobile data only mode enabled.</string>
+    <string name="data_saver_mode_enabled">Data saver mode enabled.</string>
+    <string name="image_load_error">Error loading image.</string>
+    <string name="change_network_settings">Change network settings.</string>
+    <string name="network_restricted">Network Restricted</string>
+    <string name="content_loading_restricted">Content loading is restricted due to your data saver settings</string>
+    <string name="error_occurred">An error occurred</string>
+
 
 </resources>

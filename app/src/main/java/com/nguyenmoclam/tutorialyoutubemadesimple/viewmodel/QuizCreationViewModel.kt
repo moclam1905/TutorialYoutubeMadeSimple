@@ -22,6 +22,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.topic.SaveTopic
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.SaveTranscriptUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Transcript
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.keypoint.SaveKeyPointsUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -66,7 +67,8 @@ class QuizCreationViewModel @Inject constructor(
     private val createQuizQuestionsUseCase: CreateQuizQuestionsUseCase,
     private val saveTranscriptUseCase: SaveTranscriptUseCase,
     private val saveTopicsUseCase: SaveTopicsUseCase,
-    private val saveKeyPointsUseCase: SaveKeyPointsUseCase
+    private val saveKeyPointsUseCase: SaveKeyPointsUseCase,
+    private val networkUtils: NetworkUtils
 ) : ViewModel() {
 
     data class QuizState(
@@ -109,6 +111,9 @@ class QuizCreationViewModel @Inject constructor(
             "LanguageNotFound" ->
                 context.getString(R.string.error_language_not_found)
 
+            "Network restricted by data saver settings" ->
+                context.getString(R.string.restricted_network_error)
+
             else -> context.getString(R.string.error_generic)
         }
     }
@@ -123,6 +128,15 @@ class QuizCreationViewModel @Inject constructor(
         numberOfQuestions: Int,
         transcriptMode: String
     ) {
+        // Check data saver settings before starting the quiz creation process
+        if (!networkUtils.shouldLoadContent()) {
+            state = QuizState(
+                isLoading = false,
+                errorMessage = context.getString(R.string.restricted_network_error)
+            )
+            return
+        }
+
         state = QuizState(isLoading = true, currentStep = ProcessingCreateStep.FETCH_METADATA)
 
         viewModelScope.launch(coroutineExceptionHandler) {

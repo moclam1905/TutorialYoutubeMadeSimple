@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,14 +34,13 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.R
  */
 @Composable
 fun StepIndicator(currentStep: Int, totalSteps: Int) {
-    val context = LocalContext.current
     Column(modifier = Modifier.fillMaxWidth()) {
         // Step title with improved styling
         Text(
             text = when (currentStep) {
-                1 -> context.getString(R.string.step_1_enter_video)
-                2 -> context.getString(R.string.step_2_configure_quiz)
-                3 -> context.getString(R.string.step_3_select_output)
+                1 -> stringResource(R.string.step_1_enter_video)
+                2 -> stringResource(R.string.step_2_configure_quiz)
+                3 -> stringResource(R.string.step_3_select_output)
                 else -> ""
             },
             fontSize = 22.sp,
@@ -49,7 +48,7 @@ fun StepIndicator(currentStep: Int, totalSteps: Int) {
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         // Custom step indicator with circles and connecting lines
         Row(
             modifier = Modifier
@@ -62,7 +61,7 @@ fun StepIndicator(currentStep: Int, totalSteps: Int) {
             for (i in 1..totalSteps) {
                 val isActive = i <= currentStep
                 val isCurrentStep = i == currentStep
-                
+
                 // Step indicator column
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -75,7 +74,7 @@ fun StepIndicator(currentStep: Int, totalSteps: Int) {
                             .size(36.dp)
                             .clip(CircleShape)
                             .background(
-                                if (isActive) MaterialTheme.colorScheme.primary 
+                                if (isActive) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.surfaceVariant
                             )
                             .border(
@@ -86,44 +85,44 @@ fun StepIndicator(currentStep: Int, totalSteps: Int) {
                     ) {
                         Text(
                             text = "$i",
-                            color = if (isActive) MaterialTheme.colorScheme.onPrimary 
-                                  else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (isActive) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         )
                     }
-                    
+
                     // Step label
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = when (i) {
-                            1 -> context.getString(R.string.enter_video)
-                            2 -> context.getString(R.string.configure)
-                            3 -> context.getString(R.string.output)
+                            1 -> stringResource(R.string.enter_video)
+                            2 -> stringResource(R.string.configure)
+                            3 -> stringResource(R.string.output)
                             else -> ""
                         },
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
-                        color = if (isActive) MaterialTheme.colorScheme.primary 
-                               else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = if (isActive) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontWeight = if (isCurrentStep) FontWeight.Bold else FontWeight.Normal,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
-                
+
                 // Add connecting line between circles (except after the last one)
                 if (i < totalSteps) {
                     Divider(
                         modifier = Modifier
                             .weight(0.7f)
                             .height(2.dp),
-                        color = if (i < currentStep) MaterialTheme.colorScheme.primary 
-                               else MaterialTheme.colorScheme.surfaceVariant
+                        color = if (i < currentStep) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
             }
         }
-        
+
         // Progress percentage text
         Text(
             text = "${(currentStep * 100) / totalSteps}%",

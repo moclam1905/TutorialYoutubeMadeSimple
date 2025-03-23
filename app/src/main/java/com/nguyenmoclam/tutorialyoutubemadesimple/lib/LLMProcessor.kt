@@ -1,13 +1,14 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.lib
 
-import com.nguyenmoclam.tutorialyoutubemadesimple.ApiService
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity.Companion.OPENROUTER_API_KEY
+import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.Message
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterRequest
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Question
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -24,7 +25,10 @@ import javax.inject.Inject
  *
  * The class uses OpenRouter's API with Gemini model for natural language processing tasks.
  */
-class LLMProcessor @Inject constructor() {
+class LLMProcessor @Inject constructor(
+    private val networkUtils: NetworkUtils,
+    private val openRouterApi: OpenRouterApi
+) {
 
     /**
      * Analyzes a video transcript to identify key topics and generate relevant questions.
@@ -149,6 +153,11 @@ class LLMProcessor @Inject constructor() {
      * This function handles the communication with the LLM service.
      */
     private suspend fun callLLM(prompt: String): String {
+        // Check if content should not be loaded based on data saver settings
+        if (!networkUtils.shouldLoadContent(highQuality = true)) {
+            throw IllegalStateException("Network restricted by data saver settings")
+        }
+
         val messages = listOf(
             Message(role = "user", content = prompt)
         )
@@ -158,8 +167,16 @@ class LLMProcessor @Inject constructor() {
         )
         val authHeader = "Bearer $OPENROUTER_API_KEY"
 
-        val response = ApiService.openRouterApi.createCompletion(authHeader, request)
-        return response.choices.firstOrNull()?.message?.content ?: ""
+        // Use withConnectionTimeout to apply user's timeout setting
+        val result = networkUtils.withConnectionTimeout {
+            openRouterApi.createCompletion(authHeader, request)
+        }
+
+        // Handle the result
+        return result.fold(
+            onSuccess = { response -> response.choices.firstOrNull()?.message?.content ?: "" },
+            onFailure = { exception -> throw exception }
+        )
     }
 
     /**
@@ -400,7 +417,8 @@ class LLMProcessor @Inject constructor() {
                 questionObj.containsKey("options") -> {
                     val question = questionObj["question"]?.jsonPrimitive?.content ?: return@forEach
                     val optionsObj = questionObj["options"]?.jsonObject ?: return@forEach
-                    val correctAnswersArray = questionObj["correct_answers"]?.jsonArray ?: return@forEach
+                    val correctAnswersArray =
+                        questionObj["correct_answers"]?.jsonArray ?: return@forEach
 
                     val options = optionsObj.entries.associate {
                         it.key to it.value.jsonPrimitive.content
@@ -417,8 +435,10 @@ class LLMProcessor @Inject constructor() {
                 }
                 // True/False
                 questionObj.containsKey("statement") -> {
-                    val statement = questionObj["statement"]?.jsonPrimitive?.content ?: return@forEach
-                    val isTrue = questionObj["is_true"]?.jsonPrimitive?.content?.toBoolean() ?: return@forEach
+                    val statement =
+                        questionObj["statement"]?.jsonPrimitive?.content ?: return@forEach
+                    val isTrue = questionObj["is_true"]?.jsonPrimitive?.content?.toBoolean()
+                        ?: return@forEach
 
                     trueFalseQuestions.add(
                         TrueFalseQuestion(

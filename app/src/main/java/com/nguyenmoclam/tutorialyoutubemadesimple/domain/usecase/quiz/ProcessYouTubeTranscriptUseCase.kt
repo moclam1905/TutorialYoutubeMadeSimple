@@ -8,6 +8,7 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.youtube.YouTube
 import com.nguyenmoclam.tutorialyoutubemadesimple.auth.AuthManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.YouTubeTranscriptLight
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,6 +21,7 @@ import javax.inject.Inject
 class ProcessYouTubeTranscriptUseCase @Inject constructor(
     private val youTubeTranscriptLight: YouTubeTranscriptLight,
     private val authManager: AuthManager,
+    private val networkUtils: NetworkUtils,
     @ApplicationContext private val context: Context
 ) {
     /**
@@ -43,10 +45,31 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
         transcriptMode: String
     ): TranscriptResult {
         return try {
+            // Check if content should not be loaded based on data saver settings
+            if (!networkUtils.shouldLoadContent()) {
+                return TranscriptResult(
+                    text = "",
+                    error = "Network restricted by data saver settings"
+                )
+            }
+
             if (authManager.isUserSignedIn() && transcriptMode == "google") {
-                val transcriptText = fetchTranscriptFromGoogleApi(videoId)
-                TranscriptResult(text = transcriptText)
+                // Apply connection timeout to Google API request
+                val result = networkUtils.withConnectionTimeout {
+                    fetchTranscriptFromGoogleApi(videoId)
+                }
+
+                result.fold(
+                    onSuccess = { transcriptText -> TranscriptResult(text = transcriptText) },
+                    onFailure = { e ->
+                        TranscriptResult(
+                            text = "",
+                            error = e.message ?: "Connection timeout or error"
+                        )
+                    }
+                )
             } else {
+                // YouTubeTranscriptLight already uses the timeout settings via OkHttpClient
                 val transcripts = youTubeTranscriptLight.getTranscript(videoId, languages)
                 val transcriptContent = transcripts.joinToString(" ") { it.text }
                 TranscriptResult(text = transcriptContent)

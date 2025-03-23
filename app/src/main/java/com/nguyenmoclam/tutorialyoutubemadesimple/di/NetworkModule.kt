@@ -1,11 +1,13 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.di
 
-import com.nguyenmoclam.tutorialyoutubemadesimple.ApiService
-import com.nguyenmoclam.tutorialyoutubemadesimple.YouTubeApi
+import android.content.Context
 import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
+import com.nguyenmoclam.tutorialyoutubemadesimple.YouTubeApi
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -28,13 +30,15 @@ object NetworkModule {
      */
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(networkUtils: NetworkUtils): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-        
-        return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
+
+        return networkUtils.configureOkHttpClient(
+            OkHttpClient.Builder()
+                .addInterceptor(loggingInterceptor)
+        )
             .build()
     }
 
@@ -75,7 +79,7 @@ object NetworkModule {
     @OpenRouterRetrofit
     fun provideOpenRouterRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://openrouter.ai/api/")
+            .baseUrl("https://openrouter.ai/api/v1/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -90,5 +94,18 @@ object NetworkModule {
     @Singleton
     fun provideOpenRouterApiService(@OpenRouterRetrofit retrofit: Retrofit): OpenRouterApi {
         return retrofit.create(OpenRouterApi::class.java)
+    }
+
+    /**
+     * Provides a singleton instance of NetworkUtils.
+     * This ensures consistent network status and data saver settings across the app.
+     *
+     * @param context Application context used to access system services
+     * @return Singleton instance of NetworkUtils
+     */
+    @Provides
+    @Singleton
+    fun provideNetworkUtils(@ApplicationContext context: Context): NetworkUtils {
+        return NetworkUtils(context)
     }
 }

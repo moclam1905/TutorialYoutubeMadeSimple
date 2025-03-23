@@ -1,6 +1,8 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
 import android.graphics.BlurMaskFilter
+import android.graphics.Color
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -130,9 +132,9 @@ fun CurvedBottomNavigation(
 
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5
     val shadowColor = if (isDark) {
-        android.graphics.Color.argb(70, 255, 255, 255)
+        Color.argb(70, 255, 255, 255)
     } else {
-        android.graphics.Color.argb(70, 0, 0, 0)
+        Color.argb(70, 0, 0, 0)
     }
 
     Box(
@@ -325,7 +327,7 @@ fun CurvedBottomNavigation(
                         animationSpec = tween(
                             durationMillis = 100,
                             delayMillis = 0,
-                            easing = androidx.compose.animation.core.FastOutSlowInEasing
+                            easing = FastOutSlowInEasing
                         ),
                         label = "IconScaleAnimation",
                         visibilityThreshold = 0.01f

@@ -1,8 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
 import android.annotation.SuppressLint
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -65,10 +63,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
@@ -77,6 +75,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQue
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ExitConfirmationDialog
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.MultiWaveLoadingAnimation
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkAwareWebView
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.QuizResultsScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StartQuizScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.SlidingRootNav
@@ -85,6 +84,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.mod
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.transform.ElevationTransformation
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.transform.ScaleTransformation
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.transform.YTranslationTransformation
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import kotlinx.coroutines.launch
@@ -97,9 +97,6 @@ fun QuizDetailScreen(
     quizId: Long = -1L,
     quizDetailViewModel: QuizDetailViewModel = hiltViewModel()
 ) {
-
-    val context = LocalContext.current
-
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var materialsExpanded by remember { mutableStateOf(true) }
@@ -218,7 +215,7 @@ fun QuizDetailScreen(
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        text = context.getString(R.string.quiz),
+                        text = stringResource(R.string.quiz),
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -228,7 +225,7 @@ fun QuizDetailScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-                    label = { Text(context.getString(R.string.dashboard_tab)) },
+                    label = { Text(stringResource(R.string.dashboard_tab)) },
                     selected = false,
                     onClick = {
                         scope.launch {
@@ -245,7 +242,7 @@ fun QuizDetailScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.MenuBook, contentDescription = "Materials") },
-                    label = { Text(context.getString(R.string.materials_tab)) },
+                    label = { Text(stringResource(R.string.materials_tab)) },
                     badge = {
                         if (materialsExpanded) {
                             Icon(Icons.Default.ExpandLess, contentDescription = "Collapse")
@@ -266,7 +263,7 @@ fun QuizDetailScreen(
                                     contentDescription = "Summary"
                                 )
                             },
-                            label = { Text(context.getString(R.string.summary_tab)) },
+                            label = { Text(stringResource(R.string.summary_tab)) },
                             selected = selectedContentIndex == 0,
                             onClick = {
                                 scope.launch {
@@ -278,7 +275,7 @@ fun QuizDetailScreen(
 
                         NavigationDrawerItem(
                             icon = { Icon(Icons.Default.Quiz, contentDescription = "Questions") },
-                            label = { Text(context.getString(R.string.questions_tab)) },
+                            label = { Text(stringResource(R.string.questions_tab)) },
                             selected = selectedContentIndex == 1,
                             onClick = {
                                 scope.launch {
@@ -292,7 +289,7 @@ fun QuizDetailScreen(
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                    label = { Text(context.getString(R.string.settings_tab)) },
+                    label = { Text(stringResource(R.string.settings_tab)) },
                     selected = false,
                     onClick = {
                         scope.launch {
@@ -308,7 +305,7 @@ fun QuizDetailScreen(
                 topBar = {
                     if (!quizViewModel.state.isLoading && !quizDetailViewModel.state.isLoading) {
                         TopAppBar(
-                            title = { Text(context.getString(R.string.quiz_details_title)) },
+                            title = { Text(stringResource(R.string.quiz_details_title)) },
                             navigationIcon = {
                                 val isDrawerOpen = slidingNavState.isMenuOpened
                                 val icon =
@@ -374,7 +371,7 @@ fun QuizDetailScreen(
                                                 )
                                             } else {
                                                 // Coming from HomeScreen - use a generic loading message
-                                                context.getString(R.string.loading_quiz_details)
+                                                stringResource(R.string.loading_quiz_details)
                                             },
                                             style = MaterialTheme.typography.bodyLarge,
                                             textAlign = TextAlign.Center
@@ -416,7 +413,7 @@ fun QuizDetailScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(context.getString(R.string.no_summary_available))
+                                        Text(stringResource(R.string.no_summary_available))
                                     }
                                 }
                             } else {
@@ -546,7 +543,7 @@ fun QuizDetailScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(context.getString(R.string.no_questions_available))
+                                        Text(stringResource(R.string.no_questions_available))
                                     }
                                 }
                             }
@@ -561,28 +558,16 @@ fun QuizDetailScreen(
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun SummaryContent(summaryHtml: String) {
-    AndroidView(
-        factory = { context ->
-            WebView(context).apply {
-                settings.apply {
-                    javaScriptEnabled = true
-                    useWideViewPort = true
-                    loadWithOverviewMode = true
-                    setSupportZoom(true)
-                    builtInZoomControls = true
-                    displayZoomControls = false
-                }
-                webViewClient = WebViewClient()
-                loadDataWithBaseURL(
-                    null,
-                    summaryHtml,
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
-            }
-        },
-        modifier = Modifier.fillMaxSize()
+    val networkUtils = LocalNetworkUtils.current
+
+    NetworkAwareWebView(
+        modifier = Modifier.fillMaxSize(),
+        url = "",
+        html = summaryHtml,
+        networkUtils = networkUtils,
+        isJavaScriptEnabled = true,
+        onPageFinished = {},
+        onRetryClick = {}
     )
 }
 
@@ -599,7 +584,6 @@ fun QuizContent(
     onSkipQuestion: () -> Unit,
     onNextQuestion: () -> Unit
 ) {
-    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -607,7 +591,7 @@ fun QuizContent(
             .verticalScroll(rememberScrollState())
     ) {
         Text(
-            text = context.getString(
+            text = stringResource(
                 R.string.question_index,
                 currentQuestionIndex + 1,
                 quizQuestions.size
@@ -735,7 +719,7 @@ fun QuizContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = context.getString(R.string.true_txt),
+                            text = stringResource(R.string.true_txt),
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
                         )
@@ -792,7 +776,7 @@ fun QuizContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = context.getString(R.string.false_txt),
+                            text = stringResource(R.string.false_txt),
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
                         )
@@ -833,7 +817,7 @@ fun QuizContent(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = currentQuestionIndex < quizQuestions.size - 1
                 ) {
-                    Text(context.getString(R.string.next_question_button))
+                    Text(stringResource(R.string.next_question_button))
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(Icons.Default.ArrowForward, contentDescription = "Next")
                 }
@@ -846,7 +830,7 @@ fun QuizContent(
                         onClick = onSkipQuestion,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(context.getString(R.string.skip_question_button))
+                        Text(stringResource(R.string.skip_question_button))
                     }
 
                     Button(
@@ -854,7 +838,7 @@ fun QuizContent(
                         modifier = Modifier.weight(1f),
                         enabled = selectedAnswer.isNotEmpty()
                     ) {
-                        Text(context.getString(R.string.submit_answer_button))
+                        Text(stringResource(R.string.submit_answer_button))
                     }
                 }
             }

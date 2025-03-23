@@ -32,7 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
@@ -51,13 +51,12 @@ fun ThemeSettings(
     var showConfirmDialog by remember { mutableStateOf(false) }
     var selectedTheme by remember { mutableStateOf("") }
     var previewTheme by remember { mutableStateOf(state.themeMode) }
-    val context = LocalContext.current
 
     Column(modifier = Modifier.selectableGroup()) {
         val themeOptions = listOf(
-            "light" to context.getString(R.string.light_mode),
-            "dark" to context.getString(R.string.dark_mode),
-            "system" to context.getString(R.string.system_default)
+            "light" to stringResource(R.string.light_mode),
+            "dark" to stringResource(R.string.dark_mode),
+            "system" to stringResource(R.string.system_default)
         )
 
         themeOptions.forEach { (value, label) ->
@@ -91,8 +90,8 @@ fun ThemeSettings(
                 showConfirmDialog = false
                 previewTheme = state.themeMode
             },
-            title = { Text(context.getString(R.string.theme_change_dialog_title)) },
-            text = { Text(context.getString(R.string.theme_change_dialog_message)) },
+            title = { Text(stringResource(R.string.theme_change_dialog_title)) },
+            text = { Text(stringResource(R.string.theme_change_dialog_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -100,7 +99,7 @@ fun ThemeSettings(
                         showConfirmDialog = false
                     }
                 ) {
-                    Text(context.getString(R.string.apply_button))
+                    Text(stringResource(R.string.apply_button))
                 }
             },
             dismissButton = {
@@ -110,7 +109,7 @@ fun ThemeSettings(
                         previewTheme = state.themeMode
                     }
                 ) {
-                    Text(context.getString(R.string.cancel_button))
+                    Text(stringResource(R.string.cancel_button))
                 }
             }
         )
@@ -128,17 +127,15 @@ fun QuizConfigSettings(
     onShowAnswerAfterWrongChanged: (Boolean) -> Unit,
     onAutoNextQuestionChanged: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
-
     Column {
         // Question order setting
-        Text(context.getString(R.string.question_order), fontWeight = FontWeight.Medium)
+        Text(stringResource(R.string.question_order), fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
 
         Column(modifier = Modifier.selectableGroup()) {
             val orderOptions = listOf(
-                "sequential" to context.getString(R.string.sequential),
-                "shuffle" to context.getString(R.string.random_shuffle)
+                "sequential" to stringResource(R.string.sequential),
+                "shuffle" to stringResource(R.string.random_shuffle)
             )
 
             orderOptions.forEach { (value, label) ->
@@ -166,7 +163,7 @@ fun QuizConfigSettings(
 
         // Max retry count setting
         Text(
-            context.getString(R.string.maximum_retry_count, state.maxRetryCount),
+            stringResource(R.string.maximum_retry_count, state.maxRetryCount),
             fontWeight = FontWeight.Medium
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -189,7 +186,7 @@ fun QuizConfigSettings(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(context.getString(R.string.show_answer_after_wrong))
+            Text(stringResource(R.string.show_answer_after_wrong))
             Switch(
                 checked = state.showAnswerAfterWrong,
                 onCheckedChange = onShowAnswerAfterWrongChanged
@@ -204,7 +201,7 @@ fun QuizConfigSettings(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(context.getString(R.string.auto_next_question))
+            Text(stringResource(R.string.auto_next_question))
             Switch(
                 checked = state.autoNextQuestion,
                 onCheckedChange = onAutoNextQuestionChanged
@@ -224,8 +221,6 @@ fun GoogleAccountSettings(
     onClearAccountDataClick: () -> Unit,
     onSignInClick: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-
     Column {
         // Google account status and sign-in/out buttons
         Row(
@@ -236,9 +231,9 @@ fun GoogleAccountSettings(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(context.getString(R.string.google_account), fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.google_account), fontWeight = FontWeight.Medium)
                 Text(
-                    text = if (state.isGoogleSignedIn) context.getString(R.string.signed_in) else context.getString(
+                    text = if (state.isGoogleSignedIn) stringResource(R.string.signed_in) else stringResource(
                         R.string.not_signed_in
                     ),
                     style = MaterialTheme.typography.bodySmall,
@@ -259,7 +254,7 @@ fun GoogleAccountSettings(
                 }
             ) {
                 Text(
-                    if (state.isGoogleSignedIn) context.getString(R.string.sign_out) else context.getString(
+                    if (state.isGoogleSignedIn) stringResource(R.string.sign_out) else stringResource(
                         R.string.sign_in
                     )
                 )
@@ -269,13 +264,13 @@ fun GoogleAccountSettings(
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
         // Transcript mode setting
-        Text(context.getString(R.string.transcript_mode), fontWeight = FontWeight.Medium)
+        Text(stringResource(R.string.transcript_mode), fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
 
         Column(modifier = Modifier.selectableGroup()) {
             val modeOptions = listOf(
-                "google" to context.getString(R.string.use_google_account),
-                "anonymous" to context.getString(R.string.anonymous_mode)
+                "google" to stringResource(R.string.use_google_account),
+                "anonymous" to stringResource(R.string.anonymous_mode)
             )
 
             modeOptions.forEach { (value, label) ->
@@ -310,7 +305,7 @@ fun GoogleAccountSettings(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = context.getString(R.string.clear_account_data),
+                text = stringResource(R.string.clear_account_data),
                 color = MaterialTheme.colorScheme.error
             )
         }
@@ -327,8 +322,6 @@ fun DataManagementSettings(
     onResetLearningProgressClick: () -> Unit,
     onClearCacheClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     Column {
         // Storage usage info
         Card(
@@ -340,10 +333,10 @@ fun DataManagementSettings(
             )
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(context.getString(R.string.storage_usage), fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.storage_usage), fontWeight = FontWeight.Medium)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(context.getString(R.string.storage_used, formatBytes(state.usedStorageBytes)))
-                Text(context.getString(R.string.quizzes_count, state.quizCount))
+                Text(stringResource(R.string.storage_used, formatBytes(state.usedStorageBytes)))
+                Text(stringResource(R.string.quizzes_count, state.quizCount))
             }
         }
 
@@ -358,7 +351,7 @@ fun DataManagementSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(context.getString(R.string.clear_quiz_history))
+                Text(stringResource(R.string.clear_quiz_history))
             }
 
             Divider()
@@ -370,7 +363,7 @@ fun DataManagementSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(context.getString(R.string.reset_learning_progress))
+                Text(stringResource(R.string.reset_learning_progress))
             }
 
             Divider()
@@ -382,7 +375,7 @@ fun DataManagementSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(context.getString(R.string.clear_cache))
+                Text(stringResource(R.string.clear_cache))
             }
         }
     }
@@ -399,8 +392,6 @@ fun NetworkSettings(
     onConnectionTimeoutChanged: (Int) -> Unit,
     onRetryPolicyChanged: (String) -> Unit
 ) {
-    val context = LocalContext.current
-
     Column {
         // Network status indicator
         Card(
@@ -423,7 +414,7 @@ fun NetworkSettings(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (state.isNetworkAvailable) context.getString(R.string.connected) else context.getString(
+                    text = if (state.isNetworkAvailable) stringResource(R.string.connected) else stringResource(
                         R.string.no_connection
                     ),
                     color = if (state.isNetworkAvailable) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
@@ -442,9 +433,9 @@ fun NetworkSettings(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(context.getString(R.string.data_saver_mode))
+                Text(stringResource(R.string.data_saver_mode))
                 Text(
-                    context.getString(R.string.reduce_data_usage),
+                    stringResource(R.string.reduce_data_usage),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -459,15 +450,16 @@ fun NetworkSettings(
 
         // Connection type setting
         Text(
-            context.getString(R.string.connection_type),
+            stringResource(R.string.connection_type),
             style = MaterialTheme.typography.titleMedium
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         Column(modifier = Modifier.selectableGroup()) {
             val connectionOptions = listOf(
-                "any" to context.getString(R.string.allow_mobile_data),
-                "wifi_only" to context.getString(R.string.wifi_only)
+                "any" to stringResource(R.string.allow_mobile_data),
+                "wifi_only" to stringResource(R.string.wifi_only),
+                "mobile_only" to stringResource(R.string.mobile_data_only)
             )
 
             connectionOptions.forEach { (value, label) ->
@@ -495,7 +487,7 @@ fun NetworkSettings(
 
         // Connection timeout setting
         Text(
-            context.getString(R.string.connection_timeout, state.connectionTimeout),
+            stringResource(R.string.connection_timeout, state.connectionTimeout),
             fontWeight = FontWeight.Medium
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -511,14 +503,14 @@ fun NetworkSettings(
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
         // Retry policy setting
-        Text(context.getString(R.string.retry_policy), fontWeight = FontWeight.Medium)
+        Text(stringResource(R.string.retry_policy), fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
 
         Column(modifier = Modifier.selectableGroup()) {
             val policyOptions = listOf(
-                "none" to context.getString(R.string.no_retry),
-                "linear" to context.getString(R.string.linear_backoff),
-                "exponential" to context.getString(R.string.exponential_backoff)
+                "none" to stringResource(R.string.no_retry),
+                "linear" to stringResource(R.string.linear_backoff),
+                "exponential" to stringResource(R.string.exponential_backoff)
             )
 
             policyOptions.forEach { (value, label) ->
@@ -552,15 +544,14 @@ fun LanguageSettings(
     state: SettingsState,
     onAppLanguageChanged: (String) -> Unit
 ) {
-    val context = LocalContext.current
     var showConfirmDialog by remember { mutableStateOf(false) }
     var selectedLanguage by remember { mutableStateOf("") }
-    
+
     Column(modifier = Modifier.selectableGroup()) {
         val languageOptions = listOf(
-            "en" to context.getString(R.string.english),
-            "vi" to context.getString(R.string.vietnamese),
-            "system" to context.getString(R.string.system_default)
+            "en" to stringResource(R.string.english),
+            "vi" to stringResource(R.string.vietnamese),
+            "system" to stringResource(R.string.system_default)
         )
 
         languageOptions.forEach { (value, label) ->
@@ -569,7 +560,7 @@ fun LanguageSettings(
                     .fillMaxWidth()
                     .selectable(
                         selected = state.appLanguage == value,
-                        onClick = { 
+                        onClick = {
                             if (value != state.appLanguage) {
                                 selectedLanguage = value
                                 showConfirmDialog = true
@@ -588,12 +579,12 @@ fun LanguageSettings(
             }
         }
     }
-    
+
     // Confirmation dialog
     if (showConfirmDialog) {
         AlertDialog(
-            title = { Text(context.getString(R.string.language_change_title)) },
-            text = { Text(context.getString(R.string.language_change_message)) },
+            title = { Text(stringResource(R.string.language_change_title)) },
+            text = { Text(stringResource(R.string.language_change_message)) },
             onDismissRequest = { showConfirmDialog = false },
             confirmButton = {
                 TextButton(
@@ -602,12 +593,12 @@ fun LanguageSettings(
                         showConfirmDialog = false
                     }
                 ) {
-                    Text(context.getString(R.string.confirm))
+                    Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = false }) {
-                    Text(context.getString(R.string.cancel))
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -627,9 +618,8 @@ fun AppInfoSettings(
 ) {
     Column {
         // App version
-        val context = LocalContext.current
         Text(
-            context.getString(R.string.app_version, appVersion),
+            stringResource(R.string.app_version, appVersion),
             style = MaterialTheme.typography.bodyMedium
         )
 
@@ -644,7 +634,7 @@ fun AppInfoSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(context.getString(R.string.github_repository))
+                Text(stringResource(R.string.github_repository))
             }
 
             Divider()
@@ -656,7 +646,7 @@ fun AppInfoSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(context.getString(R.string.privacy_policy))
+                Text(stringResource(R.string.privacy_policy))
             }
 
             Divider()
@@ -668,7 +658,7 @@ fun AppInfoSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(context.getString(R.string.contact_information))
+                Text(stringResource(R.string.contact_information))
             }
 
             Divider()
@@ -680,7 +670,7 @@ fun AppInfoSettings(
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(context.getString(R.string.license_information))
+                Text(stringResource(R.string.license_information))
             }
         }
     }

@@ -12,9 +12,7 @@ import androidx.navigation.navArgument
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.CreateQuizScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.HomeScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.ResultScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SplashScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
@@ -47,9 +45,6 @@ fun AppNavigation(
                 settingsViewModel = settingsViewModel
             )
         }
-        composable(AppScreens.Result.route) {
-            ResultScreen(viewModel = viewModel, navController = navController)
-        }
         composable(AppScreens.Settings.route) {
             SettingScreen(viewModel = settingsViewModel)
         }
@@ -74,10 +69,8 @@ fun AppNavigation(
  * This provides type-safe screen navigation and route management.
  */
 sealed class AppScreens(val route: String) {
-    object Splash : AppScreens("splash")
     object Home : AppScreens("home")
     object CreateQuiz : AppScreens("create_quiz")
-    object Result : AppScreens("result")
     object Settings : AppScreens("settings")
     object QuizDetail : AppScreens("quiz_detail")
 

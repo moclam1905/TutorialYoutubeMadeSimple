@@ -20,7 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -39,7 +39,6 @@ fun Step1Content(
     onShowLanguageDropdownChange: (Boolean) -> Unit,
     languages: List<String>
 ) {
-    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -51,8 +50,8 @@ fun Step1Content(
             OutlinedTextField(
                 value = youtubeUrlValue,
                 onValueChange = onYoutubeUrlChange,
-                label = { Text(context.getString(R.string.enter_youtube_url)) },
-                placeholder = { Text(context.getString(R.string.youtube_url_example)) },
+                label = { Text(stringResource(R.string.enter_youtube_url)) },
+                placeholder = { Text(stringResource(R.string.youtube_url_example)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
@@ -67,7 +66,7 @@ fun Step1Content(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Language selection
-            Text(context.getString(R.string.select_language), fontWeight = FontWeight.Medium)
+            Text(stringResource(R.string.select_language), fontWeight = FontWeight.Medium)
 
             Box {
                 OutlinedTextField(
@@ -106,7 +105,7 @@ fun Step1Content(
 
             // Language description
             Text(
-                text = context.getString(R.string.choose_language),
+                text = stringResource(R.string.choose_language),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
