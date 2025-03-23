@@ -3,6 +3,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.state.QuizStateManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.DeleteQuizUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetAllQuizzesUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetDaysSinceLastUpdateUseCase
@@ -29,17 +30,16 @@ class HomeViewModel @Inject constructor(
     // UI state for the Home screen
     private val _state = MutableStateFlow(HomeViewState())
     val state: StateFlow<HomeViewState> = _state
-
+    
+    // Filtered quizzes based on search query
+    private var allQuizzes: List<Quiz> = emptyList()
+    
     init {
         // Observe quiz state manager and refresh data when needed
         viewModelScope.launch {
             quizStateManager.quizzes.collect { quizzes ->
-                _state.update { currentState ->
-                    currentState.copy(
-                        quizzes = quizzes,
-                        isLoading = false
-                    )
-                }
+                allQuizzes = quizzes
+                applySearchFilter()
             }
         }
 
@@ -57,7 +57,9 @@ class HomeViewModel @Inject constructor(
             // Check if content should be loaded based on data saver settings
             if (networkUtils.shouldLoadContent()) {
                 val quizzes = getAllQuizzesUseCase().first()
+                allQuizzes = quizzes
                 quizStateManager.updateQuizzes(quizzes)
+                applySearchFilter()
             } else {
                 // If content should not be loaded, update the state to show the restriction
                 _state.update { currentState ->
@@ -67,6 +69,35 @@ class HomeViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+    
+    /**
+     * Update search query and filter quizzes
+     */
+    fun updateSearchQuery(query: String) {
+        _state.update { it.copy(searchQuery = query) }
+        applySearchFilter()
+    }
+    
+    /**
+     * Apply search filter to quizzes based on current search query
+     */
+    private fun applySearchFilter() {
+        val searchQuery = _state.value.searchQuery.trim().lowercase()
+        val filteredQuizzes = if (searchQuery.isEmpty()) {
+            allQuizzes
+        } else {
+            allQuizzes.filter { quiz ->
+                quiz.title.lowercase().contains(searchQuery)
+            }
+        }
+        
+        _state.update { currentState ->
+            currentState.copy(
+                quizzes = filteredQuizzes,
+                isLoading = false
+            )
         }
     }
 

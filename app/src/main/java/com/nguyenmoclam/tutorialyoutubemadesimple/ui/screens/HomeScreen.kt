@@ -59,9 +59,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -160,8 +164,8 @@ fun HomeScreen(
 
             // Search Bar
             OutlinedTextField(
-                value = "",
-                onValueChange = { },
+                value = state.searchQuery,
+                onValueChange = { query -> viewModel.updateSearchQuery(query) },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text(stringResource(R.string.search_challenges)) },
                 leadingIcon = {
@@ -254,7 +258,8 @@ fun HomeScreen(
                                         quiz.id.toString()
                                     )
                                 )
-                            }
+                            },
+                            searchQuery = state.searchQuery // Pass searchQuery from state
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
@@ -301,12 +306,14 @@ fun LearningChallengeItem(
     onToggleStats: () -> Unit,
     onDeleteQuiz: () -> Unit,
     daysSinceLastUpdate: Int,
-    onQuizClick: () -> Unit
+    onQuizClick: () -> Unit,
+    searchQuery: String = "" // Add searchQuery parameter with default empty value
 ) {
     val networkUtils = LocalNetworkUtils.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 8.dp)
             .clickable { onQuizClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp),
@@ -320,8 +327,9 @@ fun LearningChallengeItem(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Use highlightText function for title
                 Text(
-                    text = quiz.title,
+                    text = highlightText(quiz.title, searchQuery),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
@@ -357,9 +365,9 @@ fun LearningChallengeItem(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Description
+            // Description with highlighted search query
             Text(
-                text = quiz.description,
+                text = highlightText(quiz.description, searchQuery),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 4.dp),
@@ -488,6 +496,46 @@ fun LearningChallengeItem(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Highlights search query in text by creating an AnnotatedString with different style for matching parts
+ */
+@Composable
+fun highlightText(text: String, searchQuery: String): AnnotatedString {
+    if (searchQuery.isBlank()) {
+        return AnnotatedString(text)
+    }
+    
+    val highlightColor = MaterialTheme.colorScheme.primary
+    
+    return buildAnnotatedString {
+        val lowercaseText = text.lowercase()
+        val lowercaseQuery = searchQuery.lowercase()
+        
+        var startIndex = 0
+        var matchIndex = lowercaseText.indexOf(lowercaseQuery, startIndex)
+        
+        while (matchIndex >= 0) {
+            // Add text before match
+            append(text.substring(startIndex, matchIndex))
+            
+            // Add highlighted match
+            val endIndex = matchIndex + searchQuery.length
+            withStyle(SpanStyle(color = highlightColor, fontWeight = FontWeight.Bold, background = highlightColor.copy(alpha = 0.2f))) {
+                append(text.substring(matchIndex, endIndex))
+            }
+            
+            // Move to next match
+            startIndex = endIndex
+            matchIndex = lowercaseText.indexOf(lowercaseQuery, startIndex)
+        }
+        
+        // Add remaining text
+        if (startIndex < text.length) {
+            append(text.substring(startIndex))
         }
     }
 }
