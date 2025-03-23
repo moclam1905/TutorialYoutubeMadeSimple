@@ -1,5 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.lib
 
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -16,8 +17,10 @@ import javax.inject.Inject
  * - Parse and clean transcript text
  * - Handle various error cases
  */
-class YouTubeTranscriptLight @Inject constructor() {
-    private val client = OkHttpClient()
+class YouTubeTranscriptLight @Inject constructor(
+    networkUtils: NetworkUtils
+) {
+    private val client = networkUtils.configureOkHttpClient(OkHttpClient.Builder()).build()
     private val baseUrl = "https://www.youtube.com"
 
     /**
@@ -229,15 +232,5 @@ class YouTubeTranscriptLight @Inject constructor() {
         }
 
         return transcripts
-    }
-
-    companion object {
-        /**
-         * Factory method to create a new instance of YouTubeTranscriptLight
-         * @return A new YouTubeTranscriptLight instance
-         */
-        @JvmStatic
-        fun create(): YouTubeTranscriptLight =
-            YouTubeTranscriptLight()
     }
 }

@@ -15,6 +15,7 @@ data class QuizEntity(
     val title: String,
     val description: String,
     val videoUrl: String,
+    val thumbnailUrl: String = "", // Store YouTube video thumbnail URL
     val language: String,
     val questionType: String,
     val questionCount: Int,

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,21 +41,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,9 +66,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.QuizStats
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkAwareImageLoader
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,147 +81,189 @@ fun HomeScreen(
     navController: NavHostController
 ) {
     val state by viewModel.state.collectAsState()
-    
     // Trigger refresh when screen becomes active
     LaunchedEffect(Unit) {
         viewModel.refreshQuizzes()
     }
-    
+
     // Add scroll state tracking
     val lazyListState = rememberLazyListState()
     val isScrollingUp = remember {
         derivedStateOf {
             if (lazyListState.firstVisibleItemIndex > 0) {
                 // When scrolled past the first item, check scroll direction
-                lazyListState.firstVisibleItemScrollOffset == 0 || 
-                lazyListState.isScrollInProgress.not()
+                lazyListState.firstVisibleItemScrollOffset == 0 ||
+                        lazyListState.isScrollInProgress.not()
             } else {
                 // Always show navigation when at the top
                 true
             }
         }
     }
-    
+
     // Share scroll state with MainActivity
     LaunchedEffect(isScrollingUp.value) {
         // Update the BottomNavigationVisibilityState singleton
         BottomNavigationVisibilityState.isVisible.value = isScrollingUp.value
     }
-    
+
     // Delete Confirmation Dialog
     state.showDeleteConfirmDialog?.let { quizId ->
         AlertDialog(
             onDismissRequest = { viewModel.hideDeleteQuizDialog() },
-            title = { Text("Delete Quiz") },
-            text = { Text("Are you sure you want to delete this quiz?") },
+            title = { Text(stringResource(R.string.delete_quiz)) },
+            text = { Text(stringResource(R.string.delete_quiz_confirmation)) },
             confirmButton = {
                 TextButton(
                     onClick = { viewModel.deleteQuiz(quizId) }
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { viewModel.hideDeleteQuizDialog() }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
     }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Learning Hub Title
-        Text(
-            text = "Learning Hub",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
-        
-        Text(
-            text = "Explore programming challenges",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Search Bar
-        OutlinedTextField(
-            value = "",
-            onValueChange = { },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search challenges...") },
-            leadingIcon = { 
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search"
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.learning_hub)) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-            },
-            shape = RoundedCornerShape(8.dp),
-            singleLine = true
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Filter Tabs
-        var selectedTabIndex by remember { mutableIntStateOf(0) }
-        val tabs = listOf("All", "Popular", "New", "Trending")
-        
-        Row(modifier = Modifier.fillMaxWidth()) {
-            tabs.forEachIndexed { index, title ->
-                FilterTab(
-                    title = title,
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-            }
+            )
         }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        if (state.isLoading) {
-            // Show loading indicator when data is being loaded
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        } else if (state.quizzes.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "No quizzes available. Create your first quiz!",
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
-            }
-        } else {
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(state.quizzes) { quiz ->
-                    LearningChallengeItem(
-                        quiz = quiz,
-                        isStatsExpanded = state.expandedStatsMap[quiz.id] == true,
-                        quizStats = state.quizStatsCache[quiz.id],
-                        onToggleStats = { viewModel.toggleStatsExpanded(quiz.id) },
-                        onDeleteQuiz = { viewModel.showDeleteQuizDialog(quiz.id) },
-                        daysSinceLastUpdate = viewModel.getDaysSinceLastUpdate(quiz.lastUpdated),
-                        onQuizClick = { navController.navigate(AppScreens.QuizDetail.withArgs(quiz.id.toString())) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(top = 8.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp)
+        ) {
+
+            Text(
+                text = stringResource(R.string.explore_challenges),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Search Bar
+            OutlinedTextField(
+                value = "",
+                onValueChange = { },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(stringResource(R.string.search_challenges)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search"
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                },
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Filter Tabs
+            var selectedTabIndex by remember { mutableIntStateOf(0) }
+            val tabs = listOf(
+                stringResource(R.string.all),
+                stringResource(R.string.popular),
+                stringResource(R.string.new_filter),
+                stringResource(R.string.trending)
+            )
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                tabs.forEachIndexed { index, title ->
+                    FilterTab(
+                        title = title,
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (state.isLoading) {
+                // Show loading indicator when data is being loaded
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else if (state.networkRestricted) {
+                // Show network restriction message
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = stringResource(R.string.network_restricted),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.content_loading_restricted),
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        )
+                    }
+                }
+            } else if (state.quizzes.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(R.string.no_quizzes_available),
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = lazyListState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(state.quizzes) { quiz ->
+                        LearningChallengeItem(
+                            quiz = quiz,
+                            isStatsExpanded = state.expandedStatsMap[quiz.id] == true,
+                            quizStats = state.quizStatsCache[quiz.id],
+                            onToggleStats = { viewModel.toggleStatsExpanded(quiz.id) },
+                            onDeleteQuiz = { viewModel.showDeleteQuizDialog(quiz.id) },
+                            daysSinceLastUpdate = viewModel.getDaysSinceLastUpdate(quiz.lastUpdated),
+                            onQuizClick = {
+                                navController.navigate(
+                                    AppScreens.QuizDetail.withArgs(
+                                        quiz.id.toString()
+                                    )
+                                )
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
     }
+
+
 }
 
 @Composable
@@ -237,7 +286,7 @@ fun FilterTab(
         Text(
             text = title,
             color = if (selected) MaterialTheme.colorScheme.onPrimary
-                   else MaterialTheme.colorScheme.onSurface,
+            else MaterialTheme.colorScheme.onSurface,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
         )
     }
@@ -254,6 +303,7 @@ fun LearningChallengeItem(
     daysSinceLastUpdate: Int,
     onQuizClick: () -> Unit
 ) {
+    val networkUtils = LocalNetworkUtils.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -290,7 +340,23 @@ fun LearningChallengeItem(
                     )
                 }
             }
-            
+
+            // Add thumbnail if use of NetworkAwareImageLoader is appropriate
+            if (quiz.thumbnailUrl.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                NetworkAwareImageLoader(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    imageUrl = quiz.thumbnailUrl,
+                    contentDescription = quiz.title,
+                    networkUtils = networkUtils,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    onRetryClick = {}
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // Description
             Text(
                 text = quiz.description,
@@ -300,29 +366,29 @@ fun LearningChallengeItem(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Question count and last update info
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Total ${quiz.questionCount} questions",
+                    text = stringResource(R.string.total_questions, quiz.questionCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Last update: $daysSinceLastUpdate days ago",
+                    text = stringResource(R.string.last_update, daysSinceLastUpdate),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Stats button
             Button(
                 onClick = onToggleStats,
@@ -332,19 +398,27 @@ fun LearningChallengeItem(
                 )
             ) {
                 Text(
-                    text = "View Stats",
+                    text = stringResource(R.string.view_stats),
                     fontWeight = FontWeight.Medium
                 )
             }
-            
+
             // Animated stats section
             val visibleState = remember { MutableTransitionState(false) }
             visibleState.targetState = isStatsExpanded
-            
+
             AnimatedVisibility(
                 visibleState = visibleState,
-                enter = fadeIn(animationSpec = tween(300)) + expandVertically(animationSpec = tween(300)),
-                exit = fadeOut(animationSpec = tween(300)) + shrinkVertically(animationSpec = tween(300))
+                enter = fadeIn(animationSpec = tween(300)) + expandVertically(
+                    animationSpec = tween(
+                        300
+                    )
+                ),
+                exit = fadeOut(animationSpec = tween(300)) + shrinkVertically(
+                    animationSpec = tween(
+                        300
+                    )
+                )
             ) {
                 Column(
                     modifier = Modifier
@@ -357,22 +431,22 @@ fun LearningChallengeItem(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Quiz Statistics",
+                        text = stringResource(R.string.quiz_statistics),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
                     Divider()
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     if (quizStats != null) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Average Score:",
+                                text = stringResource(R.string.average_score),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.weight(1f)
                             )
@@ -382,27 +456,30 @@ fun LearningChallengeItem(
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Average Completion Time:",
+                                text = stringResource(R.string.average_completion_time),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
-                                text = "${quizStats.timeElapsedSeconds} seconds",
+                                text = stringResource(
+                                    R.string.time_elapsed_seconds,
+                                    quizStats.timeElapsedSeconds
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     } else {
                         Text(
-                            text = "No quiz attempts recorded yet",
+                            text = stringResource(R.string.no_quiz_attempts),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,

@@ -127,8 +127,8 @@ fun MultiWaveLoadingAnimation(
             centerHeight = waveStartY,
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    Color(0xFF80DEEA).copy(alpha = 0.8f), // Cyan 200 với alpha
-                    Color(0xFF4DD0E1).copy(alpha = 0.9f)  // Cyan 300 với alpha
+                    Color(0xFF80DEEA).copy(alpha = 0.8f),
+                    Color(0xFF4DD0E1).copy(alpha = 0.9f)
                 ),
                 startY = waveStartY - 10f,
                 endY = canvasHeight

@@ -1,6 +1,5 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -21,9 +20,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 
 /**
  * Content for Step 1: YouTube URL input and language selection.
@@ -49,8 +50,8 @@ fun Step1Content(
             OutlinedTextField(
                 value = youtubeUrlValue,
                 onValueChange = onYoutubeUrlChange,
-                label = { Text("Enter YouTube Video URL") },
-                placeholder = { Text("Example: https://youtu.be/VIDEO_ID") },
+                label = { Text(stringResource(R.string.enter_youtube_url)) },
+                placeholder = { Text(stringResource(R.string.youtube_url_example)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
@@ -61,12 +62,12 @@ fun Step1Content(
                     }
                 }
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Language selection
-            Text("Select Language:", fontWeight = FontWeight.Medium)
-            
+            Text(stringResource(R.string.select_language), fontWeight = FontWeight.Medium)
+
             Box {
                 OutlinedTextField(
                     value = selectedLanguage,
@@ -75,11 +76,14 @@ fun Step1Content(
                     modifier = Modifier.fillMaxWidth(),
                     trailingIcon = {
                         IconButton(onClick = { onShowLanguageDropdownChange(!showLanguageDropdown) }) {
-                            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Select language")
+                            Icon(
+                                Icons.Filled.KeyboardArrowDown,
+                                contentDescription = "Select language"
+                            )
                         }
                     }
                 )
-                
+
                 DropdownMenu(
                     expanded = showLanguageDropdown,
                     onDismissRequest = { onShowLanguageDropdownChange(false) },
@@ -96,12 +100,12 @@ fun Step1Content(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Language description
             Text(
-                text = "Choose the language for generating content based on user selection",
+                text = stringResource(R.string.choose_language),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )

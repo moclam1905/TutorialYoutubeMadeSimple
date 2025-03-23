@@ -1,4 +1,4 @@
-package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.util
+package com.nguyenmoclam.tutorialyoutubemadesimple.utils
 
 /**
  * Evaluates a value between start and end based on the fraction.

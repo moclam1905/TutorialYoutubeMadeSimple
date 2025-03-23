@@ -3,11 +3,15 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.di
 import android.content.Context
 import androidx.room.Room
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.AppDatabase
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.ContentQuestionDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.KeyPointDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuestionDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizResultDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.SummaryDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TopicDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -93,5 +97,44 @@ object DatabaseModule {
     @Provides
     fun provideQuizProgressDao(database: AppDatabase): QuizProgressDao {
         return database.quizProgressDao()
+    }
+    
+    /**
+     * Provides the TranscriptDao instance.
+     * 
+     * @param database The AppDatabase instance
+     * @return The TranscriptDao instance
+     */
+    @Provides
+    fun provideTranscriptDao(database: AppDatabase): TranscriptDao {
+        return database.transcriptDao()
+    }
+
+    /**
+     * Provides the TopicDao instance.
+     * 
+     * @param database The AppDatabase instance
+     * @return The TopicDao instance
+     */
+    @Provides
+    fun provideTopicDao(database: AppDatabase): TopicDao {
+        return database.topicDao()
+    }
+
+    /**
+     * Provides the ContentQuestionDao instance.
+     * 
+     * @param database The AppDatabase instance
+     * @return The ContentQuestionDao instance
+     */
+    @Provides
+    fun provideContentQuestionDao(database: AppDatabase): ContentQuestionDao {
+        return database.contentQuestionDao()
+    }
+
+    @Provides
+    fun provideKeyPointDao(database: AppDatabase): KeyPointDao {
+        return database.keyPointDao()
+
     }
 }

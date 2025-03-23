@@ -12,5 +12,6 @@ data class HomeViewState(
     val quizzes: List<Quiz> = emptyList(),
     val expandedStatsMap: Map<Long, Boolean> = emptyMap(),
     val quizStatsCache: Map<Long, QuizStats> = emptyMap(),
-    val showDeleteConfirmDialog: Long? = null
+    val showDeleteConfirmDialog: Long? = null,
+    val networkRestricted: Boolean = false
 )

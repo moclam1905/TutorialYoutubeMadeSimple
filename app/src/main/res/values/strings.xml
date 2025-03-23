@@ -26,6 +26,17 @@
     <string name="summarize_button">Summarize Video</string>
     <string name="back_button">Back</string>
     <string name="export_share_button">Export HTML and Share</string>
+    <string name="retry_button">Retry</string>
+    <string name="delete_button">Delete</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="apply_button">Apply</string>
+    <string name="exit_button">Exit</string>
+    <string name="continue_quiz_button">Continue Quiz</string>
+    <string name="start_quiz_button">Start Quiz</string>
+    <string name="retry_quiz_button">Retry Quiz</string>
+    <string name="next_question_button">Next Question</string>
+    <string name="skip_question_button">Skip Question</string>
+    <string name="submit_answer_button">Submit Answer</string>
     
     <!-- Loading states -->
     <string name="loading_summary">Summarizing…</string>
@@ -36,9 +47,187 @@
     <string name="step_summary">Extracting and processing topics using LLM…</string>
     <string name="step_questions">Processing questions content…</string>
     <string name="step_create_quiz">Processing quiz content…</string>
+    
     <!-- Exit Dialog -->
     <string name="exit_dialog_title">Exit Summary</string>
     <string name="exit_dialog_message">Are you sure you want to exit? Your progress will be lost.</string>
     <string name="exit_dialog_confirm">Yes, Exit</string>
     <string name="exit_dialog_cancel">Cancel</string>
+    
+    <!-- Quiz Dialog -->
+    <string name="exit_quiz_dialog_title">Exit Quiz?</string>
+    <string name="exit_quiz_dialog_message">If you exit now, your progress will be saved but your timer will be reset when you return.</string>
+    <string name="delete_quiz_dialog_title">Delete Quiz</string>
+    <string name="delete_quiz_dialog_message">Are you sure you want to delete this quiz?</string>
+    <string name="theme_change_dialog_title">Theme Change Confirmation</string>
+    <string name="theme_change_dialog_message">Do you want to change the theme? The changes will be applied immediately.</string>
+
+    
+    <!-- Screen Titles -->
+    <string name="settings_title">Settings</string>
+    <string name="learning_hub_title">Learning Hub</string>
+    <string name="create_quiz_title">Create Quiz</string>
+    <string name="quiz_details_title">Quiz Details</string>
+    <string name="reset_settings_title">Reset All Settings</string>
+    <string name="reset_settings_message">Are you sure you want to reset all settings to default values? This action cannot be undone.</string>
+    
+    <!-- Input Fields -->
+    <string name="search_placeholder">Search challenges…</string>
+    <string name="enter_youtube_url">Enter YouTube Video URL</string>
+    <string name="youtube_url_example">Example: https://youtu.be/VIDEO_ID</string>
+    <string name="number_of_questions_label">Number of questions (1–50)</string>
+    
+    <!-- Tab Labels -->
+    <string name="dashboard_tab">Dashboard</string>
+    <string name="materials_tab">Materials</string>
+    <string name="summary_tab">Summary</string>
+    <string name="questions_tab">Questions</string>
+    <string name="settings_tab">Settings</string>
+    
+    <!-- Content Labels -->
+    <string name="select_language">Select Language:</string>
+    <string name="select_output_content">Select Output Content:</string>
+    <string name="generate_summary">Generate Summary</string>
+    <string name="generate_questions">Generate Questions</string>
+    <string name="no_summary_available">No summary available</string>
+    <string name="no_questions_available">No questions available</string>
+    
+    <!-- Settings Labels -->
+    <string name="question_order">Question Order</string>
+    <string name="maximum_retry_count">Maximum Retry Count: %1$d</string>
+    <string name="show_answer_after_wrong">Show Answer After Wrong</string>
+    <string name="auto_next_question">Auto Next Question</string>
+    <string name="google_account">Google Account</string>
+    <string name="transcript_mode">Transcript Mode</string>
+    <string name="storage_usage">Storage Usage</string>
+    <string name="storage_used">Used: %1$s</string>
+    <string name="quizzes_count">Quizzes: %1$d</string>
+    <string name="clear_quiz_history">Clear Quiz History</string>
+    <string name="reset_learning_progress">Reset Learning Progress</string>
+    <string name="clear_cache">Clear Cache</string>
+    <string name="data_saver_mode">Data Saver Mode</string>
+    <string name="connection_type">Connection Type</string>
+    <string name="connection_timeout">Connection Timeout: %1$d seconds</string>
+    <string name="retry_policy">Retry Policy</string>
+    <string name="app_version">Version: %1$s</string>
+    <string name="github_repository">GitHub Repository</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="contact_information">Contact Information</string>
+    <string name="license_information">License Information</string>
+
+    <!-- Quiz Results -->
+    <string name="quiz_results_title">Quiz Results</string>
+    <string name="quiz_results_correct">Correct</string>
+    <string name="quiz_results_incorrect">Incorrect</string>
+    <string name="quiz_results_skipped">Skipped</string>
+    <string name="quiz_completion_time">Completion Time: %1$s</string>
+    <string name="quiz_ready_to_start">Ready to Start Quiz</string>
+    <string name="quiz_question_count">This quiz contains %1$d questions.</string>
+    <string name="quiz_time_tracking_info">Your time will be tracked from when you start until you complete all questions.</string>
+    <string name="quiz_complete_message">Complete the quiz to see your results.</string>
+    <string name="quiz_correct_questions">Correct Questions</string>
+    <string name="quiz_incorrect_questions">Incorrect Questions</string>
+    <string name="quiz_skipped_questions">Skipped Questions</string>
+
+    <string name="signed_in">Signed In</string>
+    <string name="not_signed_in">Not Signed In</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="sign_in">Sign In</string>
+    <string name="clear_account_data">Clear Account Data</string>
+    <string name="connected">Connected</string>
+    <string name="no_connection">No Connection</string>
+
+    <string name="reduce_data_usage">Reduces data usage by loading lower quality content</string>
+    <string name="allow_mobile_data">Allow Mobile Data</string>
+    <string name="wifi_only">Wi-Fi Only</string>
+    <string name="mobile_data_only">Mobile Data Only</string>
+    <string name="no_retry">No Retry</string>
+    <string name="linear_backoff">Linear Backoff</string>
+    <string name="exponential_backoff">Exponential Backoff</string>
+    <string name="english">English</string>
+    <string name="system_default">System Default</string>
+    <string name="vietnamese">Vietnamese</string>
+    <string name="light_mode">Light Mode</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="sequential">Sequential</string>
+    <string name="random_shuffle">Random (Shuffle)</string>
+    <string name="use_google_account">Use Google Account</string>
+    <string name="anonymous_mode">Anonymous Mode</string>
+    <string name="question_number">Question %1$d</string>
+    <string name="choose_language">Choose the language for generating content based on user selection</string>
+    <string name="question_type">Question Type:</string>
+    <string name="multiple_choice">Multiple Choice</string>
+    <string name="true_false">True/False</string>
+    <string name="number_of_questions">Number of Questions:</string>
+    <string name="auto_generate">Auto Generate</string>
+    <string name="question_level">Question Level:</string>
+    <string name="low">Low</string>
+    <string name="five_questions">5 questions</string>
+    <string name="medium">Medium</string>
+    <string name="ten_questions">10 questions</string>
+    <string name="high">High</string>
+    <string name="fifteen_questions">15 questions</string>
+    <string name="manual">Manual</string>
+    <string name="number_of_questions_range">Number of questions (1–20)</string>
+    <string name="step_1_enter_video">Step 1: Enter YouTube Video</string>
+    <string name="step_2_configure_quiz">Step 2: Configure Quiz</string>
+    <string name="step_3_select_output">Step 3: Select Output</string>
+    <string name="enter_video">Enter Video</string>
+    <string name="configure">Configure</string>
+    <string name="output">Output</string>
+    <string name="language_change_title">Language Change</string>
+    <string name="language_change_message">Do you want to change the language? The changes will be applied immediately.</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="next_button">Next</string>
+    <string name="delete_quiz">Delete Quiz</string>
+    <string name="delete_quiz_confirmation">Are you sure you want to delete this quiz?</string>
+    <string name="delete">Delete</string>
+    <string name="learning_hub">Learning Hub</string>
+    <string name="explore_challenges">Explore programming challenges</string>
+    <string name="search_challenges">Search challenges…</string>
+    <string name="all">All</string>
+    <string name="popular">Popular</string>
+    <string name="new_filter">New</string>
+    <string name="trending">Trending</string>
+    <string name="no_quizzes_available">No quizzes available. Create your first quiz!</string>
+    <string name="total_questions">Total %1$d questions</string>
+    <string name="last_update">Last update: %1$d days ago</string>
+    <string name="view_stats">View Stats</string>
+    <string name="quiz_statistics">Quiz Statistics</string>
+    <string name="average_score">Average Score:</string>
+    <string name="average_completion_time">Average Completion Time:</string>
+    <string name="time_elapsed_seconds">%1$d seconds</string>
+    <string name="no_quiz_attempts">No quiz attempts recorded yet</string>
+    <string name="quiz">Quiz</string>
+    <string name="loading_quiz_details">Loading quiz details…</string>
+    <string name="false_txt">False</string>
+    <string name="true_txt">True</string>
+    <string name="question_index">Question %1$d of %2$d</string>
+    <string name="settings">Settings</string>
+    <string name="theme">Theme</string>
+    <string name="data_management">Data Management</string>
+    <string name="confirm_delete_history">Confirm Deleting History</string>
+    <string name="delete_history_message">Are you sure you want to delete all quiz history? This action cannot be undone.</string>
+    <string name="confirm_reset_progress">Confirm Resetting Progress</string>
+    <string name="reset_progress_message">Are you sure you want to reset all learning progress? This action cannot be undone.</string>
+    <string name="reset">Reset</string>
+    <string name="confirm_clear_cache">Confirm Clearing Cache</string>
+    <string name="clear_cache_message">Are you sure you want to clear all cache? This action cannot be undone.</string>
+    <string name="network_settings">Network Settings</string>
+    <string name="language">Language</string>
+    <string name="app_information">App Information</string>
+    <string name="reset_all_settings">Reset All Settings</string>
+    <string name="restricted_network_error">Network access is restricted.</string>
+    <string name="no_internet_connection">No internet connection.</string>
+    <string name="wifi_only_mode_enabled">Wi-Fi only mode enabled.</string>
+    <string name="mobile_data_only_mode_enabled">Mobile data only mode enabled.</string>
+    <string name="data_saver_mode_enabled">Data saver mode enabled.</string>
+    <string name="image_load_error">Error loading image.</string>
+    <string name="change_network_settings">Change network settings.</string>
+    <string name="network_restricted">Network Restricted</string>
+    <string name="content_loading_restricted">Content loading is restricted due to your data saver settings</string>
+    <string name="error_occurred">An error occurred</string>
+
+
 </resources>

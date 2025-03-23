@@ -58,6 +58,16 @@ android {
     hilt {
         enableAggregatingTask = false
     }
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE"
+            )
+        }
+    }
 }
 
 dependencies {
@@ -72,6 +82,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation (libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.core.splashscreen)
 
     implementation (libs.androidx.lifecycle.viewmodel.compose)
     implementation (libs.androidx.lifecycle.runtime.compose)
@@ -92,6 +103,22 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    
+    // DataStore dependencies
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.preferences.core)
+
+    implementation (libs.play.services.auth.v2070)
+    implementation (libs.google.api.client.android)
+    implementation (libs.google.http.client.gson)
+    implementation (libs.google.api.client.gson)
+    implementation (libs.google.api.services.youtube)
+
+    implementation(libs.androidx.appcompat)
+
+    // Coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

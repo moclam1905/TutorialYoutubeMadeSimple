@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.YouTubeApi
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -10,7 +11,8 @@ import javax.inject.Inject
  * This follows the Clean Architecture principle of having use cases represent business logic.
  */
 class FetchVideoMetadataUseCase @Inject constructor(
-    private val youTubeApiService: YouTubeApi
+    private val youTubeApiService: YouTubeApi,
+    private val networkUtils: NetworkUtils
 ) {
     /**
      * Data class to hold video metadata results
@@ -21,7 +23,7 @@ class FetchVideoMetadataUseCase @Inject constructor(
         val description: String,
         val error: String? = null
     )
-    
+
     /**
      * Execute the use case to fetch video metadata.
      *
@@ -38,13 +40,21 @@ class FetchVideoMetadataUseCase @Inject constructor(
         try {
             val videoResponse = youTubeApiService.getVideoInfo(videoId, apiKey)
             val snippet = videoResponse.items.firstOrNull()?.snippet
-            
             val title = snippet?.title ?: defaultTitle
+
+            // Use NetworkUtils to determine the appropriate image quality
+            val imageQuality = networkUtils.getRecommendedImageQuality()
+
+            // Choose the URL of the image based on the recommended quality
             val thumbnailUrl = snippet?.thumbnails?.run {
-                maxres?.url ?: high?.url ?: medium?.url ?: default?.url
+                when (imageQuality) {
+                    "low" -> default?.url ?: medium?.url ?: high?.url ?: maxres?.url
+                    "medium" -> medium?.url ?: high?.url ?: maxres?.url ?: default?.url
+                    else -> maxres?.url ?: high?.url ?: medium?.url ?: default?.url
+                }
             } ?: ""
             val description = snippet?.description ?: "No description available"
-            
+
             VideoMetadata(
                 title = title,
                 thumbnailUrl = thumbnailUrl,

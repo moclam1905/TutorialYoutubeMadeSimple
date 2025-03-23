@@ -2,7 +2,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.tr
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.util.evaluate
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.evaluate
 
 /**
  * A transformation that translates the root content vertically based on the drag progress.

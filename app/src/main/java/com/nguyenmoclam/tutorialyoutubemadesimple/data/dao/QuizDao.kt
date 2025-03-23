@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.Flow
 interface QuizDao {
     @Query("SELECT * FROM quizzes ORDER BY lastUpdated DESC")
     fun getAllQuizzes(): Flow<List<QuizEntity>>
+    
+    @Query("SELECT COUNT(*) FROM quizzes")
+    suspend fun getQuizCount(): Int
 
     @Query("SELECT * FROM quizzes WHERE quizId = :quizId")
     suspend fun getQuizById(quizId: Long): QuizEntity?

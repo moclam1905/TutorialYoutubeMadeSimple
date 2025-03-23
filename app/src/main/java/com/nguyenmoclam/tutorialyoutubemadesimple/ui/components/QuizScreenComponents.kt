@@ -21,9 +21,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 
 /**
  * Screen shown when a quiz is ready to start but hasn't been started yet
@@ -47,37 +49,37 @@ fun StartQuizScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "Ready to Start Quiz",
+                text = stringResource(R.string.quiz_ready_to_start),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Text(
-                text = "This quiz contains $questionCount questions.",
+                text = stringResource(R.string.quiz_question_count, questionCount),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
-                text = "Your time will be tracked from when you start until you complete all questions.",
+                text = stringResource(R.string.quiz_time_tracking_info),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             Button(
                 onClick = onStartQuiz,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Start")
                 Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                Text("Start Quiz")
+                Text(stringResource(R.string.start_quiz_button))
             }
         }
     }
@@ -109,14 +111,14 @@ fun QuizResultsScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Complete the quiz to see your results.",
+            text = stringResource(R.string.quiz_complete_message),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // Results summary
         QuizResultsSummaryCard(
             correctAnswers = correctAnswers,
@@ -124,32 +126,32 @@ fun QuizResultsScreen(
             skippedQuestions = skippedQuestions,
             completionTimeSeconds = completionTimeSeconds
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // Correct answers section
         QuestionStatusList(
-            title = "Các câu hỏi đã trả lời đúng",
+            title = stringResource(R.string.quiz_correct_questions),
             questionIndices = correctQuestionIndices,
             quizQuestions = quizQuestions
         )
-        
+
         // Incorrect answers section
         QuestionStatusList(
-            title = "Các câu hỏi đã trả lời sai",
+            title = stringResource(R.string.quiz_incorrect_questions),
             questionIndices = incorrectQuestionIndices,
             quizQuestions = quizQuestions
         )
-        
+
         // Skipped questions section
         QuestionStatusList(
-            title = "Các câu hỏi đã bỏ qua",
+            title = stringResource(R.string.quiz_skipped_questions),
             questionIndices = skippedQuestionIndices,
             quizQuestions = quizQuestions
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // Retry button
         Button(
             onClick = onRetryQuiz,
@@ -157,7 +159,7 @@ fun QuizResultsScreen(
         ) {
             Icon(Icons.Default.Refresh, contentDescription = "Retry")
             Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-            Text("Retry Quiz")
+            Text(stringResource(R.string.retry_quiz_button))
         }
     }
 }

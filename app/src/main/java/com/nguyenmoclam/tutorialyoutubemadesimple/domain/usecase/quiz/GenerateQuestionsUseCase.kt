@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -10,8 +11,17 @@ import javax.inject.Inject
  * This follows the Clean Architecture principle of having use cases represent business logic.
  */
 class GenerateQuestionsUseCase @Inject constructor(
-    private val llmProcessor: LLMProcessor
+    private val llmProcessor: LLMProcessor,
+    private val networkUtils: NetworkUtils
 ) {
+    // Store the last extracted key points for later retrieval
+    private var lastExtractedKeyPoints: List<String> = emptyList()
+
+    /**
+     * Get the last extracted key points from the most recent question generation
+     */
+    fun getLastExtractedKeyPoints(): List<String> = lastExtractedKeyPoints
+
     /**
      * Data class to hold question generation results
      */
@@ -19,7 +29,7 @@ class GenerateQuestionsUseCase @Inject constructor(
         val content: String,
         val error: String? = null
     )
-    
+
     /**
      * Execute the use case to generate questions from a transcript.
      *
@@ -36,7 +46,17 @@ class GenerateQuestionsUseCase @Inject constructor(
         numberOfQuestions: Int
     ): QuestionsResult = withContext(Dispatchers.IO) {
         try {
+            // Check data saver settings before calling LLMProcessor
+            if (!networkUtils.shouldLoadContent(highQuality = true)) {
+                return@withContext QuestionsResult(
+                    content = "",
+                    error = "Network restricted by data saver settings"
+                )
+            }
             val keyPoints = llmProcessor.extractKeyPoints(transcriptContent, language)
+            // Store the extracted key points for later retrieval
+            lastExtractedKeyPoints = keyPoints
+
             val questionsJson = llmProcessor.generateQuestionsFromKeyPoints(
                 keyPoints = keyPoints,
                 language = language,

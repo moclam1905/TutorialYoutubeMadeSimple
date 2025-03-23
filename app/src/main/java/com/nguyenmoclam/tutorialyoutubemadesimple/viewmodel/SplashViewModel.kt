@@ -1,11 +1,9 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,15 +17,13 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class SplashViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    private val networkUtils: NetworkUtils
 ) : ViewModel() {
 
     companion object {
-        private const val MINIMUM_SPLASH_DURATION = 2000L // 1 second minimum display time
+        private const val MINIMUM_SPLASH_DURATION = 2000L // 2 seconds minimum display time
     }
 
-    private val networkUtils = NetworkUtils(context)
-    
     // UI state for the Splash screen
     private val _state = MutableStateFlow(SplashViewState())
     val state: StateFlow<SplashViewState> = _state
@@ -63,26 +59,26 @@ class SplashViewModel @Inject constructor(
             try {
                 // Set loading state
                 _state.update { it.copy(isLoading = true, error = null) }
-                
+
                 // Check network connectivity
                 if (!networkUtils.isNetworkAvailable()) {
                     throw Exception("No internet connection available")
                 }
-                
+
                 // Start timing for minimum display duration
                 val startTime = System.currentTimeMillis()
-                
+
                 // Calculate remaining time to meet minimum duration
                 val elapsedTime = System.currentTimeMillis() - startTime
                 val remainingTime = (MINIMUM_SPLASH_DURATION - elapsedTime).coerceAtLeast(0)
-                
+
                 // Wait for remaining time if needed
                 if (remainingTime > 0) {
                     delay(remainingTime)
                 }
-                
+
                 // Update state to indicate initialization is complete
-                _state.update { 
+                _state.update {
                     it.copy(
                         isLoading = false,
                         isInitialized = true,
@@ -92,7 +88,7 @@ class SplashViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 // Handle any errors during preloading
-                _state.update { 
+                _state.update {
                     it.copy(
                         isLoading = false,
                         error = e.message ?: "An error occurred during initialization",

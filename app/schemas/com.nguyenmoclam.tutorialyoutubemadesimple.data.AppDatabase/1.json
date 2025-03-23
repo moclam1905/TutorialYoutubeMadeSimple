@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "9b183835de085c04dea8dd57e12c1172",
+    "identityHash": "6c40ba761b8045194543eb009a423348",
     "entities": [
       {
         "tableName": "quizzes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `videoUrl` TEXT NOT NULL, `language` TEXT NOT NULL, `questionType` TEXT NOT NULL, `questionCount` INTEGER NOT NULL, `summaryEnabled` INTEGER NOT NULL, `questionsEnabled` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `videoUrl` TEXT NOT NULL, `thumbnailUrl` TEXT NOT NULL, `language` TEXT NOT NULL, `questionType` TEXT NOT NULL, `questionCount` INTEGER NOT NULL, `summaryEnabled` INTEGER NOT NULL, `questionsEnabled` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "quizId",
@@ -29,6 +29,12 @@
           {
             "fieldPath": "videoUrl",
             "columnName": "videoUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnailUrl",
+            "columnName": "thumbnailUrl",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -329,12 +335,258 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "transcripts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`transcriptId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `quizId` INTEGER NOT NULL, `content` TEXT NOT NULL, `language` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "transcriptId",
+            "columnName": "transcriptId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quizId",
+            "columnName": "quizId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "transcriptId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_transcripts_quizId",
+            "unique": true,
+            "columnNames": [
+              "quizId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_transcripts_quizId` ON `${TABLE_NAME}` (`quizId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "quizzes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "quizId"
+            ],
+            "referencedColumns": [
+              "quizId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "topics",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`topicId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `quizId` INTEGER NOT NULL, `title` TEXT NOT NULL, `rephrasedTitle` TEXT NOT NULL, FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "topicId",
+            "columnName": "topicId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quizId",
+            "columnName": "quizId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rephrasedTitle",
+            "columnName": "rephrasedTitle",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "topicId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_topics_quizId",
+            "unique": false,
+            "columnNames": [
+              "quizId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_topics_quizId` ON `${TABLE_NAME}` (`quizId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "quizzes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "quizId"
+            ],
+            "referencedColumns": [
+              "quizId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "content_questions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`questionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `topicId` INTEGER NOT NULL, `original` TEXT NOT NULL, `rephrased` TEXT NOT NULL, `answer` TEXT NOT NULL, FOREIGN KEY(`topicId`) REFERENCES `topics`(`topicId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "questionId",
+            "columnName": "questionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "topicId",
+            "columnName": "topicId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "original",
+            "columnName": "original",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rephrased",
+            "columnName": "rephrased",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "answer",
+            "columnName": "answer",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "questionId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_content_questions_topicId",
+            "unique": false,
+            "columnNames": [
+              "topicId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_content_questions_topicId` ON `${TABLE_NAME}` (`topicId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "topics",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "topicId"
+            ],
+            "referencedColumns": [
+              "topicId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "key_points",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`keyPointId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `quizId` INTEGER NOT NULL, `content` TEXT NOT NULL, FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "keyPointId",
+            "columnName": "keyPointId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quizId",
+            "columnName": "quizId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "keyPointId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_key_points_quizId",
+            "unique": false,
+            "columnNames": [
+              "quizId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_key_points_quizId` ON `${TABLE_NAME}` (`quizId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "quizzes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "quizId"
+            ],
+            "referencedColumns": [
+              "quizId"
+            ]
+          }
+        ]
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9b183835de085c04dea8dd57e12c1172')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6c40ba761b8045194543eb009a423348')"
     ]
   }
 }

@@ -12,11 +12,10 @@ import androidx.navigation.navArgument
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.CreateQuizScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.HomeScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.ResultScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SplashScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 
 /**
  * Main navigation component for the app.
@@ -28,30 +27,32 @@ fun AppNavigation(
     navController: NavHostController,
     viewModel: QuizViewModel,
     quizViewModel: QuizCreationViewModel,
+    settingsViewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
-        startDestination = AppScreens.Splash.route
+        startDestination = AppScreens.Home.route
     ) {
-        composable(AppScreens.Splash.route) {
-            SplashScreen(navController = navController)
-        }
         composable(AppScreens.Home.route) {
             HomeScreen(navController = navController)
         }
         composable(AppScreens.CreateQuiz.route) {
-            CreateQuizScreen(viewModel = viewModel, navController = navController, quizViewModel = quizViewModel)
-        }
-        composable(AppScreens.Result.route) {
-            ResultScreen(viewModel = viewModel, navController = navController)
+            CreateQuizScreen(
+                viewModel = viewModel,
+                navController = navController,
+                quizViewModel = quizViewModel,
+                settingsViewModel = settingsViewModel
+            )
         }
         composable(AppScreens.Settings.route) {
-            SettingScreen()
+            SettingScreen(viewModel = settingsViewModel)
         }
         composable(
             route = AppScreens.QuizDetail.route + "/{quizId}",
-            arguments = listOf(navArgument("quizId") { type = NavType.LongType; defaultValue = -1L })
+            arguments = listOf(navArgument("quizId") {
+                type = NavType.LongType; defaultValue = -1L
+            })
         ) { backStackEntry ->
             val quizId = backStackEntry.arguments?.getLong("quizId") ?: -1L
             QuizDetailScreen(
@@ -68,13 +69,11 @@ fun AppNavigation(
  * This provides type-safe screen navigation and route management.
  */
 sealed class AppScreens(val route: String) {
-    object Splash : AppScreens("splash")
     object Home : AppScreens("home")
     object CreateQuiz : AppScreens("create_quiz")
-    object Result : AppScreens("result")
     object Settings : AppScreens("settings")
     object QuizDetail : AppScreens("quiz_detail")
-    
+
     fun withArgs(vararg args: String): String {
         return buildString {
             append(route)
