@@ -1,13 +1,18 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.MindMap
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.mindmap.GetMindMapUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.mindmap.SaveMindMapUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.progress.DeleteQuizProgressUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.progress.GetQuizProgressUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.progress.SaveQuizProgressUseCase
@@ -16,8 +21,10 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.CalculateQ
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.CheckQuizAnswerUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.CheckQuizCompletionUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.FindNextUnansweredQuestionUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GenerateMindMapUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetQuizByIdUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.summary.GetQuizSummaryUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.GetTranscriptUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -34,8 +41,34 @@ class QuizDetailViewModel @Inject constructor(
     private val checkQuizAnswerUseCase: CheckQuizAnswerUseCase,
     private val calculateQuizStatisticsUseCase: CalculateQuizStatisticsUseCase,
     private val findNextUnansweredQuestionUseCase: FindNextUnansweredQuestionUseCase,
-    private val checkQuizCompletionUseCase: CheckQuizCompletionUseCase
+    private val checkQuizCompletionUseCase: CheckQuizCompletionUseCase,
+    private val getTranscriptUseCase: GetTranscriptUseCase,
+    private val generateMindMapUseCase: GenerateMindMapUseCase,
+    private val saveMindMapUseCase: SaveMindMapUseCase,
+    private val getMindMapUseCase: GetMindMapUseCase
 ) : ViewModel() {
+
+    enum class ProcessingMindMapStep(val messageRes: Int) {
+        FETCH_TRANSCRIPT(R.string.step_process_transcript),
+        EXTRACT_KEY_POINTS(R.string.generating_mindmap),
+        GENERATE_MIND_MAP(R.string.generating_mindmap),
+        SAVE_TO_DATABASE(R.string.error_generic),
+        NONE(0);
+
+        fun getMessage(context: Context): String {
+            return if (messageRes != 0) context.getString(messageRes) else ""
+        }
+
+        fun getProgressPercentage(): Float {
+            return when (this) {
+                NONE -> 0f
+                FETCH_TRANSCRIPT -> 25f
+                EXTRACT_KEY_POINTS -> 50f
+                GENERATE_MIND_MAP -> 75f
+                SAVE_TO_DATABASE -> 95f
+            }
+        }
+    }
 
     data class QuizDetailState(
         val isLoading: Boolean = false,
@@ -50,7 +83,9 @@ class QuizDetailViewModel @Inject constructor(
         val quizCompleted: Boolean = false,
         val startTime: Long = 0,
         val completionTime: Long = 0,
-        val showExitConfirmation: Boolean = false
+        val showExitConfirmation: Boolean = false,
+        val mindMapCode: String = "",
+        val currentMindMapStep: ProcessingMindMapStep = ProcessingMindMapStep.NONE
     )
 
     var state by mutableStateOf(QuizDetailState(isLoading = false))
@@ -148,6 +183,8 @@ class QuizDetailViewModel @Inject constructor(
                     state.completionTime
                 }
 
+                val mindMapCode = getMindMapUseCase(quizId)?.mermaidCode ?: ""
+
                 state = state.copy(
                     isLoading = false,
                     quiz = quiz,
@@ -158,7 +195,8 @@ class QuizDetailViewModel @Inject constructor(
                     currentQuestionIndex = currentQuestionIndex,
                     startTime = startTime,
                     completionTime = completionTime,
-                    quizStarted = quizCompleted || answeredQuestions.isNotEmpty() // Mark as started if completed or has progress
+                    quizStarted = quizCompleted || answeredQuestions.isNotEmpty(), // Mark as started if completed or has progress
+                    mindMapCode = mindMapCode
                 )
 
             } catch (e: Exception) {
@@ -488,5 +526,82 @@ class QuizDetailViewModel @Inject constructor(
             completionTime = state.completionTime
         )
         return statistics.skippedQuestionIndices
+    }
+
+    /**
+     * Generates a mind map for the current quiz using the transcript content.
+     * This function sets the loading state, calls the GenerateMindMapUseCase,
+     * and updates the UI state with the result.
+     */
+    fun generateMindMap() {
+        val quizId = state.quiz?.id ?: return  // ensure we have a loaded quiz
+        // Set loading state to true to show loading animation and update current step
+        state = state.copy(
+            isLoading = true,
+            errorMessage = null,
+            currentMindMapStep = ProcessingMindMapStep.FETCH_TRANSCRIPT
+        )
+        viewModelScope.launch {
+            try {
+                // Get the transcript content from DB (for the current quiz)
+                val transcript = getTranscriptUseCase(quizId)
+                if (transcript == null) {
+                    state = state.copy(
+                        isLoading = false,
+                        errorMessage = "Transcript not found",
+                        currentMindMapStep = ProcessingMindMapStep.NONE
+                    )
+                    return@launch
+                }
+
+                // Update state to show we're extracting key points
+                state = state.copy(currentMindMapStep = ProcessingMindMapStep.EXTRACT_KEY_POINTS)
+
+                // Call use case to generate mind map
+                state = state.copy(currentMindMapStep = ProcessingMindMapStep.GENERATE_MIND_MAP)
+                val result = generateMindMapUseCase(
+                    transcript.content,
+                    transcript.language,
+                    state.quiz?.title
+                )
+
+                if (result.error != null) {
+                    // Handle LLM generation error
+                    state = state.copy(
+                        isLoading = false,
+                        errorMessage = result.error,
+                        currentMindMapStep = ProcessingMindMapStep.NONE
+                    )
+                } else {
+                    // Update state to show we're saving to database
+                    state = state.copy(currentMindMapStep = ProcessingMindMapStep.SAVE_TO_DATABASE)
+
+                    // Get extracted key points from use case
+                    val keyPoints = generateMindMapUseCase.getLastExtractedKeyPoints()
+                    // Save generated mind map to database with key points
+                    val mindMap = MindMap(
+                        quizId = quizId,
+                        keyPoints = keyPoints,
+                        mermaidCode = result.mermaidCode
+                    )
+                    saveMindMapUseCase(mindMap, quizId)
+
+                    // Update state with the generated mind map code and set loading to false
+                    state = state.copy(
+                        isLoading = false,
+                        mindMapCode = result.mermaidCode,
+                        errorMessage = null,
+                        currentMindMapStep = ProcessingMindMapStep.NONE
+                    )
+                }
+            } catch (e: Exception) {
+                // Handle any exceptions and set loading to false
+                state = state.copy(
+                    isLoading = false,
+                    errorMessage = e.message ?: "Failed to generate mind map",
+                    currentMindMapStep = ProcessingMindMapStep.NONE
+                )
+            }
+        }
     }
 }

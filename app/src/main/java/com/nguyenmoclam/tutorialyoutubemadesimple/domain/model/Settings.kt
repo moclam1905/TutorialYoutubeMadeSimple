@@ -25,7 +25,7 @@ data class Settings(
     val isNetworkAvailable: Boolean = true,
     val dataSaverMode: Boolean = false,
     val connectionType: String = "any", // "wifi_only" or "any"
-    val connectionTimeout: Int = 30, // in seconds
+    val connectionTimeout: Int = 120, // in seconds
     val retryPolicy: String = "exponential", // "none", "linear", or "exponential"
     
     // Language

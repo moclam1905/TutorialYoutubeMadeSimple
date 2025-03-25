@@ -452,4 +452,142 @@ class LLMProcessor @Inject constructor(
 
         return Pair(multipleChoiceQuestions, trueFalseQuestions)
     }
+
+    /**
+     * Analyzes a video transcript and extracts the main key points for mind map generation.
+     * @param transcript The full text transcript of the YouTube video.
+     * @param title The title of the YouTube video.
+     * @return A list of key point strings (at most 5) representing the core ideas of the video.
+     */
+    suspend fun extractKeyPointsForMindMap(transcript: String, title: String): List<String> {
+        val prompt = """
+        You are an expert content analyzer specializing in educational content. Given a YouTube video transcript, identify the main key points or core concepts discussed in the video. These key points will be used to create a mind map for educational purposes.
+
+        VIDEO TITLE: $title
+
+        TRANSCRIPT:
+        $transcript
+
+        IMPORTANT INSTRUCTIONS:
+        1. You MUST format your response as a valid JSON object.
+        2. Include an array field "key_points" containing the key points.
+        3. Analyze the content depth and complexity to determine the appropriate number of key points:
+           - For short or simple content: Extract 3-5 key points
+           - For medium-length content: Extract 5-7 key points
+           - For long or complex content: Extract 7-10 key points
+        4. Each key point should be a clear, concise sentence (10-15 words maximum).
+        5. Ensure key points are factually accurate based on the transcript content.
+        6. Key points should be distinct from each other and cover different aspects of the content.
+        7. Arrange key points in a logical order that follows the content's natural progression.
+        8. DO NOT include any markdown code blocks or additional text.
+        9. Ensure all strings are properly escaped.
+
+        Expected JSON format:
+        {
+            "key_points": [
+                "First key point or main idea...",
+                "Second key point...",
+                "Third key point...",
+                "And so on based on content complexity..."
+            ]
+        }
+
+        The response MUST be a valid JSON object following exactly this structure.
+    """.trimIndent()
+
+        val response = callLLM(prompt)
+        return parseKeyPointsFromJsonToListString(response)
+    }
+
+    /**
+     * Generates Mermaid mind map diagram code from a list of key points.
+     * @param keyPoints The list of key point strings extracted from the transcript.
+     * @param title The title of the YouTube video (used as the central node).
+     * @return A string containing the Mermaid mindmap code representing the title and its key points.
+     */
+    suspend fun generateMermaidMindMapCode(keyPoints: List<String>, title: String): String {
+        if (keyPoints.isEmpty()) return ""
+        
+        // Adjust number of sub-points based on number of key points
+        val subPointsPerKeyPoint = when {
+            keyPoints.size <= 5 -> "2-3"
+            keyPoints.size <= 7 -> "2"
+            else -> "1-2"
+        }
+        
+        val prompt = """
+        You are an expert at generating educational mind maps. Based on the given video title and key points, produce a well-structured Mermaid mind map diagram that clearly visualizes the relationships between concepts.
+
+        VIDEO TITLE: $title
+
+        KEY POINTS:
+        ${keyPoints.joinToString("\n") { "- $it" }}
+
+        IMPORTANT INSTRUCTIONS:
+        1. Use the video title as the central root node of the mind map.
+        2. Each key point should be a top-level node branching from the title.
+        3. For each key point, add $subPointsPerKeyPoint relevant sub-points that elaborate on that key point (derived from the key point itself).
+        4. Use appropriate icons where relevant (e.g., 💡 for ideas, 🔑 for key concepts, 📊 for data points).
+        5. Keep the mind map simple and standard - DO NOT use any styling, class definitions, or node IDs.
+        6. Ensure the mind map is well-balanced with similar depth across branches.
+        7. Output the diagram in Mermaid syntax inside a markdown code block labeled 'mermaid'.
+        8. DO NOT include any explanation or text outside the Mermaid code block.
+
+        Expected Mermaid mindmap format:
+        ```mermaid
+        mindmap
+            root(($title))
+              1[First key point]
+                1.1[Sub-point 1.1]
+                1.2[Sub-point 1.2]
+              2[Second key point]
+                2.1[Sub-point 2.1]
+                2.2[Sub-point 2.2]
+              ... and so on for all key points
+        ```
+
+        The response MUST contain only the Mermaid mind map code in the format above without any styling, class definitions, or node IDs.
+    """.trimIndent()
+
+        val response = callLLM(prompt)
+        // Extract the Mermaid code block content from the LLM response
+        val code = if (response.contains("```")) {
+            if (response.contains("```mermaid")) {
+                response.substringAfter("```mermaid").substringBefore("```").trim()
+            } else {
+                response.substringAfter("```").substringBefore("```").trim()
+            }
+        } else {
+            response.trim()
+        }
+        return code
+    }
+
+    /**
+     * Parses the JSON response from the key point extraction prompt into a list of key point strings.
+     * @param jsonResponse The raw JSON string response from the LLM.
+     * @return List of key point texts (max 5) or an empty list if parsing fails or no key points found.
+     */
+    private fun parseKeyPointsFromJsonToListString(jsonResponse: String): List<String> {
+        // Remove any markdown formatting (e.g., code fences) if present
+        val cleanJson = if (jsonResponse.contains("```")) {
+            jsonResponse.substringAfter("```json").substringBefore("```").trim()
+        } else {
+            jsonResponse.trim()
+        }
+
+        return try {
+            val json = Json.parseToJsonElement(cleanJson).jsonObject
+            val pointsArray = json["key_points"]?.jsonArray ?: return emptyList()
+            // Limit to at most 5 key points
+            val limitedPointsArray = if (pointsArray.size > 5) pointsArray.take(5) else pointsArray
+            limitedPointsArray.mapNotNull { pointElement ->
+                pointElement.jsonPrimitive.content.trim().takeIf { it.isNotEmpty() }
+            }
+        } catch (e: Exception) {
+            println("parseKeyPointsFromJson error: ${e.message}")
+            emptyList()
+        }
+    }
+
 }

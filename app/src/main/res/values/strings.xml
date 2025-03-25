@@ -162,11 +162,11 @@
     <string name="auto_generate">Auto Generate</string>
     <string name="question_level">Question Level:</string>
     <string name="low">Low</string>
-    <string name="five_questions">5 questions</string>
+    <string name="five_questions">5–10 questions</string>
     <string name="medium">Medium</string>
-    <string name="ten_questions">10 questions</string>
+    <string name="ten_questions">11–20 questions</string>
     <string name="high">High</string>
-    <string name="fifteen_questions">15 questions</string>
+    <string name="fifteen_questions">21–30 questions</string>
     <string name="manual">Manual</string>
     <string name="number_of_questions_range">Number of questions (1–20)</string>
     <string name="step_1_enter_video">Step 1: Enter YouTube Video</string>
@@ -228,6 +228,21 @@
     <string name="network_restricted">Network Restricted</string>
     <string name="content_loading_restricted">Content loading is restricted due to your data saver settings</string>
     <string name="error_occurred">An error occurred</string>
+    <string name="mindmap_tab">Mind Map</string>
+    <string name="generate_mindmap">Generate Mindmap</string>
+    <string name="generating_mindmap">Generating Mind Map…</string>
+    <string name="save_mindmap">Save Mind Map</string>
+    <string name="fullscreen_mindmap">Fullscreen</string>
+    <string name="exit_fullscreen_mindmap">Exit Fullscreen</string>
+    <string name="zoom_in_mindmap">Zoom In</string>
+    <string name="zoom_out_mindmap">Zoom Out</string>
+    <string name="save_mindmap_success">Mind map saved to gallery</string>
+    <string name="save_mindmap_error">Error saving mind map: %1$s</string>
+    <string name="error_webview_not_found">Could not find WebView</string>
+    <string name="error_saving_mind_map">Error saving mind map: %1$s</string>
+    <string name="mind_map_saved">Mind map saved to gallery</string>
+    <string name="error_creating_file">Error: Could not create file</string>
+    <string name="error_saving_image">Error saving image: %1$s</string>
 
 
 </resources>

@@ -180,7 +180,7 @@ class QuizCreationViewModel @Inject constructor(
                 thumbnailUrl = fetchedThumb,
                 language = selectedLanguage,
                 questionType = questionType,
-                questionCount = numberOfQuestions,
+                questionCount = if (generateQuestions) numberOfQuestions else 0,
                 summaryEnabled = generateSummary,
                 questionsEnabled = generateQuestions,
                 lastUpdated = System.currentTimeMillis()

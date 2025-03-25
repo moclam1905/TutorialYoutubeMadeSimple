@@ -161,11 +161,11 @@
     <string name="auto_generate">Tự động tạo</string>
     <string name="question_level">Mức độ câu hỏi:</string>
     <string name="low">Thấp</string>
-    <string name="five_questions">5 câu hỏi</string>
+    <string name="five_questions">5–10 câu hỏi</string>
     <string name="medium">Trung bình</string>
-    <string name="ten_questions">10 câu hỏi</string>
+    <string name="ten_questions">11–20 câu hỏi</string>
     <string name="high">Cao</string>
-    <string name="fifteen_questions">15 câu hỏi</string>
+    <string name="fifteen_questions">21–30 câu hỏi</string>
     <string name="manual">Thủ công</string>
     <string name="number_of_questions_range">Số lượng câu hỏi (1–20)</string>
     <string name="step_1_enter_video">Bước 1: Nhập video YouTube</string>
@@ -227,6 +227,22 @@
     <string name="network_restricted">Kết nối mạng bị hạn chế</string>
     <string name="content_loading_restricted">Việc tải nội dung bị hạn chế do cài đặt tiết kiệm dữ liệu của bạn</string>
     <string name="error_occurred">Đã xảy ra lỗi</string>
+
+    <string name="mindmap_tab">Sơ đồ tư duy</string>
+    <string name="generate_mindmap">Tạo sơ đồ tư duy</string>
+    <string name="generating_mindmap">Đang tạo bản đồ tư duy…</string>
+    <string name="save_mindmap">Lưu bản đồ tư duy</string>
+    <string name="save_mindmap_success">Bản đồ tư duy đã được lưu vào thư viện</string>
+    <string name="save_mindmap_error">Lỗi khi lưu bản đồ tư duy: %1$s</string>
+    <string name="fullscreen_mindmap">Toàn màn hình</string>
+    <string name="exit_fullscreen_mindmap">Thoát chế độ toàn màn hình</string>
+    <string name="zoom_in_mindmap">Phóng to</string>
+    <string name="zoom_out_mindmap">Thu nhỏ</string>
+    <string name="error_webview_not_found">Không thể tìm thấy WebView</string>
+    <string name="error_saving_mind_map">Lỗi khi lưu bản đồ tư duy: %1$s</string>
+    <string name="mind_map_saved">Bản đồ tư duy đã được lưu vào thư viện</string>
+    <string name="error_creating_file">Lỗi: Không thể tạo tệp</string>
+    <string name="error_saving_image">Lỗi khi lưu hình ảnh: %1$s</string>
 
 
 </resources>

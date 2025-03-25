@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.AppDatabase
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.ContentQuestionDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.KeyPointDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.MindMapDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuestionDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
@@ -135,6 +136,11 @@ object DatabaseModule {
     @Provides
     fun provideKeyPointDao(database: AppDatabase): KeyPointDao {
         return database.keyPointDao()
-
     }
+
+    @Provides
+    fun provideMindMapDao(database: AppDatabase): MindMapDao {
+        return database.mindMapDao()
+    }
+
 }

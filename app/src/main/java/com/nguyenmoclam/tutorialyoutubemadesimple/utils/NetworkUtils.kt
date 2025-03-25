@@ -26,7 +26,7 @@ class NetworkUtils(context: Context) {
     // Data saver mode settings
     private var dataSaverEnabled = false
     private var connectionTypeRestriction = "any" // "any", "wifi_only" or "mobile_only"
-    private var connectionTimeout = 30 // Default timeout in seconds
+    private var connectionTimeout = 120 // Default timeout in seconds
     private var retryPolicy = "exponential" // "none", "linear", or "exponential"
 
     /**

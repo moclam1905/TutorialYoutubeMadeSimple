@@ -16,10 +16,6 @@ class QuizViewModel : ViewModel() {
     var summaryText by mutableStateOf("")
         private set
 
-    /** Current processing step during summarization */
-    var currentStep by mutableStateOf(ProcessingCreateStep.NONE)
-        private set
-
     /** Indicates whether a summarization process is currently in progress */
     var isLoading by mutableStateOf(false)
         private set
@@ -88,10 +84,10 @@ class QuizViewModel : ViewModel() {
     val numberOfQuestions: Int
         get() = when (questionCountMode) {
             "auto" -> when (questionLevel) {
-                "low" -> 5
-                "medium" -> 10
-                "high" -> 15
-                else -> 10 // Default to medium if unknown
+                "low" -> (5..10).random() // Random between 5-10 questions
+                "medium" -> (11..20).random() // Random between 11-20 questions
+                "high" -> (21..30).random() // Random between 21-30 questions
+                else -> (11..20).random() // Default to medium if unknown
             }
 
             "manual" -> manualQuestionCount.toIntOrNull() ?: 5

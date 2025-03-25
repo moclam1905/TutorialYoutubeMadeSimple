@@ -2,6 +2,9 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -53,7 +56,8 @@ fun NetworkAwareWebView(
     networkUtils: NetworkUtils,
     isJavaScriptEnabled: Boolean = true,
     onPageFinished: () -> Unit = {},
-    onRetryClick: () -> Unit = {}
+    onRetryClick: () -> Unit = {},
+    jsInterface: ((WebView) -> Unit)? = null
 ) {
     // State variables
     var isLoading by remember { mutableStateOf(true) }
@@ -124,6 +128,7 @@ fun NetworkAwareWebView(
     // If content should be loaded, show WebView
     Box(modifier = modifier.fillMaxSize()) {
         AndroidView(
+            modifier = Modifier.fillMaxSize(),
             factory = { context ->
                 WebView(context).apply {
                     settings.apply {
@@ -136,6 +141,81 @@ fun NetworkAwareWebView(
                             WebSettings.LOAD_CACHE_ELSE_NETWORK // Prefer cache in data saver mode
                         } else {
                             WebSettings.LOAD_DEFAULT
+                        }
+                        // Enable WebView to use hardware acceleration
+                        setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
+                        // Enable fullscreen support
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
+                        // Enable content access
+                        allowContentAccess = true
+                        // Enable file access
+                        allowFileAccess = true
+                    }
+
+                    // Set layout parameters to ensure WebView takes full height
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+
+                    // Add WebChromeClient to handle fullscreen requests
+                    webChromeClient = object : WebChromeClient() {
+                        private var customView: View? = null
+                        private var customViewCallback: CustomViewCallback? = null
+                        private var originalSystemUiVisibility: Int = 0
+
+                        override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                            // This is called when the user enters fullscreen mode via HTML5 video or other content
+                            if (customView != null) {
+                                onHideCustomView()
+                                return
+                            }
+
+                            customView = view
+                            customViewCallback = callback
+
+                            // Find the root view to add our fullscreen view to
+                            val decorView =
+                                (context as? android.app.Activity)?.window?.decorView as? ViewGroup
+                            decorView?.let {
+                                // Save original UI visibility
+                                originalSystemUiVisibility = decorView.systemUiVisibility
+
+                                // Add the custom view to the window
+                                it.addView(
+                                    customView,
+                                    ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.MATCH_PARENT
+                                    )
+                                )
+
+                                // Set fullscreen flags
+                                decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                                        View.SYSTEM_UI_FLAG_FULLSCREEN or
+                                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            }
+                        }
+
+                        override fun onHideCustomView() {
+                            // This is called when the user exits fullscreen mode
+                            val decorView =
+                                (context as? android.app.Activity)?.window?.decorView as? ViewGroup
+                            decorView?.let {
+                                // Remove the custom view
+                                customView?.let { view -> it.removeView(view) }
+
+                                // Restore original UI visibility
+                                decorView.systemUiVisibility = originalSystemUiVisibility
+                            }
+
+                            customView = null
+                            customViewCallback?.onCustomViewHidden()
+                            customViewCallback = null
                         }
                     }
 
@@ -178,6 +258,9 @@ fun NetworkAwareWebView(
                             }
                         }
                     }
+
+                    // Add JavaScript interface if provided
+                    jsInterface?.invoke(this)
 
                     // Load content
                     if (html.isNotEmpty()) {

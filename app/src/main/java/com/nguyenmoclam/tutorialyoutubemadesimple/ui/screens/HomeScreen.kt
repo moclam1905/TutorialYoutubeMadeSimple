@@ -58,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -359,7 +360,7 @@ fun LearningChallengeItem(
                     imageUrl = quiz.thumbnailUrl,
                     contentDescription = quiz.title,
                     networkUtils = networkUtils,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    contentScale = ContentScale.Crop,
                     onRetryClick = {}
                 )
                 Spacer(modifier = Modifier.height(8.dp))

@@ -495,8 +495,8 @@ fun NetworkSettings(
         Slider(
             value = state.connectionTimeout.toFloat(),
             onValueChange = { onConnectionTimeoutChanged(it.toInt()) },
-            valueRange = 10f..60f,
-            steps = 5,
+            valueRange = 120f..240f,
+            steps = 24,
             colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
         )
 

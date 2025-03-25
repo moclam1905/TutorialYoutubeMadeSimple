@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.data.repository
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizProgressEntity
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.MindMap
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Question
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Summary
@@ -19,26 +20,38 @@ interface QuizRepository {
     suspend fun deleteQuiz(quizId: Long)
     suspend fun getQuizCount(): Int
     suspend fun getUsedStorageBytes(): Long
-    
+
     // Quiz progress methods
     suspend fun getQuizProgressEntity(quizId: Long): QuizProgressEntity?
     fun getProgressForQuizAsFlow(quizId: Long): Flow<Map<Int, String>?>
     fun getAllProgress(): Flow<List<Map<Int, String>>>
-    suspend fun saveQuizProgress(quizId: Long, currentQuestionIndex: Int, answeredQuestions: Map<Int, String>, completionTime: Long = 0)
+    suspend fun saveQuizProgress(
+        quizId: Long,
+        currentQuestionIndex: Int,
+        answeredQuestions: Map<Int, String>,
+        completionTime: Long = 0
+    )
+
     suspend fun deleteProgressForQuiz(quizId: Long)
-    
+
     // Transcript methods
     suspend fun insertTranscript(transcript: Transcript)
     suspend fun getTranscriptByQuizId(quizId: Long): Transcript?
     suspend fun deleteTranscriptForQuiz(quizId: Long)
-    
+
     // Topic and content question methods
     suspend fun insertTopics(topics: List<Topic>, quizId: Long)
     suspend fun getTopicsForQuiz(quizId: Long): Flow<List<Topic>>
     suspend fun deleteTopicsForQuiz(quizId: Long)
-    
+
     // Key points methods
     suspend fun insertKeyPoints(keyPoints: List<String>, quizId: Long)
     suspend fun getKeyPointsForQuiz(quizId: Long): Flow<List<com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.keypoint.KeyPoint>>
     suspend fun deleteKeyPointsForQuiz(quizId: Long)
+
+    // Mind map
+    suspend fun insertMindMap(mindMap: MindMap, quizId: Long)
+    suspend fun getMindMapByQuizId(quizId: Long): MindMap?
+    suspend fun deleteMindMapForQuiz(quizId: Long)
+
 }
