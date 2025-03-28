@@ -243,6 +243,19 @@
     <string name="mind_map_saved">Mind map saved to gallery</string>
     <string name="error_creating_file">Error: Could not create file</string>
     <string name="error_saving_image">Error saving image: %1$s</string>
+    <string name="chapter_timestamp">Chapter %1$s</string>
+    <string name="no_data">No data</string>
+    <string name="transcript">Transcript</string>
+    <string name="chapters">Chapters</string>
+    <string name="search_in_transcript">Search in transcript…</string>
+    <string name="results_found">%1$d results found</string>
+    <string name="no_results_found">No results found for &quot;%1$s&quot;</string>
+    <string name="transcript_not_found">Transcript not found for this quiz</string>
+    <string name="error_loading_transcript">Error loading transcript: %1$s</string>
+    <string name="error_loading_segments">Error loading transcript segments: %1$s</string>
+    <string name="error_parsing_transcript">Error parsing transcript: %1$s</string>
+    <string name="progress">Progress</string>
+    <string name="error_extracting_video_id">Could not extract videoId from link: %1$s</string>
 
 
 </resources>

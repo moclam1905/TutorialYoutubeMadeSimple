@@ -1,7 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Settings
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.repository.SettingsRepository
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

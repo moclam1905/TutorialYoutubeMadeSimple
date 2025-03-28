@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz
 
 import android.content.Context
+import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -29,6 +30,8 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
      */
     data class TranscriptResult(
         val text: String,
+        val segments: List<YouTubeTranscriptLight.Transcript> = emptyList(),
+        val chapters: List<YouTubeTranscriptLight.Chapter> = emptyList(),
         val error: String? = null
     )
 
@@ -49,6 +52,7 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
             if (!networkUtils.shouldLoadContent()) {
                 return TranscriptResult(
                     text = "",
+                    segments = emptyList(),
                     error = "Network restricted by data saver settings"
                 )
             }
@@ -60,10 +64,15 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
                 }
 
                 result.fold(
-                    onSuccess = { transcriptText -> TranscriptResult(text = transcriptText) },
+                    onSuccess = { transcriptText -> 
+                        // For Google API, we don't have segments with timestamps yet
+                        // This would need to be implemented separately
+                        TranscriptResult(text = transcriptText, segments = emptyList()) 
+                    },
                     onFailure = { e ->
                         TranscriptResult(
                             text = "",
+                            segments = emptyList(),
                             error = e.message ?: "Connection timeout or error"
                         )
                     }
@@ -72,12 +81,16 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
                 // YouTubeTranscriptLight already uses the timeout settings via OkHttpClient
                 val transcripts = youTubeTranscriptLight.getTranscript(videoId, languages)
                 val transcriptContent = transcripts.joinToString(" ") { it.text }
-                TranscriptResult(text = transcriptContent)
+
+                val chapterList = youTubeTranscriptLight.getChapters(videoId)
+                Log.d("ProcessYouTubeTranscriptUseCase", "Chapters: $chapterList")
+
+                TranscriptResult(text = transcriptContent, segments = transcripts, chapters = chapterList)
             }
         } catch (e: YouTubeTranscriptLight.TranscriptError) {
-            TranscriptResult(text = "", error = e.javaClass.simpleName)
+            TranscriptResult(text = "", segments = emptyList(), error = e.javaClass.simpleName)
         } catch (e: Exception) {
-            TranscriptResult(text = "", error = e.message ?: "Unknown error")
+            TranscriptResult(text = "", segments = emptyList(), error = e.message ?: "Unknown error")
         }
     }
 
@@ -96,7 +109,6 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
             ).apply {
                 selectedAccount = account.account
             }
-
 
             val youtube = YouTube.Builder(
                 NetHttpTransport(),

@@ -57,12 +57,26 @@ class YouTubeTranscriptLight @Inject constructor(
      * @return List of [Transcript] objects containing the video transcript
      * @throws TranscriptError Various transcript-related errors
      */
+    /**
+     * Fetches and caches the video page HTML for reuse
+     *
+     * @param videoId The YouTube video ID
+     * @return The raw HTML content of the video page and its parsed initial data
+     * @throws TranscriptError.VideoNotFound if the video doesn't exist or can't be accessed
+     */
+    private suspend fun fetchAndCacheVideoData(videoId: String): Pair<String, JSONObject?> =
+        withContext(Dispatchers.IO) {
+            val html = fetchVideoPage(videoId)
+            val initialData = extractInitialData(html)
+            Pair(html, initialData)
+        }
+
     suspend fun getTranscript(
         videoId: String,
         languages: List<String> = listOf("en") // currently only supports English
     ): List<Transcript> = withContext(Dispatchers.IO) {
         try {
-            val html = fetchVideoPage(videoId)
+            val (html, _) = fetchAndCacheVideoData(videoId)
             val captionsJson = extractCaptionsJson(html, videoId)
             val transcriptUrl = findTranscriptUrl(captionsJson, languages)
             fetchTranscript(transcriptUrl)
@@ -233,4 +247,100 @@ class YouTubeTranscriptLight @Inject constructor(
 
         return transcripts
     }
+
+    /**
+     * Parses chapter information from the initial data JSON
+     *
+     * @param json The parsed initial data JSON object
+     * @return List of Chapter objects containing video chapter information
+     */
+    fun parseChaptersFromInitialData(json: JSONObject): List<Chapter> {
+        val result = mutableListOf<Chapter>()
+        try {
+            val playerOverlays = json
+                .optJSONObject("playerOverlays")
+                ?.optJSONObject("playerOverlayRenderer")
+
+            val decoratedBar = playerOverlays
+                ?.optJSONObject("decoratedPlayerBarRenderer")
+                ?.optJSONObject("decoratedPlayerBarRenderer")
+
+            // Get playerBar
+            val playerBar = decoratedBar?.optJSONObject("playerBar") ?: return emptyList()
+
+            // Get multiMarkers
+            val multiMarkers =
+                playerBar.optJSONObject("multiMarkersPlayerBarRenderer") ?: return emptyList()
+
+            // Get markersMap
+            val markersArray = multiMarkers.optJSONArray("markersMap") ?: return emptyList()
+
+            // Find key = "DESCRIPTION_CHAPTERS" (or "AUTO_CHAPTERS")
+            for (i in 0 until markersArray.length()) {
+                val markerObj = markersArray.getJSONObject(i)
+                val key = markerObj.optString("key", "")
+                if (key == "DESCRIPTION_CHAPTERS" || key == "AUTO_CHAPTERS") {
+                    val value = markerObj.optJSONObject("value") ?: continue
+
+                    val chaptersArr = value.optJSONArray("chapters") ?: continue
+                    // Process each chapter item
+                    for (j in 0 until chaptersArr.length()) {
+                        val chapterObj = chaptersArr.getJSONObject(j)
+                            .optJSONObject("chapterRenderer") ?: continue
+
+                        val title = chapterObj
+                            .optJSONObject("title")
+                            ?.optString("simpleText") ?: "Untitled"
+
+                        val startMs = chapterObj.optLong("timeRangeStartMillis", 0)
+                        val startSec = startMs / 1000.0
+
+                        // Optional: get end time if available
+                        val endMs = chapterObj.optLong("timeRangeEndMillis", 0)
+                        val endSec = endMs / 1000.0
+
+                        result.add(Chapter(title, startSec, endSec))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return result
+    }
+
+    data class Chapter(
+        val title: String,
+        val startSeconds: Double,
+        val endSeconds: Double
+    )
+
+    suspend fun getChapters(videoId: String): List<Chapter> = withContext(Dispatchers.IO) {
+        // Fetch and cache video data
+        val (_, initialData) = fetchAndCacheVideoData(videoId)
+
+        // Parse chapters from initial data
+        val chapters = initialData?.let { parseChaptersFromInitialData(it) } ?: emptyList()
+        return@withContext chapters
+    }
+
+    /**
+     * Extracts initial data JSON from the video page HTML
+     *
+     * @param html The raw HTML content of the video page
+     * @return JSONObject containing the initial data or null if extraction fails
+     */
+    private fun extractInitialData(html: String): JSONObject? {
+        // Regex pattern to extract ytInitialData = {...};
+        val regex = Regex("(?s)ytInitialData\\s*=\\s*(\\{.*?\\});")
+        val match = regex.find(html) ?: return null
+        val jsonStr = match.groups[1]?.value ?: return null
+        return try {
+            JSONObject(jsonStr)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
 }

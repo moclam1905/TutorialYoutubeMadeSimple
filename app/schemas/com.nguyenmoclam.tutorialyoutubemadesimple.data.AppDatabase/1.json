@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "780f8d6b7b489c43b86ee74514cdb37b",
+    "identityHash": "43ed979a5a544c63af24483c0d1b1751",
     "entities": [
       {
         "tableName": "quizzes",
@@ -647,12 +647,96 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "transcript_segments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`segmentId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `transcriptId` INTEGER NOT NULL, `timestamp` TEXT NOT NULL, `timestampMillis` INTEGER NOT NULL, `text` TEXT NOT NULL, `isChapterStart` INTEGER NOT NULL, `chapterTitle` TEXT, `orderIndex` INTEGER NOT NULL, FOREIGN KEY(`transcriptId`) REFERENCES `transcripts`(`transcriptId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "segmentId",
+            "columnName": "segmentId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transcriptId",
+            "columnName": "transcriptId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestampMillis",
+            "columnName": "timestampMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "text",
+            "columnName": "text",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isChapterStart",
+            "columnName": "isChapterStart",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chapterTitle",
+            "columnName": "chapterTitle",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "orderIndex",
+            "columnName": "orderIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "segmentId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_transcript_segments_transcriptId",
+            "unique": false,
+            "columnNames": [
+              "transcriptId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transcript_segments_transcriptId` ON `${TABLE_NAME}` (`transcriptId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "transcripts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "transcriptId"
+            ],
+            "referencedColumns": [
+              "transcriptId"
+            ]
+          }
+        ]
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '780f8d6b7b489c43b86ee74514cdb37b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '43ed979a5a544c63af24483c0d1b1751')"
     ]
   }
 }

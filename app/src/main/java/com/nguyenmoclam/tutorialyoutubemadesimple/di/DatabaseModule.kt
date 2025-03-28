@@ -13,6 +13,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizResultDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.SummaryDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TopicDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptSegmentDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -143,4 +144,8 @@ object DatabaseModule {
         return database.mindMapDao()
     }
 
+    @Provides
+    fun provideTranscriptSegmentDao(database: AppDatabase): TranscriptSegmentDao {
+        return database.transcriptSegmentDao()
+    }
 }

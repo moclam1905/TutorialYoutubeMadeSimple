@@ -243,6 +243,19 @@
     <string name="mind_map_saved">Bản đồ tư duy đã được lưu vào thư viện</string>
     <string name="error_creating_file">Lỗi: Không thể tạo tệp</string>
     <string name="error_saving_image">Lỗi khi lưu hình ảnh: %1$s</string>
+    <string name="chapter_timestamp">Chương %1$s</string>
+    <string name="no_data">Không có dữ liệu</string>
+    <string name="transcript">Bản ghi</string>
+    <string name="chapters">Các chương</string>
+    <string name="search_in_transcript">Tìm kiếm trong bản ghi…</string>
+    <string name="results_found">Tìm thấy %1$d kết quả</string>
+    <string name="no_results_found">Không tìm thấy kết quả cho &quot;%1$s&quot;</string>
+    <string name="transcript_not_found">Không tìm thấy bản ghi cho bài kiểm tra này</string>
+    <string name="error_loading_transcript">Lỗi khi tải bản ghi: %1$s</string>
+    <string name="error_loading_segments">Lỗi khi tải các đoạn bản ghi: %1$s</string>
+    <string name="error_parsing_transcript">Lỗi khi phân tích bản ghi: %1$s</string>
+    <string name="progress">Tiến độ</string>
+    <string name="error_extracting_video_id">Không thể lấy videoId từ link: %1$s</string>
 
 
 </resources>

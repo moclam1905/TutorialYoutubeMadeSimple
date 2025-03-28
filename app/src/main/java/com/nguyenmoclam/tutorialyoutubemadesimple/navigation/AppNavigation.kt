@@ -16,6 +16,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.VideoPlayerWithTranscriptScreen
 
 /**
  * Main navigation component for the app.
@@ -61,6 +62,22 @@ fun AppNavigation(
                 quizId = quizId
             )
         }
+
+        // Video Player with Transcript Screen
+        composable(
+            route = AppScreens.VideoPlayer.route + "/{quizId}/{videoUrl}",
+            arguments = listOf(
+                navArgument("quizId") { type = NavType.LongType },
+                navArgument("videoUrl") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val quizId = backStackEntry.arguments?.getLong("quizId") ?: -1L
+            val videoUrl = backStackEntry.arguments?.getString("videoUrl") ?: ""
+            VideoPlayerWithTranscriptScreen(
+                quizId = quizId,
+                videoUrl = videoUrl
+            )
+        }
     }
 }
 
@@ -73,6 +90,7 @@ sealed class AppScreens(val route: String) {
     object CreateQuiz : AppScreens("create_quiz")
     object Settings : AppScreens("settings")
     object QuizDetail : AppScreens("quiz_detail")
+    object VideoPlayer : AppScreens("video_player")
 
     fun withArgs(vararg args: String): String {
         return buildString {
