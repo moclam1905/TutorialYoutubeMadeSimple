@@ -1,6 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings
 
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.repository.SettingsRepository
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.SettingsRepository
 import javax.inject.Inject
 
 /**

@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Settings
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.repository.SettingsRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow

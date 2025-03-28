@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -21,8 +22,12 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.summary.CreateQ
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.topic.SaveTopicsUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.SaveTranscriptUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Transcript
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.TranscriptSegment
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.keypoint.SaveKeyPointsUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.ParseTranscriptContentUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.SaveTranscriptWithSegmentsUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.TimeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -66,6 +71,8 @@ class QuizCreationViewModel @Inject constructor(
     private val createQuizSummaryUseCase: CreateQuizSummaryUseCase,
     private val createQuizQuestionsUseCase: CreateQuizQuestionsUseCase,
     private val saveTranscriptUseCase: SaveTranscriptUseCase,
+    private val saveTranscriptWithSegmentsUseCase: SaveTranscriptWithSegmentsUseCase,
+    private val parseTranscriptContentUseCase: ParseTranscriptContentUseCase,
     private val saveTopicsUseCase: SaveTopicsUseCase,
     private val saveKeyPointsUseCase: SaveKeyPointsUseCase,
     private val networkUtils: NetworkUtils
@@ -189,14 +196,126 @@ class QuizCreationViewModel @Inject constructor(
             // Insert quiz and get its ID using the use case
             val quizId = createQuizUseCase(quiz)
 
-            // Save transcript to database
-            saveTranscriptUseCase(
-                Transcript(
-                    quizId = quizId,
-                    content = transcriptContent,
-                    language = selectedLanguage
-                )
+            // Create transcript object
+            val transcript = Transcript(
+                quizId = quizId,
+                content = transcriptContent,
+                language = selectedLanguage
             )
+
+            // Process transcript segments if available
+            if (transcriptResult.segments.isNotEmpty()) {
+                // Convert YouTube transcript segments to our domain model
+                var segments = transcriptResult.segments.mapIndexed { index, segment ->
+                    val timestamp =
+                        TimeUtils.convertMillisToTimestamp((segment.start * 1000).toLong())
+                    val timestampMillis = (segment.start * 1000).toLong()
+
+                    TranscriptSegment(
+                        transcriptId = 0, // Will be set by the repository
+                        timestamp = timestamp,
+                        timestampMillis = timestampMillis,
+                        text = segment.text,
+                        isChapterStart = false // Default value, can be updated later
+                    )
+                }
+
+                // Process chapters if available
+                if (transcriptResult.chapters.isNotEmpty()) {
+                    Log.d(
+                        "QuizCreationViewModel",
+                        "Processing ${transcriptResult.chapters.size} chapters"
+                    )
+                    // Mark segments that correspond to chapter start times
+                    transcriptResult.chapters.forEach { chapter ->
+                        val chapterStartTimeMs = (chapter.startSeconds * 1000).toLong()
+                        // Find the segment closest to the chapter start time
+                        val closestSegmentIndex = segments.indexOfFirst { segment ->
+                            segment.timestampMillis >= chapterStartTimeMs
+                        }.takeIf { it >= 0 } ?: 0
+
+                        if (closestSegmentIndex < segments.size) {
+                            // Mark this segment as a chapter start and add the chapter title
+                            // Create a new mutable list to allow modification
+                            val mutableSegments = segments.toMutableList()
+                            mutableSegments[closestSegmentIndex] =
+                                segments[closestSegmentIndex].copy(
+                                    isChapterStart = true,
+                                    chapterTitle = chapter.title
+                                )
+                            // Update the original list with the modified list
+                            segments = mutableSegments
+                            Log.d(
+                                "QuizCreationViewModel",
+                                "Added chapter: ${chapter.title} at ${segments[closestSegmentIndex].timestamp}"
+                            )
+                        }
+                    }
+                }
+
+                // Save transcript with segments
+                val transcriptId = saveTranscriptWithSegmentsUseCase(transcript, segments)
+
+                // Only parse the content for chapter detection if no chapters were found from YouTube
+                transcript.id = transcriptId
+
+                // If we already have chapters from YouTube, skip additional parsing
+                if (transcriptResult.chapters.isEmpty()) {
+                    Log.d(
+                        "QuizCreationViewModel",
+                        "No chapters from YouTube, attempting to detect from content"
+                    )
+                    // For large transcripts, use the Flow-based implementation
+                    val parsedSegments = if (transcriptContent.length > 10000) {
+                        // Collect all segments from the flow
+                        val segments = mutableListOf<TranscriptSegment>()
+                        parseTranscriptContentUseCase.invokeAsFlow(transcriptContent, transcriptId)
+                            .collect { chunks -> segments.clear(); segments.addAll(chunks) }
+                        segments
+                    } else {
+                        // For smaller transcripts, use the direct method
+                        parseTranscriptContentUseCase(transcriptContent, transcriptId)
+                    }
+
+                    // If parsing produced segments with chapters, update the transcript
+                    if (parsedSegments.isNotEmpty() && parsedSegments.any { it.isChapterStart }) {
+                        Log.d(
+                            "QuizCreationViewModel",
+                            "Detected ${parsedSegments.count { it.isChapterStart }} chapters from content"
+                        )
+                        saveTranscriptWithSegmentsUseCase(transcript, parsedSegments)
+                    }
+                } else {
+                    Log.d(
+                        "QuizCreationViewModel",
+                        "Using ${transcriptResult.chapters.size} chapters from YouTube"
+                    )
+                }
+            } else {
+                // If no segments available, save transcript and try to parse content
+                val transcriptId = saveTranscriptUseCase(transcript)
+
+                // Try to parse transcript content into segments with chapter detection
+                // For large transcripts, use the Flow-based implementation
+                val parsedSegments = if (transcriptContent.length > 10000) {
+                    // Collect all segments from the flow
+                    val segments = mutableListOf<TranscriptSegment>()
+                    parseTranscriptContentUseCase.invokeAsFlow(transcriptContent, transcriptId)
+                        .collect { chunks -> segments.clear(); segments.addAll(chunks) }
+                    segments
+                } else {
+                    // For smaller transcripts, use the direct method
+                    parseTranscriptContentUseCase(transcriptContent, transcriptId)
+                }
+
+                // If segments were successfully parsed, update the transcript
+                if (parsedSegments.isNotEmpty()) {
+                    // Update transcript with the parsed segments
+                    // The saveTranscriptWithSegmentsUseCase will handle chapter detection and processing
+                    transcript.id = transcriptId
+                    saveTranscriptWithSegmentsUseCase(transcript, parsedSegments)
+                }
+            }
 
             val newState = if (generateSummary && generateQuestions) {
                 supervisorScope {
@@ -332,5 +451,4 @@ class QuizCreationViewModel @Inject constructor(
             state = newState
         }
     }
-
 }

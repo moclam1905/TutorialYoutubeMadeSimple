@@ -116,7 +116,9 @@ class MainActivity : ComponentActivity() {
                     Surface(color = MaterialTheme.colorScheme.background) {
                         Scaffold(
                             bottomBar = {
-                                if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true) {
+                                if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true &&
+                                    currentDestinationRoute?.startsWith(AppScreens.VideoPlayer.route) != true
+                                ) {
                                     // Animate bottom navigation visibility
                                     AnimatedVisibility(
                                         visible = isBottomNavVisible,

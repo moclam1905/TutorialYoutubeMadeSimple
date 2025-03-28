@@ -6,6 +6,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Question
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Summary
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Transcript
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.TranscriptSegment
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
 import kotlinx.coroutines.flow.Flow
 
@@ -35,9 +36,48 @@ interface QuizRepository {
     suspend fun deleteProgressForQuiz(quizId: Long)
 
     // Transcript methods
-    suspend fun insertTranscript(transcript: Transcript)
+    suspend fun insertTranscript(transcript: Transcript): Long
     suspend fun getTranscriptByQuizId(quizId: Long): Transcript?
     suspend fun deleteTranscriptForQuiz(quizId: Long)
+    /**
+     * Get a transcript for a specific quiz.
+     */
+    fun getTranscriptForQuiz(quizId: Long): Flow<Transcript?>
+
+    /**
+     * Get all transcript segments for a specific transcript.
+     */
+    fun getSegmentsForTranscript(transcriptId: Long): Flow<List<TranscriptSegment>>
+
+    /**
+     * Get all chapter segments (segments that mark the start of a chapter) for a specific transcript.
+     */
+    fun getChaptersForTranscript(transcriptId: Long): Flow<List<TranscriptSegment>>
+
+    /**
+     * Get the current segment based on the current playback time.
+     */
+    suspend fun getCurrentSegment(transcriptId: Long, currentTimeMillis: Long): TranscriptSegment?
+
+    /**
+     * Save a transcript with its segments.
+     */
+    suspend fun saveTranscriptWithSegments(transcript: Transcript, segments: List<TranscriptSegment>): Long
+
+    /**
+     * Update a transcript.
+     */
+    suspend fun updateTranscript(transcript: Transcript)
+
+    /**
+     * Delete a transcript and all its segments.
+     */
+    suspend fun deleteTranscript(transcriptId: Long)
+
+    /**
+     * Parse raw transcript content into segments.
+     */
+    suspend fun parseTranscriptContent(content: String, transcriptId: Long): List<TranscriptSegment>
 
     // Topic and content question methods
     suspend fun insertTopics(topics: List<Topic>, quizId: Long)

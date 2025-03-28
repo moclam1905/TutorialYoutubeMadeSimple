@@ -41,6 +41,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,7 +52,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -90,6 +93,14 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
+// CompositionLocal for providing NavController and QuizDetailViewModel to child composables
+val LocalNavController =
+    compositionLocalOf<NavHostController> { error("No NavController provided") }
+val LocalQuizDetailViewModel =
+    compositionLocalOf<QuizDetailViewModel> { error("No QuizDetailViewModel provided") }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,492 +110,505 @@ fun QuizDetailScreen(
     quizId: Long = -1L,
     quizDetailViewModel: QuizDetailViewModel = hiltViewModel()
 ) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-    var materialsExpanded by remember { mutableStateOf(true) }
-    var selectedContentIndex by remember { mutableIntStateOf(0) }
+    // Provide NavController and QuizDetailViewModel to child composables
+    CompositionLocalProvider(
+        LocalNavController provides navController,
+        LocalQuizDetailViewModel provides quizDetailViewModel
+    ) {
+        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+        val scope = rememberCoroutineScope()
+        var materialsExpanded by remember { mutableStateOf(true) }
+        var selectedContentIndex by remember { mutableIntStateOf(0) }
 
-    var quizQuestions by remember { mutableStateOf<List<Any>>(emptyList()) }
-    var currentQuestionIndex by remember { mutableIntStateOf(0) }
-    var selectedAnswer by remember { mutableStateOf("") }
-    var showFeedback by remember { mutableStateOf(false) }
-    var isCorrect by remember { mutableStateOf(false) }
+        var quizQuestions by remember { mutableStateOf<List<Any>>(emptyList()) }
+        var currentQuestionIndex by remember { mutableIntStateOf(0) }
+        var selectedAnswer by remember { mutableStateOf("") }
+        var showFeedback by remember { mutableStateOf(false) }
+        var isCorrect by remember { mutableStateOf(false) }
 
-    // Track answered questions and their selected answers - now using ViewModel state
-    var answeredQuestions by remember { mutableStateOf<Map<Int, String>>(quizDetailViewModel.state.answeredQuestions) }
+        // Track answered questions and their selected answers - now using ViewModel state
+        var answeredQuestions by remember { mutableStateOf<Map<Int, String>>(quizDetailViewModel.state.answeredQuestions) }
 
-    val configuration = LocalConfiguration.current
-    val screenWidthPx = with(LocalDensity.current) {
-        configuration.screenWidthDp.dp.toPx()
-    }
-    val dragDistance = (0.4f * screenWidthPx).toInt()
-
-    // Handle system back button press
-    BackHandler(enabled = quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted && selectedContentIndex == 1) {
-        quizDetailViewModel.showExitConfirmation()
-    }
-
-    // Load quiz data from database if quizId is provided
-    LaunchedEffect(quizId) {
-        if (quizId > 0) {
-            quizDetailViewModel.loadQuizById(quizId)
+        val configuration = LocalConfiguration.current
+        val screenWidthPx = with(LocalDensity.current) {
+            configuration.screenWidthDp.dp.toPx()
         }
-    }
+        val dragDistance = (0.4f * screenWidthPx).toInt()
 
-    // Load quiz questions from QuizCreationViewModel (when coming from quiz creation)
-    LaunchedEffect(quizViewModel.state.quizIdInserted) {
-        if (quizId <= 0 && quizViewModel.state.quizIdInserted >= 0L) {
-            try {
-                quizDetailViewModel.loadQuizById(quizViewModel.state.quizIdInserted)
-            } catch (e: Exception) {
-                println("Error parsing quiz questions: ${e.message}")
+        // Handle system back button press
+        BackHandler(enabled = quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted && selectedContentIndex == 1) {
+            quizDetailViewModel.showExitConfirmation()
+        }
+
+        // Load quiz data from database if quizId is provided
+        LaunchedEffect(quizId) {
+            if (quizId > 0) {
+                quizDetailViewModel.loadQuizById(quizId)
             }
         }
-    }
 
-    LaunchedEffect(quizDetailViewModel.state.questions) {
-        if (quizDetailViewModel.state.questions.isNotEmpty()) {
-            quizQuestions = quizDetailViewModel.state.questions
+        // Load quiz questions from QuizCreationViewModel (when coming from quiz creation)
+        LaunchedEffect(quizViewModel.state.quizIdInserted) {
+            if (quizId <= 0 && quizViewModel.state.quizIdInserted >= 0L) {
+                try {
+                    quizDetailViewModel.loadQuizById(quizViewModel.state.quizIdInserted)
+                } catch (e: Exception) {
+                    println("Error parsing quiz questions: ${e.message}")
+                }
+            }
         }
-    }
 
-    // Set the current question index based on answered questions from ViewModel
-    LaunchedEffect(quizQuestions, quizDetailViewModel.state.answeredQuestions) {
-        if (quizQuestions.isNotEmpty()) {
-            // Update local state with ViewModel state
-            answeredQuestions = quizDetailViewModel.state.answeredQuestions
+        LaunchedEffect(quizDetailViewModel.state.questions) {
+            if (quizDetailViewModel.state.questions.isNotEmpty()) {
+                quizQuestions = quizDetailViewModel.state.questions
+            }
+        }
 
-            // If we have answered questions, show the last answered question
-            if (answeredQuestions.isNotEmpty()) {
-                // Use the ViewModel's method to get the last answered question index
-                currentQuestionIndex = quizDetailViewModel.getLastAnsweredQuestionIndex()
-                selectedAnswer = quizDetailViewModel.getAnswerForQuestion(currentQuestionIndex)
-                showFeedback = selectedAnswer.isNotEmpty()
+        // Set the current question index based on answered questions from ViewModel
+        LaunchedEffect(quizQuestions, quizDetailViewModel.state.answeredQuestions) {
+            if (quizQuestions.isNotEmpty()) {
+                // Update local state with ViewModel state
+                answeredQuestions = quizDetailViewModel.state.answeredQuestions
 
-                // Check if the answer was correct
-                if (showFeedback) {
-                    val currentQuestion = quizQuestions[currentQuestionIndex]
-                    isCorrect = when (currentQuestion) {
-                        is MultipleChoiceQuestion -> {
-                            currentQuestion.correctAnswers.contains(selectedAnswer)
+                // If we have answered questions, show the last answered question
+                if (answeredQuestions.isNotEmpty()) {
+                    // Use the ViewModel's method to get the last answered question index
+                    currentQuestionIndex = quizDetailViewModel.getLastAnsweredQuestionIndex()
+                    selectedAnswer = quizDetailViewModel.getAnswerForQuestion(currentQuestionIndex)
+                    showFeedback = selectedAnswer.isNotEmpty()
+
+                    // Check if the answer was correct
+                    if (showFeedback) {
+                        val currentQuestion = quizQuestions[currentQuestionIndex]
+                        isCorrect = when (currentQuestion) {
+                            is MultipleChoiceQuestion -> {
+                                currentQuestion.correctAnswers.contains(selectedAnswer)
+                            }
+
+                            is TrueFalseQuestion -> {
+                                (selectedAnswer == "True" && currentQuestion.isTrue) ||
+                                        (selectedAnswer == "False" && !currentQuestion.isTrue)
+                            }
+
+                            else -> false
                         }
-
-                        is TrueFalseQuestion -> {
-                            (selectedAnswer == "True" && currentQuestion.isTrue) ||
-                                    (selectedAnswer == "False" && !currentQuestion.isTrue)
-                        }
-
-                        else -> false
                     }
+                } else {
+                    // If no questions have been answered, show the first question
+                    currentQuestionIndex = quizDetailViewModel.state.currentQuestionIndex
+                    selectedAnswer = ""
+                    showFeedback = false
                 }
-            } else {
-                // If no questions have been answered, show the first question
-                currentQuestionIndex = quizDetailViewModel.state.currentQuestionIndex
-                selectedAnswer = ""
-                showFeedback = false
             }
         }
-    }
 
-    // Create a state for the sliding root navigation
-    val slidingNavState =
-        rememberSlidingRootNavState(initialDragProgress = if (drawerState.currentValue == DrawerValue.Open) 1f else 0f)
+        // Create a state for the sliding root navigation
+        val slidingNavState =
+            rememberSlidingRootNavState(initialDragProgress = if (drawerState.currentValue == DrawerValue.Open) 1f else 0f)
 
-    // Use SlidingRootNav directly with the state
-    SlidingRootNav(
-        state = slidingNavState,
-        modifier = Modifier,
-        dragDistance = dragDistance,
-        gravity = SlideGravity.LEFT,
-        transformations = listOf(
-            ScaleTransformation(0.65f),
-            ElevationTransformation(20.dp.value),
-            YTranslationTransformation(20.dp.value)
-        ),
-        menuContent = {
-            Column(modifier = Modifier.fillMaxHeight()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.QuestionAnswer,
-                        contentDescription = "App Logo",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
+        // Use SlidingRootNav directly with the state
+        SlidingRootNav(
+            state = slidingNavState,
+            modifier = Modifier,
+            dragDistance = dragDistance,
+            gravity = SlideGravity.LEFT,
+            transformations = listOf(
+                ScaleTransformation(0.65f),
+                ElevationTransformation(20.dp.value),
+                YTranslationTransformation(20.dp.value)
+            ),
+            menuContent = {
+                Column(modifier = Modifier.fillMaxHeight()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QuestionAnswer,
+                            contentDescription = "App Logo",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = stringResource(R.string.quiz),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Divider()
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
+                        label = { Text(stringResource(R.string.dashboard_tab)) },
+                        selected = false,
+                        onClick = {
+                            scope.launch {
+
+                                if (quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted && selectedContentIndex == 1) {
+                                    quizDetailViewModel.showExitConfirmation()
+                                } else {
+                                    slidingNavState.dragProgress = 0f
+                                    navController.navigate(AppScreens.Home.route)
+                                }
+                            }
+                        }
                     )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = stringResource(R.string.quiz),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
 
-                Divider()
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-                    label = { Text(stringResource(R.string.dashboard_tab)) },
-                    selected = false,
-                    onClick = {
-                        scope.launch {
-
-                            if (quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted && selectedContentIndex == 1) {
-                                quizDetailViewModel.showExitConfirmation()
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.MenuBook, contentDescription = "Materials") },
+                        label = { Text(stringResource(R.string.materials_tab)) },
+                        badge = {
+                            if (materialsExpanded) {
+                                Icon(Icons.Default.ExpandLess, contentDescription = "Collapse")
                             } else {
-                                slidingNavState.dragProgress = 0f
-                                navController.navigate(AppScreens.Home.route)
+                                Icon(Icons.Default.ExpandMore, contentDescription = "Expand")
                             }
-                        }
-                    }
-                )
+                        },
+                        selected = false,
+                        onClick = { materialsExpanded = !materialsExpanded }
+                    )
 
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.MenuBook, contentDescription = "Materials") },
-                    label = { Text(stringResource(R.string.materials_tab)) },
-                    badge = {
-                        if (materialsExpanded) {
-                            Icon(Icons.Default.ExpandLess, contentDescription = "Collapse")
-                        } else {
-                            Icon(Icons.Default.ExpandMore, contentDescription = "Expand")
-                        }
-                    },
-                    selected = false,
-                    onClick = { materialsExpanded = !materialsExpanded }
-                )
-
-                if (materialsExpanded) {
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        NavigationDrawerItem(
-                            icon = {
-                                Icon(
-                                    Icons.Default.Summarize,
-                                    contentDescription = "Summary"
-                                )
-                            },
-                            label = { Text(stringResource(R.string.summary_tab)) },
-                            selected = selectedContentIndex == 0,
-                            onClick = {
-                                scope.launch {
-                                    slidingNavState.dragProgress = 0f
-                                }
-                                selectedContentIndex = 0
-                            }
-                        )
-
-                        NavigationDrawerItem(
-                            icon = { Icon(Icons.Default.Quiz, contentDescription = "Questions") },
-                            label = { Text(stringResource(R.string.questions_tab)) },
-                            selected = selectedContentIndex == 1,
-                            onClick = {
-                                scope.launch {
-                                    slidingNavState.dragProgress = 0f
-                                }
-                                selectedContentIndex = 1
-                            }
-                        )
-
-                        NavigationDrawerItem(
-                            icon = {
-                                Icon(
-                                    Icons.Default.AccountTree,
-                                    contentDescription = "Mind Map"
-                                )
-                            },
-                            label = { Text(stringResource(R.string.mindmap_tab)) },
-                            selected = selectedContentIndex == 2,
-                            onClick = {
-                                scope.launch { slidingNavState.dragProgress = 0f }
-                                selectedContentIndex = 2
-                            }
-                        )
-                    }
-                }
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                    label = { Text(stringResource(R.string.settings_tab)) },
-                    selected = false,
-                    onClick = {
-                        scope.launch {
-                            slidingNavState.closeMenu()
-                            navController.navigate(AppScreens.Settings.route)
-                        }
-                    }
-                )
-            }
-        },
-        contentContent = {
-            Scaffold(
-                topBar = {
-                    if (!quizViewModel.state.isLoading && !quizDetailViewModel.state.isLoading) {
-                        TopAppBar(
-                            title = { Text(stringResource(R.string.quiz_details_title)) },
-                            navigationIcon = {
-                                val isDrawerOpen = slidingNavState.isMenuOpened
-                                val icon =
-                                    if (isDrawerOpen) Icons.Default.Close else Icons.Default.Menu
-
-                                IconButton(onClick = {
+                    if (materialsExpanded) {
+                        Column(modifier = Modifier.padding(start = 16.dp)) {
+                            NavigationDrawerItem(
+                                icon = {
+                                    Icon(
+                                        Icons.Default.Summarize,
+                                        contentDescription = "Summary"
+                                    )
+                                },
+                                label = { Text(stringResource(R.string.summary_tab)) },
+                                selected = selectedContentIndex == 0,
+                                onClick = {
                                     scope.launch {
-                                        //slidingNavState.dragProgress = 1f
-                                        if (isDrawerOpen) {
-                                            slidingNavState.closeMenu()
-                                        } else {
-                                            slidingNavState.openMenu()
-                                        }
+                                        slidingNavState.dragProgress = 0f
                                     }
-                                }) {
-                                    Icon(icon, contentDescription = "Menu")
+                                    selectedContentIndex = 0
                                 }
-                            }
-                        )
+                            )
+
+                            NavigationDrawerItem(
+                                icon = {
+                                    Icon(
+                                        Icons.Default.Quiz,
+                                        contentDescription = "Questions"
+                                    )
+                                },
+                                label = { Text(stringResource(R.string.questions_tab)) },
+                                selected = selectedContentIndex == 1,
+                                onClick = {
+                                    scope.launch {
+                                        slidingNavState.dragProgress = 0f
+                                    }
+                                    selectedContentIndex = 1
+                                }
+                            )
+
+                            NavigationDrawerItem(
+                                icon = {
+                                    Icon(
+                                        Icons.Default.AccountTree,
+                                        contentDescription = "Mind Map"
+                                    )
+                                },
+                                label = { Text(stringResource(R.string.mindmap_tab)) },
+                                selected = selectedContentIndex == 2,
+                                onClick = {
+                                    scope.launch { slidingNavState.dragProgress = 0f }
+                                    selectedContentIndex = 2
+                                }
+                            )
+                        }
                     }
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                        label = { Text(stringResource(R.string.settings_tab)) },
+                        selected = false,
+                        onClick = {
+                            scope.launch {
+                                slidingNavState.closeMenu()
+                                navController.navigate(AppScreens.Settings.route)
+                            }
+                        }
+                    )
                 }
-            ) { paddingValues ->
-                // Main content
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                ) {
-                    when {
-                        quizViewModel.state.isLoading || quizDetailViewModel.state.isLoading -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
+            },
+            contentContent = {
+                Scaffold(
+                    topBar = {
+                        if (!quizViewModel.state.isLoading && !quizDetailViewModel.state.isLoading) {
+                            TopAppBar(
+                                title = { Text(stringResource(R.string.quiz_details_title)) },
+                                navigationIcon = {
+                                    val isDrawerOpen = slidingNavState.isMenuOpened
+                                    val icon =
+                                        if (isDrawerOpen) Icons.Default.Close else Icons.Default.Menu
+
+                                    IconButton(onClick = {
+                                        scope.launch {
+                                            //slidingNavState.dragProgress = 1f
+                                            if (isDrawerOpen) {
+                                                slidingNavState.closeMenu()
+                                            } else {
+                                                slidingNavState.openMenu()
+                                            }
+                                        }
+                                    }) {
+                                        Icon(icon, contentDescription = "Menu")
+                                    }
+                                }
+                            )
+                        }
+                    }
+                ) { paddingValues ->
+                    // Main content
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                    ) {
+                        when {
+                            quizViewModel.state.isLoading || quizDetailViewModel.state.isLoading -> {
                                 Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.8f)
-                                        .wrapContentHeight()
-                                        .animateContentSize()
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.fillMaxWidth()
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.8f)
+                                            .wrapContentHeight()
+                                            .animateContentSize()
                                     ) {
-                                        MultiWaveLoadingAnimation(
-                                            progress = if (quizId <= 0 && selectedContentIndex != 2) {
-                                                // Coming from quiz creation - use QuizCreationViewModel
-                                                quizViewModel.state.currentStep.getProgressPercentage()
-                                            } else if (selectedContentIndex == 2) {
-                                                // Mind map tab - use the mind map progress
-                                                quizDetailViewModel.state.currentMindMapStep.getProgressPercentage()
-                                            } else {
-                                                // Coming from HomeScreen - use a fixed progress for QuizDetailViewModel
-                                                if (quizDetailViewModel.state.isLoading) 50f else 0f
-                                            },
-                                            modifier = Modifier.size(200.dp)
-                                        )
-
-                                        Spacer(modifier = Modifier.height(16.dp))
-
-                                        Text(
-                                            text = if (quizId <= 0 && selectedContentIndex != 2) {
-                                                // Coming from quiz creation - use QuizCreationViewModel message
-                                                quizViewModel.state.currentStep.getMessage(
-                                                    LocalContext.current
-                                                )
-                                            } else if (selectedContentIndex == 2) {
-                                                quizDetailViewModel.state.currentMindMapStep.getMessage(
-                                                    LocalContext.current
-                                                )
-                                            } else {
-                                                // Coming from HomeScreen - use a generic loading message
-                                                stringResource(R.string.loading_quiz_details)
-                                            },
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        quizViewModel.state.errorMessage != null || quizDetailViewModel.state.errorMessage != null -> {
-                            // Error state
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = quizViewModel.state.errorMessage
-                                        ?: quizDetailViewModel.state.errorMessage ?: "",
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(16.dp)
-                                )
-                            }
-                        }
-
-                        else -> {
-                            when (selectedContentIndex) {
-                                0 -> {
-                                    // Summary
-                                    // Get summary from either QuizCreationViewModel or QuizDetailViewModel
-                                    val summaryContent = if (quizId > 0) {
-                                        quizDetailViewModel.state.summary
-                                    } else {
-                                        quizViewModel.state.quizSummary
-                                    }
-
-                                    if (summaryContent.isNotEmpty()) {
-                                        SummaryContent(summaryContent)
-                                    } else {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Text(stringResource(R.string.no_summary_available))
+                                            MultiWaveLoadingAnimation(
+                                                progress = if (quizId <= 0 && selectedContentIndex != 2) {
+                                                    // Coming from quiz creation - use QuizCreationViewModel
+                                                    quizViewModel.state.currentStep.getProgressPercentage()
+                                                } else if (selectedContentIndex == 2) {
+                                                    // Mind map tab - use the mind map progress
+                                                    quizDetailViewModel.state.currentMindMapStep.getProgressPercentage()
+                                                } else {
+                                                    // Coming from HomeScreen - use a fixed progress for QuizDetailViewModel
+                                                    if (quizDetailViewModel.state.isLoading) 50f else 0f
+                                                },
+                                                modifier = Modifier.size(200.dp)
+                                            )
+
+                                            Spacer(modifier = Modifier.height(16.dp))
+
+                                            Text(
+                                                text = if (quizId <= 0 && selectedContentIndex != 2) {
+                                                    // Coming from quiz creation - use QuizCreationViewModel message
+                                                    quizViewModel.state.currentStep.getMessage(
+                                                        LocalContext.current
+                                                    )
+                                                } else if (selectedContentIndex == 2) {
+                                                    quizDetailViewModel.state.currentMindMapStep.getMessage(
+                                                        LocalContext.current
+                                                    )
+                                                } else {
+                                                    // Coming from HomeScreen - use a generic loading message
+                                                    stringResource(R.string.loading_quiz_details)
+                                                },
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                textAlign = TextAlign.Center
+                                            )
                                         }
                                     }
                                 }
+                            }
 
-                                1 -> {
-                                    // Questions
-                                    if (quizQuestions.isNotEmpty()) {
-                                        // Check if quiz is completed to show results screen
-                                        if (quizDetailViewModel.state.quizCompleted) {
-                                            // skippedQuestions, skippedQuestionIndices get data from Database if needed
-                                            QuizResultsScreen(
-                                                quizQuestions = quizQuestions,
-                                                correctAnswers = quizDetailViewModel.getCorrectAnswersCount(),
-                                                incorrectAnswers = quizDetailViewModel.getIncorrectAnswersCount(),
-                                                skippedQuestions =
-                                                    if (quizDetailViewModel.state.skippedQuestions.isNotEmpty())
-                                                        quizDetailViewModel.state.skippedQuestions.size
-                                                    else
-                                                        quizDetailViewModel.getSkippedQuestionsCount(),
-                                                completionTimeSeconds = quizDetailViewModel.getQuizCompletionTimeInSeconds(),
-                                                correctQuestionIndices = quizDetailViewModel.getCorrectlyAnsweredQuestions(),
-                                                incorrectQuestionIndices = quizDetailViewModel.getIncorrectlyAnsweredQuestions(),
-                                                skippedQuestionIndices =
-                                                    if (quizDetailViewModel.state.skippedQuestions.isNotEmpty())
-                                                        quizDetailViewModel.state.skippedQuestions.toList()
-                                                    else
-                                                        quizDetailViewModel.getSkippedQuestions(),
-                                                onRetryQuiz = {
-                                                    quizDetailViewModel.resetQuiz()
-                                                }
-                                            )
+                            quizViewModel.state.errorMessage != null || quizDetailViewModel.state.errorMessage != null -> {
+                                // Error state
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = quizViewModel.state.errorMessage
+                                            ?: quizDetailViewModel.state.errorMessage ?: "",
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(16.dp)
+                                    )
+                                }
+                            }
+
+                            else -> {
+                                when (selectedContentIndex) {
+                                    0 -> {
+                                        // Summary
+                                        // Get summary from either QuizCreationViewModel or QuizDetailViewModel
+                                        val summaryContent = if (quizId > 0) {
+                                            quizDetailViewModel.state.summary
+                                        } else {
+                                            quizViewModel.state.quizSummary
                                         }
-                                        // Check if quiz has not started yet
-                                        else if (!quizDetailViewModel.state.quizStarted) {
-                                            StartQuizScreen(
-                                                questionCount = quizQuestions.size,
-                                                onStartQuiz = {
-                                                    quizDetailViewModel.startQuiz()
-                                                    selectedAnswer = ""
-                                                    showFeedback = false
-                                                    currentQuestionIndex = 0
-                                                }
-                                            )
+
+                                        if (summaryContent.isNotEmpty()) {
+                                            SummaryContent(summaryContent)
+                                        } else {
+                                            Box(
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(stringResource(R.string.no_summary_available))
+                                            }
                                         }
-                                        // Show quiz content if quiz is started and not completed
-                                        else {
-                                            // Show exit confirmation dialog if needed
-                                            if (quizDetailViewModel.state.showExitConfirmation) {
-                                                ExitConfirmationDialog(
-                                                    onConfirm = {
-                                                        quizDetailViewModel.confirmExit()
-                                                        navController.popBackStack()
-                                                    },
-                                                    onDismiss = {
-                                                        quizDetailViewModel.hideExitConfirmation()
+                                    }
+
+                                    1 -> {
+                                        // Questions
+                                        if (quizQuestions.isNotEmpty()) {
+                                            // Check if quiz is completed to show results screen
+                                            if (quizDetailViewModel.state.quizCompleted) {
+                                                // skippedQuestions, skippedQuestionIndices get data from Database if needed
+                                                QuizResultsScreen(
+                                                    quizQuestions = quizQuestions,
+                                                    correctAnswers = quizDetailViewModel.getCorrectAnswersCount(),
+                                                    incorrectAnswers = quizDetailViewModel.getIncorrectAnswersCount(),
+                                                    skippedQuestions =
+                                                        if (quizDetailViewModel.state.skippedQuestions.isNotEmpty())
+                                                            quizDetailViewModel.state.skippedQuestions.size
+                                                        else
+                                                            quizDetailViewModel.getSkippedQuestionsCount(),
+                                                    completionTimeSeconds = quizDetailViewModel.getQuizCompletionTimeInSeconds(),
+                                                    correctQuestionIndices = quizDetailViewModel.getCorrectlyAnsweredQuestions(),
+                                                    incorrectQuestionIndices = quizDetailViewModel.getIncorrectlyAnsweredQuestions(),
+                                                    skippedQuestionIndices =
+                                                        if (quizDetailViewModel.state.skippedQuestions.isNotEmpty())
+                                                            quizDetailViewModel.state.skippedQuestions.toList()
+                                                        else
+                                                            quizDetailViewModel.getSkippedQuestions(),
+                                                    onRetryQuiz = {
+                                                        quizDetailViewModel.resetQuiz()
                                                     }
                                                 )
                                             }
-
-                                            QuizContent(
-                                                quizQuestions = quizQuestions,
-                                                currentQuestionIndex = currentQuestionIndex,
-                                                onQuestionChange = { currentQuestionIndex = it },
-                                                selectedAnswer = selectedAnswer,
-                                                onAnswerSelected = { selectedAnswer = it },
-                                                showFeedback = showFeedback,
-                                                isCorrect = isCorrect,
-                                                onSubmitAnswer = {
-                                                    val currentQuestion =
-                                                        quizQuestions[currentQuestionIndex]
-                                                    isCorrect = when (currentQuestion) {
-                                                        is MultipleChoiceQuestion -> {
-                                                            currentQuestion.correctAnswers.contains(
-                                                                selectedAnswer
-                                                            )
-                                                        }
-
-                                                        is TrueFalseQuestion -> {
-                                                            (selectedAnswer == "True" && currentQuestion.isTrue) ||
-                                                                    (selectedAnswer == "False" && !currentQuestion.isTrue)
-                                                        }
-
-                                                        else -> false
-                                                    }
-                                                    showFeedback = true
-
-                                                    // Save the progress in the ViewModel after checking correctness
-                                                    quizDetailViewModel.saveQuizProgress(
-                                                        currentQuestionIndex,
-                                                        selectedAnswer
-                                                    )
-
-                                                    // Update local state to match ViewModel state
-                                                    answeredQuestions =
-                                                        quizDetailViewModel.state.answeredQuestions
-                                                },
-                                                onSkipQuestion = {
-                                                    quizDetailViewModel.skipQuestion(
-                                                        currentQuestionIndex
-                                                    )
-                                                    // Update local state to match ViewModel state
-                                                    currentQuestionIndex =
-                                                        quizDetailViewModel.state.currentQuestionIndex
-                                                    if (currentQuestionIndex < quizQuestions.size - 1) {
-                                                        currentQuestionIndex++
+                                            // Check if quiz has not started yet
+                                            else if (!quizDetailViewModel.state.quizStarted) {
+                                                StartQuizScreen(
+                                                    questionCount = quizQuestions.size,
+                                                    onStartQuiz = {
+                                                        quizDetailViewModel.startQuiz()
                                                         selectedAnswer = ""
                                                         showFeedback = false
+                                                        currentQuestionIndex = 0
                                                     }
-                                                },
-                                                onNextQuestion = {
-                                                    if (currentQuestionIndex < quizQuestions.size - 1) {
-                                                        // Move to the next question
-                                                        currentQuestionIndex++
-                                                        selectedAnswer = ""
-                                                        showFeedback = false
-
-                                                    }
-                                                    // If this is the last question and all questions are answered/skipped,
-                                                    // we need to explicitly check completion
-                                                    else if (currentQuestionIndex == quizQuestions.size - 1) {
-                                                        // Force a check for quiz completion
-                                                        quizDetailViewModel.checkQuizCompletion()
-                                                    }
+                                                )
+                                            }
+                                            // Show quiz content if quiz is started and not completed
+                                            else {
+                                                // Show exit confirmation dialog if needed
+                                                if (quizDetailViewModel.state.showExitConfirmation) {
+                                                    ExitConfirmationDialog(
+                                                        onConfirm = {
+                                                            quizDetailViewModel.confirmExit()
+                                                            navController.popBackStack()
+                                                        },
+                                                        onDismiss = {
+                                                            quizDetailViewModel.hideExitConfirmation()
+                                                        }
+                                                    )
                                                 }
-                                            )
-                                        }
-                                    } else {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(stringResource(R.string.no_questions_available))
+
+                                                QuizContent(
+                                                    quizQuestions = quizQuestions,
+                                                    currentQuestionIndex = currentQuestionIndex,
+                                                    onQuestionChange = {
+                                                        currentQuestionIndex = it
+                                                    },
+                                                    selectedAnswer = selectedAnswer,
+                                                    onAnswerSelected = { selectedAnswer = it },
+                                                    showFeedback = showFeedback,
+                                                    isCorrect = isCorrect,
+                                                    onSubmitAnswer = {
+                                                        val currentQuestion =
+                                                            quizQuestions[currentQuestionIndex]
+                                                        isCorrect = when (currentQuestion) {
+                                                            is MultipleChoiceQuestion -> {
+                                                                currentQuestion.correctAnswers.contains(
+                                                                    selectedAnswer
+                                                                )
+                                                            }
+
+                                                            is TrueFalseQuestion -> {
+                                                                (selectedAnswer == "True" && currentQuestion.isTrue) ||
+                                                                        (selectedAnswer == "False" && !currentQuestion.isTrue)
+                                                            }
+
+                                                            else -> false
+                                                        }
+                                                        showFeedback = true
+
+                                                        // Save the progress in the ViewModel after checking correctness
+                                                        quizDetailViewModel.saveQuizProgress(
+                                                            currentQuestionIndex,
+                                                            selectedAnswer
+                                                        )
+
+                                                        // Update local state to match ViewModel state
+                                                        answeredQuestions =
+                                                            quizDetailViewModel.state.answeredQuestions
+                                                    },
+                                                    onSkipQuestion = {
+                                                        quizDetailViewModel.skipQuestion(
+                                                            currentQuestionIndex
+                                                        )
+                                                        // Update local state to match ViewModel state
+                                                        currentQuestionIndex =
+                                                            quizDetailViewModel.state.currentQuestionIndex
+                                                        if (currentQuestionIndex < quizQuestions.size - 1) {
+                                                            currentQuestionIndex++
+                                                            selectedAnswer = ""
+                                                            showFeedback = false
+                                                        }
+                                                    },
+                                                    onNextQuestion = {
+                                                        if (currentQuestionIndex < quizQuestions.size - 1) {
+                                                            // Move to the next question
+                                                            currentQuestionIndex++
+                                                            selectedAnswer = ""
+                                                            showFeedback = false
+
+                                                        }
+                                                        // If this is the last question and all questions are answered/skipped,
+                                                        // we need to explicitly check completion
+                                                        else if (currentQuestionIndex == quizQuestions.size - 1) {
+                                                            // Force a check for quiz completion
+                                                            quizDetailViewModel.checkQuizCompletion()
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        } else {
+                                            Box(
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(stringResource(R.string.no_questions_available))
+                                            }
                                         }
                                     }
-                                }
 
-                                2 -> {
-                                    if (quizDetailViewModel.state.mindMapCode.isNotEmpty()) {
-                                        MindMapContent(code = quizDetailViewModel.state.mindMapCode)
-                                    } else {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Button(onClick = { quizDetailViewModel.generateMindMap() }) {
-                                                Text(stringResource(R.string.generate_mindmap))
+                                    2 -> {
+                                        if (quizDetailViewModel.state.mindMapCode.isNotEmpty()) {
+                                            MindMapContent(code = quizDetailViewModel.state.mindMapCode)
+                                        } else {
+                                            Box(
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Button(onClick = { quizDetailViewModel.generateMindMap() }) {
+                                                    Text(stringResource(R.string.generate_mindmap))
+                                                }
                                             }
                                         }
                                     }
@@ -594,24 +618,45 @@ fun QuizDetailScreen(
                     }
                 }
             }
-        }
-    )
+        )
+    }
 }
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun SummaryContent(summaryHtml: String) {
     val networkUtils = LocalNetworkUtils.current
+    val navController = LocalNavController.current
+    val quizDetailViewModel = LocalQuizDetailViewModel.current
 
-    NetworkAwareWebView(
-        modifier = Modifier.fillMaxSize(),
-        url = "",
-        html = summaryHtml,
-        networkUtils = networkUtils,
-        isJavaScriptEnabled = true,
-        onPageFinished = {},
-        onRetryClick = {}
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        NetworkAwareWebView(
+            modifier = Modifier.fillMaxSize(),
+            url = "",
+            html = summaryHtml,
+            networkUtils = networkUtils,
+            isJavaScriptEnabled = true,
+            onPageFinished = {},
+            onRetryClick = {}
+        )
+
+        // Floating button to navigate to video player
+        quizDetailViewModel.state.quiz?.let { quiz ->
+            FloatingActionButton(
+                onClick = {
+                    // Encode video URL to avoid issues with special characters
+                    val encodedUrl =
+                        URLEncoder.encode(quiz.videoUrl, StandardCharsets.UTF_8.toString())
+                    navController.navigate(AppScreens.VideoPlayer.route + "/${quiz.id}/$encodedUrl")
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(Icons.Default.ArrowForward, contentDescription = "Watch Video")
+            }
+        }
+    }
 }
 
 @Composable

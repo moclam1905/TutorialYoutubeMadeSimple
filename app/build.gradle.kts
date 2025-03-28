@@ -108,7 +108,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore.preferences.core)
 
-    implementation (libs.play.services.auth.v2070)
+    implementation (libs.play.services.auth)
     implementation (libs.google.api.client.android)
     implementation (libs.google.http.client.gson)
     implementation (libs.google.api.client.gson)
@@ -119,6 +119,9 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+
+    // Android Youtube Player
+    implementation(libs.core)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
