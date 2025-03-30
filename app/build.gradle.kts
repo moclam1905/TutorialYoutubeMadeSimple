@@ -123,6 +123,9 @@ dependencies {
     // Android Youtube Player
     implementation(libs.core)
 
+    // Android SVG
+    implementation (libs.androidsvg)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

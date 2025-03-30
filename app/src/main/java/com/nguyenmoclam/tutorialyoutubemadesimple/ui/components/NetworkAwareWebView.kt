@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.graphics.Bitmap
 import android.view.View
 import android.view.ViewGroup
@@ -151,7 +152,23 @@ fun NetworkAwareWebView(
                         allowContentAccess = true
                         // Enable file access
                         allowFileAccess = true
+                        // Improve scrolling performance
+                        setSupportZoom(true)
+                        builtInZoomControls = true
+                        displayZoomControls = false
+                        // Optimize rendering
+                        setRenderPriority(WebSettings.RenderPriority.HIGH)
+                        // Enable hardware acceleration for SVG rendering
+                        setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
+                        // Enable SVG support
+                        mediaPlaybackRequiresUserGesture = false
                     }
+
+                    // Improve scrolling performance
+                    scrollBarStyle = WebView.SCROLLBARS_OUTSIDE_OVERLAY
+                    isScrollbarFadingEnabled = true
+                    isVerticalScrollBarEnabled = true
+                    setOnLongClickListener { true } // Disable text selection long press
 
                     // Set layout parameters to ensure WebView takes full height
                     layoutParams = ViewGroup.LayoutParams(
@@ -177,7 +194,7 @@ fun NetworkAwareWebView(
 
                             // Find the root view to add our fullscreen view to
                             val decorView =
-                                (context as? android.app.Activity)?.window?.decorView as? ViewGroup
+                                (context as? Activity)?.window?.decorView as? ViewGroup
                             decorView?.let {
                                 // Save original UI visibility
                                 originalSystemUiVisibility = decorView.systemUiVisibility
@@ -204,7 +221,7 @@ fun NetworkAwareWebView(
                         override fun onHideCustomView() {
                             // This is called when the user exits fullscreen mode
                             val decorView =
-                                (context as? android.app.Activity)?.window?.decorView as? ViewGroup
+                                (context as? Activity)?.window?.decorView as? ViewGroup
                             decorView?.let {
                                 // Remove the custom view
                                 customView?.let { view -> it.removeView(view) }

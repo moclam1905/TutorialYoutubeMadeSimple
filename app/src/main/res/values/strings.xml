@@ -256,6 +256,8 @@
     <string name="error_parsing_transcript">Error parsing transcript: %1$s</string>
     <string name="progress">Progress</string>
     <string name="error_extracting_video_id">Could not extract videoId from link: %1$s</string>
+    <string name="mind_map_created_successfully">Mind map created successfully</string>
+
 
 
 </resources>

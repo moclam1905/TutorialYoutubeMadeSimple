@@ -158,7 +158,8 @@ fun HomeScreen(
             Text(
                 text = stringResource(R.string.explore_challenges),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -167,7 +168,9 @@ fun HomeScreen(
             OutlinedTextField(
                 value = state.searchQuery,
                 onValueChange = { query -> viewModel.updateSearchQuery(query) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 placeholder = { Text(stringResource(R.string.search_challenges)) },
                 leadingIcon = {
                     Icon(
@@ -190,7 +193,9 @@ fun HomeScreen(
                 stringResource(R.string.trending)
             )
 
-            Row(modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)) {
                 tabs.forEachIndexed { index, title ->
                     FilterTab(
                         title = title,
@@ -509,31 +514,37 @@ fun highlightText(text: String, searchQuery: String): AnnotatedString {
     if (searchQuery.isBlank()) {
         return AnnotatedString(text)
     }
-    
+
     val highlightColor = MaterialTheme.colorScheme.primary
-    
+
     return buildAnnotatedString {
         val lowercaseText = text.lowercase()
         val lowercaseQuery = searchQuery.lowercase()
-        
+
         var startIndex = 0
         var matchIndex = lowercaseText.indexOf(lowercaseQuery, startIndex)
-        
+
         while (matchIndex >= 0) {
             // Add text before match
             append(text.substring(startIndex, matchIndex))
-            
+
             // Add highlighted match
             val endIndex = matchIndex + searchQuery.length
-            withStyle(SpanStyle(color = highlightColor, fontWeight = FontWeight.Bold, background = highlightColor.copy(alpha = 0.2f))) {
+            withStyle(
+                SpanStyle(
+                    color = highlightColor,
+                    fontWeight = FontWeight.Bold,
+                    background = highlightColor.copy(alpha = 0.2f)
+                )
+            ) {
                 append(text.substring(matchIndex, endIndex))
             }
-            
+
             // Move to next match
             startIndex = endIndex
             matchIndex = lowercaseText.indexOf(lowercaseQuery, startIndex)
         }
-        
+
         // Add remaining text
         if (startIndex < text.length) {
             append(text.substring(startIndex))

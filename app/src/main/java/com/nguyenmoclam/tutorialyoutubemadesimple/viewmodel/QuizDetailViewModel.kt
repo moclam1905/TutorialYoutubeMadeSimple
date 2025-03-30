@@ -25,6 +25,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GenerateMi
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetQuizByIdUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.summary.GetQuizSummaryUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.GetTranscriptUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -45,7 +46,8 @@ class QuizDetailViewModel @Inject constructor(
     private val getTranscriptUseCase: GetTranscriptUseCase,
     private val generateMindMapUseCase: GenerateMindMapUseCase,
     private val saveMindMapUseCase: SaveMindMapUseCase,
-    private val getMindMapUseCase: GetMindMapUseCase
+    private val getMindMapUseCase: GetMindMapUseCase,
+    private val llmProcessor: LLMProcessor
 ) : ViewModel() {
 
     enum class ProcessingMindMapStep(val messageRes: Int) {
@@ -601,6 +603,32 @@ class QuizDetailViewModel @Inject constructor(
                     errorMessage = e.message ?: "Failed to generate mind map",
                     currentMindMapStep = ProcessingMindMapStep.NONE
                 )
+            }
+        }
+    }
+
+    fun getLLMProcessor(): LLMProcessor {
+        return llmProcessor
+    }
+
+    fun getLanguage(): String {
+        return state.quiz?.language ?: "English"
+    }
+
+    fun updateMindMapCode(newCode: String) {
+        state = state.copy(mindMapCode = newCode)
+
+        // Save the updated mind map to the database
+        viewModelScope.launch {
+            try {
+                val quizId = state.quiz?.id ?: return@launch
+                val existingMindMap = getMindMapUseCase(quizId) ?: return@launch
+
+                // Create a new mind map with the updated code
+                val updatedMindMap = existingMindMap.copy(mermaidCode = newCode)
+
+                saveMindMapUseCase(updatedMindMap, quizId)
+            } catch (e: Exception) {
             }
         }
     }

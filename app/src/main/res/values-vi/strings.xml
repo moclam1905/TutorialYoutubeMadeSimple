@@ -256,6 +256,7 @@
     <string name="error_parsing_transcript">Lỗi khi phân tích bản ghi: %1$s</string>
     <string name="progress">Tiến độ</string>
     <string name="error_extracting_video_id">Không thể lấy videoId từ link: %1$s</string>
+    <string name="mind_map_created_successfully">Mind map được tạo thành công</string>
 
 
 </resources>

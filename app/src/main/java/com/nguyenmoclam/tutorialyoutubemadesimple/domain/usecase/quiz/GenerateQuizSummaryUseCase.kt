@@ -44,17 +44,18 @@ class GenerateQuizSummaryUseCase @Inject constructor(
     suspend operator fun invoke(
         title: String,
         thumbnailUrl: String,
-        transcriptContent: String
+        transcriptContent: String,
+        language: String = "English"
     ): SummaryResult = withContext(Dispatchers.IO) {
         try {
-            val topics = llmProcessor.extractTopicsAndQuestions(transcriptContent, title)
+            val topics = llmProcessor.extractTopicsAndQuestions(transcriptContent, title, language)
                 .takeIf { it.isNotEmpty() }
                 ?: return@withContext SummaryResult(
                     content = "",
                     error = "No topics could be extracted"
                 )
 
-            val processedTopics = llmProcessor.processContent(topics, transcriptContent)
+            val processedTopics = llmProcessor.processContent(topics, transcriptContent, language)
             // Store the processed topics for later retrieval
             lastProcessedTopics = processedTopics
             val sections = processedTopics.map { topic ->

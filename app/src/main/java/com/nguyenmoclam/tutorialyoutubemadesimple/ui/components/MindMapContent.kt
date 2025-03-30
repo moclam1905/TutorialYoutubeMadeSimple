@@ -3,13 +3,22 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Base64
+import android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+import android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+import android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+import android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+import android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+import android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,24 +26,38 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.ZoomIn
-import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -45,7 +68,12 @@ import java.util.Locale
 /**
  * JavaScript interface to handle saving mind map images
  */
-class MindMapJavaScriptInterface(private val context: Context) {
+@Suppress("unused")
+class MindMapJavaScriptInterface(
+    private val context: Context,
+    private val onParseResult: (Boolean, String?) -> Unit,
+    private val onSVGReadyShow: (String) -> Unit
+) {
 
     @JavascriptInterface
     fun saveMindMapImage(base64Image: String) {
@@ -54,9 +82,9 @@ class MindMapJavaScriptInterface(private val context: Context) {
             val base64Data = base64Image.substring(base64Image.indexOf(",") + 1)
 
             // Convert base64 to bitmap
-            val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+            val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
             val bitmap =
-                android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
 
             // Save the bitmap to storage
             saveBitmapToStorage(bitmap)
@@ -74,16 +102,16 @@ class MindMapJavaScriptInterface(private val context: Context) {
     fun onEnterFullscreen() {
         // This method is called from JavaScript when entering fullscreen mode
         try {
-            val activity = context as? androidx.activity.ComponentActivity
+            val activity = context as? ComponentActivity
             activity?.runOnUiThread {
                 // Request immersive fullscreen mode
                 activity.window?.decorView?.systemUiVisibility = (
-                        android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-                                android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                                android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                                android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                                android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                                android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+                        SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                                SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                                SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                                SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                                SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                                SYSTEM_UI_FLAG_FULLSCREEN
                         )
             }
         } catch (e: Exception) {
@@ -95,11 +123,11 @@ class MindMapJavaScriptInterface(private val context: Context) {
     fun onExitFullscreen() {
         // This method is called from JavaScript when exiting fullscreen mode
         try {
-            val activity = context as? androidx.activity.ComponentActivity
+            val activity = context as? ComponentActivity
             activity?.runOnUiThread {
                 // Restore normal UI visibility
                 activity.window?.decorView?.systemUiVisibility = (
-                        android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        SYSTEM_UI_FLAG_LAYOUT_STABLE
                         )
             }
         } catch (e: Exception) {
@@ -107,7 +135,40 @@ class MindMapJavaScriptInterface(private val context: Context) {
         }
     }
 
-    private fun saveBitmapToStorage(bitmap: Bitmap) {
+    @JavascriptInterface
+    fun onParseError(errorMsg: String) {
+        try {
+            (context as? ComponentActivity)?.runOnUiThread {
+                onParseResult(false, errorMsg)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    @JavascriptInterface
+    fun onParseSuccess() {
+        try {
+            (context as? ComponentActivity)?.runOnUiThread {
+                onParseResult(true, null)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    @JavascriptInterface
+    fun onSVGReady(svgString: String) {
+        try {
+            (context as? ComponentActivity)?.runOnUiThread {
+                onSVGReadyShow(svgString)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    internal fun saveBitmapToStorage(bitmap: Bitmap) {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val filename = "MindMap_$timestamp.png"
         var fos: OutputStream? = null
@@ -177,41 +238,113 @@ class MindMapJavaScriptInterface(private val context: Context) {
 }
 
 @Composable
-fun MindMapContent(code: String) {
+fun MindMapContent(
+    code: String,
+    onFixCodeRequested: suspend (originalCode: String, errorMessage: String) -> String
+) {
     val context = LocalContext.current
     val networkUtils = LocalNetworkUtils.current
     var isFullscreen by remember { mutableStateOf(false) }
-    var currentZoomLevel by remember { mutableFloatStateOf(1.0f) }
     val webViewRef = remember { mutableStateOf<WebView?>(null) }
 
+    var parseErrorMessage by remember { mutableStateOf<String?>(null) }
+    var currentCode by remember { mutableStateOf(code) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Field for SVG
+    var svgString by remember { mutableStateOf<String?>(null) }
+    var isUsingSVG by remember { mutableStateOf(false) }
+
+    LaunchedEffect(code) {
+        if (code != currentCode) {
+            currentCode = code
+        }
+    }
+
     // Generate the HTML content with Mermaid diagram
-    val htmlContent = remember(code) { generateMermaidHtml(code) }
+    val htmlContent = remember(currentCode) { generateMermaidHtml(currentCode) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        NetworkAwareWebView(
-            url = "",  // Empty URL since we're using HTML content directly
-            html = htmlContent,
-            networkUtils = networkUtils,
-            isJavaScriptEnabled = true,
-            onPageFinished = {},  // no-op or handle if needed
-            jsInterface = { webView ->
-                webView.apply {
-                    // Enable zoom support
-                    settings.setSupportZoom(true)
-                    settings.builtInZoomControls = true
-                    settings.displayZoomControls = false // Hide default zoom controls
-
-                    // Save reference to WebView for later use
-                    webViewRef.value = this
-
-                    // Add JavaScript interface
-                    addJavascriptInterface(
-                        MindMapJavaScriptInterface(context),
-                        "AndroidInterface"
-                    )
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.padding(16.dp)
+        ) { snackbarData ->
+            Snackbar(
+                snackbarData = snackbarData,
+                containerColor = if (parseErrorMessage != null) {
+                    Color(0xFFBA1A1A) // Error color
+                } else {
+                    Color(0xFF386A20) // Success color
                 }
-            }
-        )
+            )
+        }
+        if (isUsingSVG && svgString != null) {
+            AndroidView(
+                factory = { context ->
+                    SVGView(context).apply {
+                        tag = "svg_view"
+                    }
+                },
+                update = { view -> view.setSVG(svgString!!) },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            NetworkAwareWebView(
+                url = "",  // Empty URL since we're using HTML content directly
+                html = htmlContent,
+                networkUtils = networkUtils,
+                isJavaScriptEnabled = true,
+                onPageFinished = {},  // no-op or handle if needed
+                jsInterface = { webView ->
+                    webView.apply {
+                        // Enable zoom support
+                        settings.setSupportZoom(true)
+                        settings.builtInZoomControls = true
+                        settings.displayZoomControls = false // Hide default zoom controls
+
+                        // Save reference to WebView for later use
+                        webViewRef.value = this
+
+                        // Add JavaScript interface
+                        addJavascriptInterface(
+                            MindMapJavaScriptInterface(
+                                context,
+                                { isSuccess, errorMsg ->
+                                    parseErrorMessage = if (isSuccess) null else errorMsg
+
+                                    // Show Snackbar notification
+                                    scope.launch {
+                                        if (isSuccess) {
+                                            snackbarHostState.showSnackbar(
+                                                message = context.getString(R.string.mind_map_created_successfully),
+                                                duration = SnackbarDuration.Short
+                                            )
+                                            webView.evaluateJavascript(
+                                                "javascript:getSVGContent();",
+                                                null
+                                            )
+                                        } else {
+                                            snackbarHostState.showSnackbar(
+                                                message = errorMsg
+                                                    ?: context.getString(R.string.error_occurred),
+                                                duration = SnackbarDuration.Long
+                                            )
+                                        }
+                                    }
+                                },
+                                { svg ->
+                                    svgString = svg
+                                    isUsingSVG = true
+                                }
+                            ),
+                            "AndroidInterface"
+                        )
+                    }
+                }
+            )
+        }
 
         // Action buttons
         if (isFullscreen) {
@@ -240,44 +373,6 @@ fun MindMapContent(code: String) {
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
-                // Zoom out button
-                FloatingActionButton(
-                    onClick = {
-                        webViewRef.value?.let { webView ->
-                            currentZoomLevel = (currentZoomLevel - 0.25f).coerceAtLeast(0.5f)
-                            webView.evaluateJavascript(
-                                "javascript:setZoomLevel($currentZoomLevel);",
-                                null
-                            )
-                        }
-                    },
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.ZoomOut,
-                        contentDescription = stringResource(R.string.zoom_out_mindmap)
-                    )
-                }
-
-                // Zoom in button
-                FloatingActionButton(
-                    onClick = {
-                        webViewRef.value?.let { webView ->
-                            currentZoomLevel = (currentZoomLevel + 0.25f).coerceAtMost(3.0f)
-                            webView.evaluateJavascript(
-                                "javascript:setZoomLevel($currentZoomLevel);",
-                                null
-                            )
-                        }
-                    },
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.ZoomIn,
-                        contentDescription = stringResource(R.string.zoom_in_mindmap)
-                    )
-                }
-
                 // Fullscreen button
                 FloatingActionButton(
                     onClick = {
@@ -297,11 +392,81 @@ fun MindMapContent(code: String) {
 
                 // Save button
                 FloatingActionButton(
-                    onClick = { captureAndSaveMindMap(context) }
+                    onClick = {
+                        if (isUsingSVG) {
+                            // Get SVGView reference directly from composable
+                            val svgView =
+                                (context as? ComponentActivity)?.window?.decorView?.rootView
+                                    ?.findViewWithTag<SVGView>("svg_view")
+                            svgView?.saveAsBitmap()?.let { bitmap ->
+                                MindMapJavaScriptInterface(
+                                    context,
+                                    { _, _ -> },
+                                    { _ -> }).saveBitmapToStorage(bitmap)
+                            }
+                        } else {
+                            // Use existing JavaScript method for WebView
+                            webViewRef.value?.evaluateJavascript(
+                                "javascript:captureMindMap();",
+                                null
+                            )
+                        }
+                    },
+                    modifier = Modifier.padding(end = 8.dp)
                 ) {
                     Icon(
                         Icons.Default.Save,
                         contentDescription = stringResource(R.string.save_mindmap)
+                    )
+                }
+
+                val infiniteTransition =
+                    rememberInfiniteTransition(label = "RefreshButtonAnimation")
+                val scale = if (parseErrorMessage != null) {
+                    // Animation for the refresh button when there is an error
+                    infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 1.2f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(durationMillis = 800),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "ScaleAnimation"
+                    ).value
+                } else {
+                    1f
+                }
+
+                FloatingActionButton(
+                    onClick = {
+                        val error = parseErrorMessage
+                        if (error != null) {
+                            scope.launch {
+                                val fixedCode = onFixCodeRequested(currentCode, error)
+                                currentCode = fixedCode
+                            }
+                        }
+                    },
+
+                    // Material3 FAB don't have enabled,
+                    // so we block onClick and/or change color/alpha for "disable" shadow
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                        .let {
+                            if (parseErrorMessage == null) {
+                                it.alpha(0.3f)
+                            } else {
+                                it
+                            }
+                        }
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Fix code with LLM"
                     )
                 }
             }
@@ -311,7 +476,6 @@ fun MindMapContent(code: String) {
 
 // Helper function to wrap Mermaid code into a full HTML page
 fun generateMermaidHtml(code: String): String {
-    // Embeds Mermaid.js from CDN and the mindmap code in a div
     return """
         <html>
           <head>
@@ -325,15 +489,19 @@ fun generateMermaidHtml(code: String): String {
                     width: 100%;
                     height: 100%;
                     box-sizing: border-box;
-                    overflow: hidden; /* Prevent scrolling */
+                    overflow: hidden;
                 }
                 #capture-container {
                     width: 100%;
                     height: 100%;
-                    padding: 10px; 
+                    padding: 10px;
                     box-sizing: border-box;
-                    overflow: visible; /* Allow content to be visible */
-                    position: relative; /* Create positioning context */
+                    overflow: visible;
+                    position: relative;
+                    cursor: grab;
+                }
+                #capture-container:active {
+                    cursor: grabbing;
                 }
                 .mermaid {
                     width: 100%;
@@ -341,34 +509,30 @@ fun generateMermaidHtml(code: String): String {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    position: absolute; /* Position absolutely */
+                    position: absolute;
                     top: 0;
                     left: 0;
                     right: 0;
                     bottom: 0;
                 }
-                
-                /* Ensure SVG takes full available space */
                 .mermaid svg {
                     width: 100% !important;
-                    height: 100% !important; /* Force full height */
-                    min-height: 100vh !important; /* Use viewport height */
-                    max-height: none !important; /* Remove any max height restriction */
+                    height: 100% !important;
+                    min-height: 100vh !important;
+                    max-height: none !important;
                     display: block;
-                    object-fit: contain; /* Maintain aspect ratio */
+                    object-fit: contain;
                 }
-               
-                /* Styles for fullscreen mode */
-                .fullscreen { 
-                    position: fixed; 
-                    top: 0; 
-                    left: 0; 
-                    width: 100%; 
-                    height: 100%; 
-                    z-index: 9999; 
-                    background-color: white; 
-                    padding: 20px; 
-                    box-sizing: border-box; 
+                .fullscreen {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 9999;
+                    background-color: white;
+                    padding: 20px;
+                    box-sizing: border-box;
                 }
             </style>
           </head>
@@ -379,12 +543,11 @@ ${code.trimIndent()}
               </div>
             </div>
             <script>
-              // Initialize Mermaid to render the diagram
-              mermaid.initialize({ 
-                startOnLoad: true,
+              // Initialize Mermaid with startOnLoad: false
+              mermaid.initialize({
+                startOnLoad: false,
                 theme: 'default',
                 securityLevel: 'loose',
-                // Set diagram to fit container
                 flowchart: {
                   useMaxWidth: true,
                   htmlLabels: true
@@ -394,40 +557,55 @@ ${code.trimIndent()}
                   htmlLabels: true
                 }
               });
-              
-              // Force height recalculation after rendering
-              document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(function() {
-                  const container = document.getElementById('capture-container');
-                  const mermaidDiv = container.querySelector('.mermaid');
-                  const svgElement = mermaidDiv.querySelector('svg');
-                  if (svgElement) {
-                    svgElement.style.height = '100%';
-                    svgElement.style.minHeight = '100vh';
+
+              // Wait until Mermaid is ready
+              function waitUntilMermaidReady() {
+                return new Promise(resolve => {
+                  if (window.mermaid) {
+                    resolve();
+                  } else {
+                    setTimeout(() => waitUntilMermaidReady().then(() => resolve()), 100);
                   }
-                }, 500);
-              });
-              
-              // Current zoom level
-              let currentZoom = 1.0;
-              
-              // Function to set zoom level
-              function setZoomLevel(zoomLevel) {
-                currentZoom = zoomLevel;
-                const container = document.getElementById('capture-container');
-                const mermaidDiv = container.querySelector('.mermaid');
-                if (mermaidDiv) {
-                  mermaidDiv.style.transform = 'scale(' + zoomLevel + ')';
-                  mermaidDiv.style.transformOrigin = 'top left';
-                }
+                });
               }
-              
+
+              // Parsing and rendering logic
+              document.addEventListener('DOMContentLoaded', async function() {
+                await waitUntilMermaidReady();
+                const mindMapDiv = document.querySelector('.mermaid');
+                const code = mindMapDiv.innerHTML.trim();
+                try {
+                  try {
+                    const parseResult = await Promise.resolve(mermaid.parse(code));
+                    
+                    if (parseResult && typeof parseResult === 'object' && parseResult.hasOwnProperty('error')) {
+                      throw new Error(parseResult.error || 'Invalid Mermaid syntax');
+                    }
+                   
+                    try {
+                      window.mermaid.init();
+                      window.AndroidInterface.onParseSuccess();
+                      
+                      getSVGContent();
+                      
+                    } catch (renderError) {
+                      window.AndroidInterface.onParseError(renderError.message || 'Error rendering diagram');
+                      throw renderError;
+                    }
+                  } catch (parseError) {
+                    window.AndroidInterface.onParseError(parseError.message || 'Invalid Mermaid syntax');
+                    throw parseError;
+                  }
+                } catch (error) {
+                  window.AndroidInterface.onParseError(error.message);
+                }
+              });
+
               // Function to toggle fullscreen mode
               function toggleFullscreen(isFullscreen) {
                 const container = document.getElementById('capture-container');
                 if (isFullscreen) {
                   container.classList.add('fullscreen');
-                  // Notify Android that we're in fullscreen mode
                   if (window.AndroidInterface) {
                     try {
                       window.AndroidInterface.onEnterFullscreen();
@@ -437,7 +615,6 @@ ${code.trimIndent()}
                   }
                 } else {
                   container.classList.remove('fullscreen');
-                  // Notify Android that we're exiting fullscreen mode
                   if (window.AndroidInterface) {
                     try {
                       window.AndroidInterface.onExitFullscreen();
@@ -447,100 +624,19 @@ ${code.trimIndent()}
                   }
                 }
               }
-              
-              // Function to capture the mind map as an image
-              function captureMindMap() {
-                try {
-                  const container = document.getElementById('capture-container');
-                  const svgElement = container.querySelector('svg');
-                  
-                  if (!svgElement) {
-                    console.error('SVG element not found');
-                    return;
-                  }
-                  
-                  // Create a canvas with proper dimensions
-                  const canvas = document.createElement('canvas');
-                  const bbox = svgElement.getBBox();
-                  const width = Math.max(bbox.width + 40, svgElement.width.baseVal.value);
-                  const height = Math.max(bbox.height + 40, svgElement.height.baseVal.value);
-                  
-                  canvas.width = width;
-                  canvas.height = height;
-                  const ctx = canvas.getContext('2d');
-                  
-                  // Set white background
-                  ctx.fillStyle = 'white';
-                  ctx.fillRect(0, 0, width, height);
-                  
-                  // Convert SVG to data URL
-                  const data = new XMLSerializer().serializeToString(svgElement);
-                  const svgBlob = new Blob([data], {type: 'image/svg+xml;charset=utf-8'});
-                  const url = URL.createObjectURL(svgBlob);
-                  
-                  // Create image from SVG
-                  const img = new Image();
-                  img.onload = function() {
-                    // Draw image to canvas
-                    ctx.drawImage(img, 0, 0);
-                    URL.revokeObjectURL(url);
-                    
-                    // Convert canvas to PNG
-                    const imgData = canvas.toDataURL('image/png');
-                    
-                    // Send to Android
-                    if (window.AndroidInterface) {
-                      window.AndroidInterface.saveMindMapImage(imgData);
-                    }
-                  };
-                  img.src = url;
-                } catch (e) {
-                  console.error('Error capturing mind map:', e);
+            
+              function getSVGContent() {
+                const svgElement = document.querySelector('.mermaid svg');
+                if (svgElement) {
+                  const serializer = new XMLSerializer();
+                  const svgString = serializer.serializeToString(svgElement);
+                  window.AndroidInterface.onSVGReady(svgString);
+                } else {
+                  console.error('SVG element not found');
                 }
               }
             </script>
           </body>
         </html>
     """.trimIndent()
-}
-
-// Function to trigger the JavaScript capture function
-fun captureAndSaveMindMap(context: Context) {
-    try {
-        // Find the WebView in the current activity
-        val activity = context as? androidx.activity.ComponentActivity
-        val rootView = activity?.window?.decorView?.rootView
-        val webView = findWebViewInView(rootView)
-
-        if (webView != null) {
-            // Execute the JavaScript function to capture the mind map
-            webView.evaluateJavascript("javascript:captureMindMap();", null)
-        } else {
-            Toast.makeText(
-                context,
-                context.getString(R.string.error_webview_not_found),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        Toast.makeText(
-            context,
-            context.getString(R.string.error_saving_mind_map, e.message),
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-}
-
-// Helper function to find WebView in the view hierarchy
-fun findWebViewInView(view: android.view.View?): WebView? {
-    if (view == null) return null
-    if (view is WebView) return view
-    if (view is android.view.ViewGroup) {
-        for (i in 0 until view.childCount) {
-            val webView = findWebViewInView(view.getChildAt(i))
-            if (webView != null) return webView
-        }
-    }
-    return null
 }

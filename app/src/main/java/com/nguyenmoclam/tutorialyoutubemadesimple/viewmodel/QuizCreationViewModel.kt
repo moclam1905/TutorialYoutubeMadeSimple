@@ -326,7 +326,8 @@ class QuizCreationViewModel @Inject constructor(
                         val result = generateQuizSummaryUseCase(
                             fetchedTitle,
                             fetchedThumb,
-                            transcriptContent
+                            transcriptContent,
+                            selectedLanguage
                         )
                         if (result.error != null) {
                             throw IllegalStateException(result.error)
@@ -386,7 +387,12 @@ class QuizCreationViewModel @Inject constructor(
                 state =
                     state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
                 val summaryResult =
-                    generateQuizSummaryUseCase(fetchedTitle, fetchedThumb, transcriptContent)
+                    generateQuizSummaryUseCase(
+                        fetchedTitle,
+                        fetchedThumb,
+                        transcriptContent,
+                        selectedLanguage
+                    )
 
                 if (summaryResult.error != null) {
                     throw IllegalStateException(summaryResult.error)

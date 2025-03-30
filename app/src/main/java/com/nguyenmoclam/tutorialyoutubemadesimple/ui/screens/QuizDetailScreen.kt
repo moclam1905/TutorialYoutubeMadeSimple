@@ -600,7 +600,23 @@ fun QuizDetailScreen(
 
                                     2 -> {
                                         if (quizDetailViewModel.state.mindMapCode.isNotEmpty()) {
-                                            MindMapContent(code = quizDetailViewModel.state.mindMapCode)
+                                            MindMapContent(
+                                                code = quizDetailViewModel.state.mindMapCode,
+                                                onFixCodeRequested = { originalCode, errorMsg ->
+                                                    // Use LLMProcessor to fix the error in the mind map code
+                                                    val llmProcessor =
+                                                        quizDetailViewModel.getLLMProcessor()
+                                                    val language = quizDetailViewModel.getLanguage()
+                                                    val fixedCode = llmProcessor.fixMindMapCode(
+                                                        originalCode,
+                                                        errorMsg,
+                                                        language
+                                                    )
+
+                                                    // Update mind map code in ViewModel
+                                                    quizDetailViewModel.updateMindMapCode(fixedCode)
+                                                    fixedCode
+                                                })
                                         } else {
                                             Box(
                                                 modifier = Modifier.fillMaxSize(),
