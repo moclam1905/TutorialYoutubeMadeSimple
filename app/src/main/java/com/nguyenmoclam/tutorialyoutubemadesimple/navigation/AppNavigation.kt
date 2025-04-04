@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -13,10 +14,11 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.CreateQuizScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.HomeScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.VideoPlayerWithTranscriptScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.VideoPlayerWithTranscriptScreen
 
 /**
  * Main navigation component for the app.
@@ -35,9 +37,11 @@ fun AppNavigation(
         navController = navController,
         startDestination = AppScreens.Home.route
     ) {
+        // Home Screen
         composable(AppScreens.Home.route) {
             HomeScreen(navController = navController)
         }
+        // Create Quiz Screen
         composable(AppScreens.CreateQuiz.route) {
             CreateQuizScreen(
                 viewModel = viewModel,
@@ -46,9 +50,11 @@ fun AppNavigation(
                 settingsViewModel = settingsViewModel
             )
         }
+        // Settings Screen
         composable(AppScreens.Settings.route) {
             SettingScreen(viewModel = settingsViewModel)
         }
+        // Quiz Detail Screen
         composable(
             route = AppScreens.QuizDetail.route + "/{quizId}",
             arguments = listOf(navArgument("quizId") {
@@ -56,13 +62,14 @@ fun AppNavigation(
             })
         ) { backStackEntry ->
             val quizId = backStackEntry.arguments?.getLong("quizId") ?: -1L
+            val quizDetailViewModel: QuizDetailViewModel = hiltViewModel()
             QuizDetailScreen(
+                quizId = quizId.toString(),
                 navController = navController,
-                quizViewModel = quizViewModel,
-                quizId = quizId
+                quizDetailViewModel = quizDetailViewModel,
+                quizViewModel = quizViewModel
             )
         }
-
         // Video Player with Transcript Screen
         composable(
             route = AppScreens.VideoPlayer.route + "/{quizId}/{videoUrl}",

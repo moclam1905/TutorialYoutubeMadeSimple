@@ -34,4 +34,7 @@ interface QuizDao {
 
     @Query("DELETE FROM quizzes WHERE quizId = :quizId")
     suspend fun deleteQuizById(quizId: Long)
+
+    @Query("UPDATE quizzes SET localThumbnailPath = :localPath WHERE quizId = :quizId")
+    suspend fun updateLocalThumbnailPath(quizId: Long, localPath: String)
 }

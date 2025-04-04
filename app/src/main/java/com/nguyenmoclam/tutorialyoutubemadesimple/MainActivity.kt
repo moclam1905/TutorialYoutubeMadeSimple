@@ -41,7 +41,9 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavItem
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.BottomNavigationVisibilityState
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LanguageChangeHelper
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkStateListener
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkStateListener
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
@@ -64,6 +66,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var networkUtils: NetworkUtils
+    
+    @Inject
+    lateinit var networkStateListener: NetworkStateListener
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,8 +82,12 @@ class MainActivity : ComponentActivity() {
 
         // Keep the splash screen visible until initialization is complete
         splashScreen.setKeepOnScreenCondition {
-            !splashViewModel.state.value.isInitialized
+            !splashViewModel.state.value.isInitialized && 
+            (splashViewModel.state.value.isLoading || splashViewModel.state.value.networkAvailable)
         }
+        
+        // Initialize network connectivity monitoring
+        networkUtils.observeNetworkConnectivity()
 
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
@@ -107,8 +116,11 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestinationRoute = navBackStackEntry?.destination?.route
 
-                // Provide NetworkUtils to the composable tree
-                CompositionLocalProvider(LocalNetworkUtils provides networkUtils) {
+                // Provide NetworkUtils and NetworkStateListener to the composable tree
+                CompositionLocalProvider(
+                    LocalNetworkUtils provides networkUtils,
+                    LocalNetworkStateListener provides networkStateListener
+                ) {
 
                     // Observe bottom navigation visibility state
                     val isBottomNavVisible by BottomNavigationVisibilityState.isVisible
@@ -144,6 +156,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Unregister network callback to avoid memory leaks
+        networkStateListener.unregisterNetworkCallback()
     }
 
     @Composable

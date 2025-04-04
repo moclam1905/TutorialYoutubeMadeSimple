@@ -1,6 +1,8 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
 import android.annotation.SuppressLint
+import android.webkit.WebSettings
+import android.webkit.WebView
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Summarize
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,6 +51,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
@@ -71,6 +76,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import android.util.Base64
+import android.view.ViewGroup
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
@@ -83,6 +91,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.MultiWaveLoading
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkAwareWebView
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.QuizResultsScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StartQuizScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.WebViewClientWithOfflineSupport
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.SlidingRootNav
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.model.SlideGravity
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.model.rememberSlidingRootNavState
@@ -90,6 +99,8 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.tra
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.transform.ScaleTransformation
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.transform.YTranslationTransformation
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import kotlinx.coroutines.launch
@@ -102,31 +113,177 @@ val LocalNavController =
 val LocalQuizDetailViewModel =
     compositionLocalOf<QuizDetailViewModel> { error("No QuizDetailViewModel provided") }
 
+/**
+ * Displays summary content with automatic offline mode support.
+ * Uses NetworkUtils to automatically detect network status and display appropriate content.
+ */
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+fun SummaryContent(summaryHtml: String, quizId: Long) {
+    val networkUtils = LocalNetworkUtils.current
+    val navController = LocalNavController.current
+    val quizDetailViewModel = LocalQuizDetailViewModel.current
+    val context = LocalContext.current
+    val offlineDataManager = remember { OfflineDataManager(context) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Check network connection
+        if (networkUtils.isNetworkAvailable() && networkUtils.shouldLoadContent()) {
+            // Use NetworkAwareWebView when network is available
+            NetworkAwareWebView(
+                modifier = Modifier.fillMaxSize(),
+                url = "",
+                html = summaryHtml,
+                networkUtils = networkUtils,
+                isJavaScriptEnabled = true,
+                onPageFinished = {},
+                onRetryClick = {}
+            )
+        } else {
+            // Use WebView with offline support when no connection
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    WebView(context).apply {
+                        settings.apply {
+                            javaScriptEnabled = true
+                            domStorageEnabled = true
+                            loadsImagesAutomatically = !networkUtils.isDataSaverEnabled()
+                            blockNetworkImage = networkUtils.isDataSaverEnabled()
+                            cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+                            setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
+                            useWideViewPort = true
+                            loadWithOverviewMode = true
+                            allowContentAccess = true
+                            allowFileAccess = true
+                            setSupportZoom(true)
+                            builtInZoomControls = true
+                            displayZoomControls = false
+                        }
+
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+
+                        // Use WebViewClient with offline support
+                        webViewClient = WebViewClientWithOfflineSupport(
+                            offlineDataManager = offlineDataManager,
+                            networkUtils = networkUtils,
+                            onPageStarted = { _ -> },
+                            onPageFinished = { view ->
+                                // Inject CSS to make images responsive
+                                val css = "img { max-width: 100%; height: auto; display: block; }"
+                                val js = "javascript:(function() {" +
+                                        "var parent = document.getElementsByTagName('head').item(0);" +
+                                        "var style = document.createElement('style');" +
+                                        "style.type = 'text/css';" +
+                                        "style.innerHTML = window.atob('${Base64.encodeToString(css.toByteArray(), Base64.NO_WRAP)}');" +
+                                        "parent.appendChild(style)" +
+                                        "})()"
+                                // Explicitly cast view to WebView
+                                (view as? WebView)?.evaluateJavascript(js, null)
+                            },
+                            onReceivedError = { _, _ -> }
+                        )
+
+                        // Create assumed URL for summary content to store offline
+                        val summaryUrl = "https://tutorialyoutubemadesimple.app/summary/$quizId"
+
+                        // Load HTML content directly
+                        loadDataWithBaseURL(summaryUrl, summaryHtml, "text/html", "UTF-8", null)
+                    }
+                }
+            )
+        }
+
+        // Floating button to navigate to video player
+        quizDetailViewModel.state.quiz?.let { quiz ->
+            FloatingActionButton(
+                onClick = {
+                    // Encode video URL to avoid issues with special characters
+                    val encodedUrl =
+                        URLEncoder.encode(quiz.videoUrl, StandardCharsets.UTF_8.toString())
+                    navController.navigate(AppScreens.VideoPlayer.route + "/${quiz.id}/$encodedUrl")
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(Icons.Default.ArrowForward, contentDescription = "Watch Video")
+            }
+        }
+
+        // Display offline mode icon if no network connection
+        if (!networkUtils.isNetworkAvailable()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        RoundedCornerShape(4.dp)
+                    )
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.WifiOff,
+                        contentDescription = "Offline Mode",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Offline",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * QuizDetailScreen version with automatic offline mode support.
+ * This screen displays quiz details including summary, questions and mind map.
+ * It automatically handles network state through NetworkUtils.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizDetailScreen(
+    quizId: String,
     navController: NavHostController,
-    quizViewModel: QuizCreationViewModel,
-    quizId: Long = -1L,
-    quizDetailViewModel: QuizDetailViewModel = hiltViewModel()
+    quizDetailViewModel: QuizDetailViewModel,
+    quizViewModel: QuizCreationViewModel = hiltViewModel()
 ) {
+    // Convert quizId from String to Long
+    val quizIdLong = quizId.toLongOrNull() ?: -1L
+
     // Provide NavController and QuizDetailViewModel to child composables
     CompositionLocalProvider(
         LocalNavController provides navController,
         LocalQuizDetailViewModel provides quizDetailViewModel
     ) {
-        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+
+        // Get necessary components for offline mode
+        val context = LocalContext.current
+        val networkUtils = LocalNetworkUtils.current
+        val offlineDataManager = remember { OfflineDataManager(context) }
+
+        val snackbarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
+
         var materialsExpanded by remember { mutableStateOf(true) }
         var selectedContentIndex by remember { mutableIntStateOf(0) }
-
         var quizQuestions by remember { mutableStateOf<List<Any>>(emptyList()) }
         var currentQuestionIndex by remember { mutableIntStateOf(0) }
         var selectedAnswer by remember { mutableStateOf("") }
         var showFeedback by remember { mutableStateOf(false) }
         var isCorrect by remember { mutableStateOf(false) }
 
-        // Track answered questions and their selected answers - now using ViewModel state
+        // Track answered questions and their selected answers
         var answeredQuestions by remember { mutableStateOf<Map<Int, String>>(quizDetailViewModel.state.answeredQuestions) }
 
         val configuration = LocalConfiguration.current
@@ -141,19 +298,37 @@ fun QuizDetailScreen(
         }
 
         // Load quiz data from database if quizId is provided
-        LaunchedEffect(quizId) {
-            if (quizId > 0) {
-                quizDetailViewModel.loadQuizById(quizId)
+        LaunchedEffect(quizIdLong) {
+            if (quizIdLong > 0) {
+                quizDetailViewModel.loadQuizById(quizIdLong)
             }
         }
 
         // Load quiz questions from QuizCreationViewModel (when coming from quiz creation)
         LaunchedEffect(quizViewModel.state.quizIdInserted) {
-            if (quizId <= 0 && quizViewModel.state.quizIdInserted >= 0L) {
+            if (quizIdLong <= 0 && quizViewModel.state.quizIdInserted >= 0L) {
                 try {
                     quizDetailViewModel.loadQuizById(quizViewModel.state.quizIdInserted)
                 } catch (e: Exception) {
                     println("Error parsing quiz questions: ${e.message}")
+                }
+            }
+        }
+
+        // Observe network changes and update offline mode
+        LaunchedEffect(Unit) {
+            // Start monitoring network state changes
+            val offlineSyncManager = OfflineSyncManager(
+                networkUtils,
+                quizDetailViewModel.getQuizRepository(),
+                offlineDataManager
+            )
+            offlineSyncManager.startObservingNetworkChanges()
+
+            // Notify when there is no network connection
+            if (!networkUtils.isNetworkAvailable()) {
+                scope.launch {
+                    snackbarHostState.showSnackbar("Switched to offline mode due to no network connection")
                 }
             }
         }
@@ -203,6 +378,7 @@ fun QuizDetailScreen(
         }
 
         // Create a state for the sliding root navigation
+        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val slidingNavState =
             rememberSlidingRootNavState(initialDragProgress = if (drawerState.currentValue == DrawerValue.Open) 1f else 0f)
 
@@ -247,7 +423,6 @@ fun QuizDetailScreen(
                         selected = false,
                         onClick = {
                             scope.launch {
-
                                 if (quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted && selectedContentIndex == 1) {
                                     quizDetailViewModel.showExitConfirmation()
                                 } else {
@@ -351,7 +526,6 @@ fun QuizDetailScreen(
 
                                     IconButton(onClick = {
                                         scope.launch {
-                                            //slidingNavState.dragProgress = 1f
                                             if (isDrawerOpen) {
                                                 slidingNavState.closeMenu()
                                             } else {
@@ -364,7 +538,8 @@ fun QuizDetailScreen(
                                 }
                             )
                         }
-                    }
+                    },
+                    snackbarHost = { SnackbarHost(snackbarHostState) }
                 ) { paddingValues ->
                     // Main content
                     Column(
@@ -389,7 +564,7 @@ fun QuizDetailScreen(
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             MultiWaveLoadingAnimation(
-                                                progress = if (quizId <= 0 && selectedContentIndex != 2) {
+                                                progress = if (quizIdLong <= 0 && selectedContentIndex != 2) {
                                                     // Coming from quiz creation - use QuizCreationViewModel
                                                     quizViewModel.state.currentStep.getProgressPercentage()
                                                 } else if (selectedContentIndex == 2) {
@@ -405,7 +580,7 @@ fun QuizDetailScreen(
                                             Spacer(modifier = Modifier.height(16.dp))
 
                                             Text(
-                                                text = if (quizId <= 0 && selectedContentIndex != 2) {
+                                                text = if (quizIdLong <= 0 && selectedContentIndex != 2) {
                                                     // Coming from quiz creation - use QuizCreationViewModel message
                                                     quizViewModel.state.currentStep.getMessage(
                                                         LocalContext.current
@@ -446,14 +621,14 @@ fun QuizDetailScreen(
                                     0 -> {
                                         // Summary
                                         // Get summary from either QuizCreationViewModel or QuizDetailViewModel
-                                        val summaryContent = if (quizId > 0) {
+                                        val summaryContent = if (quizIdLong > 0) {
                                             quizDetailViewModel.state.summary
                                         } else {
                                             quizViewModel.state.quizSummary
                                         }
 
                                         if (summaryContent.isNotEmpty()) {
-                                            SummaryContent(summaryContent)
+                                            SummaryContent(summaryContent, quizIdLong)
                                         } else {
                                             Box(
                                                 modifier = Modifier.fillMaxSize(),
@@ -469,24 +644,21 @@ fun QuizDetailScreen(
                                         if (quizQuestions.isNotEmpty()) {
                                             // Check if quiz is completed to show results screen
                                             if (quizDetailViewModel.state.quizCompleted) {
-                                                // skippedQuestions, skippedQuestionIndices get data from Database if needed
                                                 QuizResultsScreen(
                                                     quizQuestions = quizQuestions,
                                                     correctAnswers = quizDetailViewModel.getCorrectAnswersCount(),
                                                     incorrectAnswers = quizDetailViewModel.getIncorrectAnswersCount(),
-                                                    skippedQuestions =
-                                                        if (quizDetailViewModel.state.skippedQuestions.isNotEmpty())
-                                                            quizDetailViewModel.state.skippedQuestions.size
-                                                        else
-                                                            quizDetailViewModel.getSkippedQuestionsCount(),
+                                                    skippedQuestions = if (quizDetailViewModel.state.skippedQuestions.isNotEmpty())
+                                                        quizDetailViewModel.state.skippedQuestions.size
+                                                    else
+                                                        quizDetailViewModel.getSkippedQuestionsCount(),
                                                     completionTimeSeconds = quizDetailViewModel.getQuizCompletionTimeInSeconds(),
                                                     correctQuestionIndices = quizDetailViewModel.getCorrectlyAnsweredQuestions(),
                                                     incorrectQuestionIndices = quizDetailViewModel.getIncorrectlyAnsweredQuestions(),
-                                                    skippedQuestionIndices =
-                                                        if (quizDetailViewModel.state.skippedQuestions.isNotEmpty())
-                                                            quizDetailViewModel.state.skippedQuestions.toList()
-                                                        else
-                                                            quizDetailViewModel.getSkippedQuestions(),
+                                                    skippedQuestionIndices = if (quizDetailViewModel.state.skippedQuestions.isNotEmpty())
+                                                        quizDetailViewModel.state.skippedQuestions.toList()
+                                                    else
+                                                        quizDetailViewModel.getSkippedQuestions(),
                                                     onRetryQuiz = {
                                                         quizDetailViewModel.resetQuiz()
                                                     }
@@ -577,7 +749,6 @@ fun QuizDetailScreen(
                                                             currentQuestionIndex++
                                                             selectedAnswer = ""
                                                             showFeedback = false
-
                                                         }
                                                         // If this is the last question and all questions are answered/skipped,
                                                         // we need to explicitly check completion
@@ -635,43 +806,6 @@ fun QuizDetailScreen(
                 }
             }
         )
-    }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun SummaryContent(summaryHtml: String) {
-    val networkUtils = LocalNetworkUtils.current
-    val navController = LocalNavController.current
-    val quizDetailViewModel = LocalQuizDetailViewModel.current
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        NetworkAwareWebView(
-            modifier = Modifier.fillMaxSize(),
-            url = "",
-            html = summaryHtml,
-            networkUtils = networkUtils,
-            isJavaScriptEnabled = true,
-            onPageFinished = {},
-            onRetryClick = {}
-        )
-
-        // Floating button to navigate to video player
-        quizDetailViewModel.state.quiz?.let { quiz ->
-            FloatingActionButton(
-                onClick = {
-                    // Encode video URL to avoid issues with special characters
-                    val encodedUrl =
-                        URLEncoder.encode(quiz.videoUrl, StandardCharsets.UTF_8.toString())
-                    navController.navigate(AppScreens.VideoPlayer.route + "/${quiz.id}/$encodedUrl")
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "Watch Video")
-            }
-        }
     }
 }
 

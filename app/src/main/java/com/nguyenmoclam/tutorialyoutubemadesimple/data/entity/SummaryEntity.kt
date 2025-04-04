@@ -26,5 +26,6 @@ data class SummaryEntity(
     val summaryId: Long = 0,
     
     val quizId: Long,
-    val content: String
+    val content: String,
+    val lastSyncTimestamp: Long = System.currentTimeMillis()
 )

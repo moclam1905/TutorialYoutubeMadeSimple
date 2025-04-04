@@ -21,5 +21,6 @@ data class QuizEntity(
     val questionCount: Int,
     val summaryEnabled: Boolean,
     val questionsEnabled: Boolean,
-    val lastUpdated: Long // Timestamp in milliseconds
+    val lastUpdated: Long, // Timestamp in milliseconds
+    val localThumbnailPath: String? = null // Path to locally stored thumbnail
 )

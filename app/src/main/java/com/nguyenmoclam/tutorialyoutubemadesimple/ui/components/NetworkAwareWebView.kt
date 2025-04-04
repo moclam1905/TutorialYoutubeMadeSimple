@@ -158,8 +158,6 @@ fun NetworkAwareWebView(
                         displayZoomControls = false
                         // Optimize rendering
                         setRenderPriority(WebSettings.RenderPriority.HIGH)
-                        // Enable hardware acceleration for SVG rendering
-                        setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
                         // Enable SVG support
                         mediaPlaybackRequiresUserGesture = false
                     }

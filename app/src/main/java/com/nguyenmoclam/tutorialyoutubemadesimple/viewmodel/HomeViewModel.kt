@@ -30,10 +30,10 @@ class HomeViewModel @Inject constructor(
     // UI state for the Home screen
     private val _state = MutableStateFlow(HomeViewState())
     val state: StateFlow<HomeViewState> = _state
-    
+
     // Filtered quizzes based on search query
     private var allQuizzes: List<Quiz> = emptyList()
-    
+
     init {
         // Observe quiz state manager and refresh data when needed
         viewModelScope.launch {
@@ -54,14 +54,20 @@ class HomeViewModel @Inject constructor(
 
     fun refreshQuizzes() {
         viewModelScope.launch {
-            // Check if content should be loaded based on data saver settings
-            if (networkUtils.shouldLoadContent()) {
+            // Check if offline data is available, regardless of offline mode being enabled or not
+            val offlineQuizzes = getAllQuizzesUseCase().first()
+
+            if (offlineQuizzes.isNotEmpty()) {
+                allQuizzes = offlineQuizzes
+                quizStateManager.updateQuizzes(offlineQuizzes)
+
+                applySearchFilter()
+            } else if (networkUtils.shouldLoadContent()) {
                 val quizzes = getAllQuizzesUseCase().first()
                 allQuizzes = quizzes
                 quizStateManager.updateQuizzes(quizzes)
                 applySearchFilter()
             } else {
-                // If content should not be loaded, update the state to show the restriction
                 _state.update { currentState ->
                     currentState.copy(
                         isLoading = false,
@@ -71,7 +77,7 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * Update search query and filter quizzes
      */
@@ -79,7 +85,7 @@ class HomeViewModel @Inject constructor(
         _state.update { it.copy(searchQuery = query) }
         applySearchFilter()
     }
-    
+
     /**
      * Apply search filter to quizzes based on current search query
      */
@@ -92,7 +98,7 @@ class HomeViewModel @Inject constructor(
                 quiz.title.lowercase().contains(searchQuery)
             }
         }
-        
+
         _state.update { currentState ->
             currentState.copy(
                 quizzes = filteredQuizzes,

@@ -60,13 +60,23 @@ class SplashViewModel @Inject constructor(
                 // Set loading state
                 _state.update { it.copy(isLoading = true, error = null) }
 
-                // Check network connectivity
-                if (!networkUtils.isNetworkAvailable()) {
-                    throw Exception("No internet connection available")
-                }
-
                 // Start timing for minimum display duration
                 val startTime = System.currentTimeMillis()
+                
+                // Check network connectivity
+                if (!networkUtils.isNetworkAvailable()) {
+                    // If no network, wait for minimum duration then update state
+                    delay(MINIMUM_SPLASH_DURATION)
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isInitialized = true, // Mark as initialized so splash screen disappears
+                            networkAvailable = false,
+                            error = "No internet connection available"
+                        )
+                    }
+                    return@launch
+                }
 
                 // Calculate remaining time to meet minimum duration
                 val elapsedTime = System.currentTimeMillis() - startTime
@@ -91,6 +101,7 @@ class SplashViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         isLoading = false,
+                        isInitialized = true, // Mark as initialized so splash screen disappears
                         error = e.message ?: "An error occurred during initialization",
                         networkAvailable = networkUtils.isNetworkAvailable()
                     )

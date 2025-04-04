@@ -18,14 +18,13 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.progress.GetQui
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.progress.SaveQuizProgressUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.question.GetQuestionsForQuizUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.CalculateQuizStatisticsUseCase
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.CheckQuizAnswerUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.CheckQuizCompletionUseCase
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.FindNextUnansweredQuestionUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GenerateMindMapUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetQuizByIdUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.summary.GetQuizSummaryUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.GetTranscriptUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -39,15 +38,14 @@ class QuizDetailViewModel @Inject constructor(
     private val getQuizProgressUseCase: GetQuizProgressUseCase,
     private val saveQuizProgressUseCase: SaveQuizProgressUseCase,
     private val deleteQuizProgressUseCase: DeleteQuizProgressUseCase,
-    private val checkQuizAnswerUseCase: CheckQuizAnswerUseCase,
     private val calculateQuizStatisticsUseCase: CalculateQuizStatisticsUseCase,
-    private val findNextUnansweredQuestionUseCase: FindNextUnansweredQuestionUseCase,
     private val checkQuizCompletionUseCase: CheckQuizCompletionUseCase,
     private val getTranscriptUseCase: GetTranscriptUseCase,
     private val generateMindMapUseCase: GenerateMindMapUseCase,
     private val saveMindMapUseCase: SaveMindMapUseCase,
     private val getMindMapUseCase: GetMindMapUseCase,
-    private val llmProcessor: LLMProcessor
+    private val llmProcessor: LLMProcessor,
+    private val offlineSyncManager: OfflineSyncManager
 ) : ViewModel() {
 
     enum class ProcessingMindMapStep(val messageRes: Int) {
@@ -101,6 +99,11 @@ class QuizDetailViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                // Sync quiz data before loading
+                offlineSyncManager.syncQuizDataById(quizId)
+
+                // Manage offline storage using OfflineDataManager (Removed call from here)
+
                 // Load quiz data using use case
                 val quiz = getQuizByIdUseCase(quizId)
                 if (quiz == null) {
@@ -111,9 +114,16 @@ class QuizDetailViewModel @Inject constructor(
                     return@launch
                 }
 
+                // Auto download content for quiz
+                offlineSyncManager.autoDownloadContentForQuiz(quizId)
+
                 // Load summary if available using use case
                 val summary = if (quiz.summaryEnabled) {
-                    getQuizSummaryUseCase(quizId)?.content ?: ""
+                    val summaryContent = getQuizSummaryUseCase(quizId)?.content ?: ""
+                    if (summaryContent.isNotBlank()) {
+                        downloadSummaryWebContent(summaryContent)
+                    }
+                    summaryContent
                 } else {
                     ""
                 }
@@ -171,14 +181,14 @@ class QuizDetailViewModel @Inject constructor(
                     progressEntity?.completionTime != null && progressEntity.completionTime > 0
 
                 // Get start time and completion time from progress entity
-                val startTime = if (quizCompleted) {
+                val startTime = if (quizCompleted && progressEntity != null) { // Add null check
                     // If completed, calculate start time from completion time and last updated
                     progressEntity.lastUpdated.minus(progressEntity.completionTime)
                 } else {
                     state.startTime
                 }
 
-                val completionTime = if (quizCompleted) {
+                val completionTime = if (quizCompleted && progressEntity != null) { // Add null check
                     // If completed, use the stored completion time
                     progressEntity.completionTime
                 } else {
@@ -362,6 +372,22 @@ class QuizDetailViewModel @Inject constructor(
         state.quiz?.id?.let { quizId ->
             viewModelScope.launch {
                 deleteQuizProgressUseCase(quizId)
+            }
+        }
+    }
+
+    /**
+     * Download the web content related to the summary
+     */
+    private fun downloadSummaryWebContent(summaryContent: String) {
+        if (summaryContent.isBlank()) return
+
+        viewModelScope.launch {
+            try {
+                // Create a temporary URL for offline storage
+                val summaryUrl = "https://tutorialyoutubemadesimple.app/summary/${state.quiz?.id}"
+                offlineSyncManager.downloadAndSaveWebContent(summaryUrl)
+            } catch (e: Exception) {
             }
         }
     }
@@ -614,6 +640,11 @@ class QuizDetailViewModel @Inject constructor(
     fun getLanguage(): String {
         return state.quiz?.language ?: "English"
     }
+
+    /**
+     * Get QuizRepository to use in OfflineSyncManager
+     */
+    fun getQuizRepository() = getQuizByIdUseCase.getQuizRepository()
 
     fun updateMindMapCode(newCode: String) {
         state = state.copy(mindMapCode = newCode)

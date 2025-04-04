@@ -19,4 +19,11 @@ class GetSettingsUseCase @Inject constructor(
     operator fun invoke(): Flow<Settings> {
         return settingsRepository.getSettings()
     }
+    
+    /**
+     * Get the SettingsRepository instance used by the use case.
+     */
+    fun getSettingsRepository(): SettingsRepository {
+        return settingsRepository
+    }
 }

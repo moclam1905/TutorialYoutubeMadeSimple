@@ -257,7 +257,25 @@
     <string name="progress">Progress</string>
     <string name="error_extracting_video_id">Could not extract videoId from link: %1$s</string>
     <string name="mind_map_created_successfully">Mind map created successfully</string>
+    <string name="offline_mode">Offline Mode</string>
+    <string name="offline_mode_description">Enable using the app without an internet connection</string>
 
+    <string name="auto_sync">Auto Sync</string>
+    <string name="auto_sync_description">Automatically sync data when internet is available</string>
 
+    <string name="auto_download">Auto Download</string>
+    <string name="auto_download_description">Automatically download required content for offline use</string>
+
+    <string name="max_storage">Max Storage</string>
+    <string name="max_storage_description">Set the maximum storage space used for offline content</string>
+    <string name="summary_not_available_offline">Summary is not available in offline mode</string>
+    <string name="mindmap_not_available_offline">Mind map is not available in offline mode</string>
+    <string name="network_reconnected">Network reconnected</string>
+    <string name="content_not_available_offline">Content is not available in offline mode</string>
+    <string name="offline_mode_active">Offline mode is active</string>
+    <string name="no_offline_transcript">Transcript is not available in offline mode</string>
+    <string name="offline_content_available">You can still use content saved in the cache</string>
+    <string name="check_connection">Check Connection</string>
+    <string name="continue_using_app">Continue Using App</string>
 
 </resources>

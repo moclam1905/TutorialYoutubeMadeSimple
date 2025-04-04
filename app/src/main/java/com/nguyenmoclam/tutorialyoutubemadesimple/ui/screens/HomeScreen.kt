@@ -362,7 +362,8 @@ fun LearningChallengeItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp),
-                    imageUrl = quiz.thumbnailUrl,
+                    imageUrl = quiz.thumbnailUrl, // Network URL
+                    localPath = quiz.localThumbnailPath, // Local file path
                     contentDescription = quiz.title,
                     networkUtils = networkUtils,
                     contentScale = ContentScale.Crop,

@@ -29,5 +29,11 @@ data class Settings(
     val retryPolicy: String = "exponential", // "none", "linear", or "exponential"
     
     // Language
-    val appLanguage: String = "system" // "en", "vi", or "system"
+    val appLanguage: String = "system", // "en", "vi", or "system"
+    
+    // Offline mode settings
+    val offlineModeEnabled: Boolean = false,
+    val autoSyncWhenOnline: Boolean = true,
+    val autoDownloadContent: Boolean = false,
+    val maxOfflineStorage: Int = 500 // in MB
 )

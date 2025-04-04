@@ -257,6 +257,25 @@
     <string name="progress">Tiến độ</string>
     <string name="error_extracting_video_id">Không thể lấy videoId từ link: %1$s</string>
     <string name="mind_map_created_successfully">Mind map được tạo thành công</string>
+    <string name="offline_mode">Chế độ ngoại tuyến</string>
+    <string name="offline_mode_description">Cho phép sử dụng ứng dụng khi không có kết nối internet</string>
 
+    <string name="auto_sync">Đồng bộ tự động</string>
+    <string name="auto_sync_description">Tự động đồng bộ dữ liệu khi có kết nối internet</string>
+
+    <string name="auto_download">Tải xuống tự động</string>
+    <string name="auto_download_description">Tự động tải nội dung cần thiết để sử dụng ngoại tuyến</string>
+
+    <string name="max_storage">Dung lượng tối đa</string>
+    <string name="max_storage_description">Thiết lập dung lượng lưu trữ tối đa cho nội dung ngoại tuyến</string>
+    <string name="summary_not_available_offline">Tóm tắt không khả dụng ở chế độ ngoại tuyến</string>
+    <string name="mindmap_not_available_offline">Mind map không khả dụng ở chế độ ngoại tuyến</string>
+    <string name="network_reconnected">Đã kết nối lại mạng</string>
+    <string name="content_not_available_offline">Nội dung không khả dụng ở chế độ ngoại tuyến</string>
+    <string name="offline_mode_active">Chế độ ngoại tuyến đang hoạt động</string>
+    <string name="no_offline_transcript">Bản ghi không khả dụng ở chế độ ngoại tuyến</string>
+    <string name="offline_content_available">Bạn vẫn có thể sử dụng nội dung đã lưu trong bộ nhớ cache</string>
+    <string name="check_connection">Kiểm tra kết nối</string>
+    <string name="continue_using_app">Tiếp tục sử dụng ứng dụng</string>
 
 </resources>

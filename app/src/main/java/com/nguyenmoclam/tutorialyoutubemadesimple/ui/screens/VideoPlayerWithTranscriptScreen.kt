@@ -23,6 +23,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -49,6 +51,8 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.TranscriptSegment
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ChapterNavigationBar
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.TranscriptList
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkStateListener
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkSnackbarManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.TranscriptViewModel
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
@@ -72,6 +76,12 @@ fun VideoPlayerWithTranscriptScreen(
     val state by viewModel.state.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val filteredSegments by viewModel.filteredSegments.collectAsState()
+
+    // Network state
+    val networkStateListener = LocalNetworkStateListener.current
+
+    // SnackbarHostState is used to display a notification when the network connection is restored
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Tab selection state
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -133,9 +143,17 @@ fun VideoPlayerWithTranscriptScreen(
         }
     }
 
-    // UI layout
+    // Show the notification when the network connection changes
+    NetworkSnackbarManager.NetworkStatusSnackbar(
+        snackbarHostState = snackbarHostState,
+        networkStateListener = networkStateListener,
+        showReconnectionMessage = true,
+        showDisconnectionMessage = true
+    )
+
     Scaffold(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -146,122 +164,128 @@ fun VideoPlayerWithTranscriptScreen(
             // Extract videoId = 11 characters
             val videoId = remember(videoUrl) { extractVideoId(videoUrl) }
 
-            if (videoId == null) {
-                // Show error
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(stringResource(R.string.error_extracting_video_id, videoUrl))
-                }
-            } else {
-                // YouTube Player View
-                AndroidView(
-                    factory = { context ->
-                        YouTubePlayerView(context).apply {
-                            addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-                                override fun onReady(youTubePlayer: YouTubePlayer) {
-                                    // Save instance + attach tracker
-                                    youTubePlayerInstance = youTubePlayer
-                                    youTubePlayer.addListener(tracker)
-
-                                    // Load video
-                                    youTubePlayer.loadVideo(videoId, 0f)
-                                }
-                            })
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp)
-                )
-            }
-
-            // Chapter Navigation Section with improved layout
-            if (state.chapters.isNotEmpty() && totalDuration > 0) {
-                // Current chapter title with animation
-                state.currentChapter?.let { currentChapter ->
-                    Row(
+            // Removed GlobalNetworkAwareContent wrapper
+            // Content is now directly inside the main Column
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Video player region
+                if (videoId == null) {
+                    // Show error
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .height(240.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Bookmark,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = currentChapter.chapterTitle
-                                ?: "Chapter ${currentChapter.timestamp}",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(stringResource(R.string.error_extracting_video_id, videoUrl))
                     }
+                } else {
+                    // YouTube Player View
+                    AndroidView(
+                        factory = { context ->
+                            YouTubePlayerView(context).apply {
+                                addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+                                    override fun onReady(youTubePlayer: YouTubePlayer) {
+                                        // Save instance + attach tracker
+                                        youTubePlayerInstance = youTubePlayer
+                                        youTubePlayer.addListener(tracker)
+
+                                        // Load video
+                                        youTubePlayer.loadVideo(videoId, 0f)
+                                    }
+                                })
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(240.dp)
+                    )
                 }
 
-                // Enhanced Chapter Navigation Bar with Previous/Next buttons
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Previous Chapter Button
-                    IconButton(onClick = {
-                        viewModel.getPreviousChapter()?.let { prevChapter ->
-                            viewModel.jumpToChapter(prevChapter)
+                // Chapter Navigation Section with improved layout
+                if (state.chapters.isNotEmpty() && totalDuration > 0) {
+                    // Current chapter title with animation
+                    state.currentChapter?.let { currentChapter ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Bookmark,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = currentChapter.chapterTitle
+                                    ?: "Chapter ${currentChapter.timestamp}",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.NavigateBefore,
-                            contentDescription = "Previous Chapter",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
                     }
 
-                    // Chapter Navigation Bar
-                    ChapterNavigationBar(
+                    // Enhanced Chapter Navigation Bar with Previous/Next buttons
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Previous Chapter Button
+                        IconButton(onClick = {
+                            viewModel.getPreviousChapter()?.let { prevChapter ->
+                                viewModel.jumpToChapter(prevChapter)
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.NavigateBefore,
+                                contentDescription = "Previous Chapter",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        // Chapter Navigation Bar
+                        ChapterNavigationBar(
+                            chapters = state.chapters,
+                            currentTimeMillis = currentPosition,
+                            totalDurationMillis = totalDuration,
+                            onChapterClick = { chapter ->
+                                viewModel.jumpToChapter(chapter)
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp)
+                        )
+
+                        // Next Chapter Button
+                        IconButton(onClick = {
+                            viewModel.getNextChapter()?.let { nextChapter ->
+                                viewModel.jumpToChapter(nextChapter)
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.NavigateNext,
+                                contentDescription = "Next Chapter",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    // Chapter Navigation (chips) with horizontal scrolling
+                    ChapterNavigationComponent(
                         chapters = state.chapters,
                         currentTimeMillis = currentPosition,
-                        totalDurationMillis = totalDuration,
-                        onChapterClick = { chapter ->
+                        onChapterClick = { chapter: TranscriptSegment ->
                             viewModel.jumpToChapter(chapter)
                         },
                         modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp)
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 8.dp)
                     )
-
-                    // Next Chapter Button
-                    IconButton(onClick = {
-                        viewModel.getNextChapter()?.let { nextChapter ->
-                            viewModel.jumpToChapter(nextChapter)
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.NavigateNext,
-                            contentDescription = "Next Chapter",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
                 }
-
-                // Chapter Navigation (chips) with horizontal scrolling
-                ChapterNavigationComponent(
-                    chapters = state.chapters,
-                    currentTimeMillis = currentPosition,
-                    onChapterClick = { chapter: TranscriptSegment ->
-                        viewModel.jumpToChapter(chapter)
-                    },
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 8.dp)
-                )
             }
+
 
             // Tab row + Search button
             Row(modifier = Modifier.fillMaxWidth()) {

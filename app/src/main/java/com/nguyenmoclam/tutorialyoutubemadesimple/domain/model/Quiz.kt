@@ -11,5 +11,6 @@ data class Quiz(
     val questionCount: Int,
     val summaryEnabled: Boolean,
     val questionsEnabled: Boolean,
-    val lastUpdated: Long
+    val lastUpdated: Long,
+    val localThumbnailPath: String? = null // Path to locally stored thumbnail
 )
