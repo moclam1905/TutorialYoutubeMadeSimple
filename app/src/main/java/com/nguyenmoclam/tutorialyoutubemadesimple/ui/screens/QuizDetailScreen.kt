@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
 import android.annotation.SuppressLint
+import android.view.ViewGroup
 import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.activity.compose.BackHandler
@@ -76,8 +77,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import android.util.Base64
-import android.view.ViewGroup
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -148,8 +147,9 @@ fun SummaryContent(summaryHtml: String, quizId: Long) {
                         settings.apply {
                             javaScriptEnabled = true
                             domStorageEnabled = true
-                            loadsImagesAutomatically = !networkUtils.isDataSaverEnabled()
-                            blockNetworkImage = networkUtils.isDataSaverEnabled()
+                            // Force image loading when offline, regardless of data saver
+                            loadsImagesAutomatically = true
+                            blockNetworkImage = false
                             cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
                             setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
                             useWideViewPort = true
@@ -171,27 +171,39 @@ fun SummaryContent(summaryHtml: String, quizId: Long) {
                             offlineDataManager = offlineDataManager,
                             networkUtils = networkUtils,
                             onPageStarted = { _ -> },
-                            onPageFinished = { view ->
-                                // Inject CSS to make images responsive
-                                val css = "img { max-width: 100%; height: auto; display: block; }"
-                                val js = "javascript:(function() {" +
-                                        "var parent = document.getElementsByTagName('head').item(0);" +
-                                        "var style = document.createElement('style');" +
-                                        "style.type = 'text/css';" +
-                                        "style.innerHTML = window.atob('${Base64.encodeToString(css.toByteArray(), Base64.NO_WRAP)}');" +
-                                        "parent.appendChild(style)" +
-                                        "})()"
-                                // Explicitly cast view to WebView
-                                (view as? WebView)?.evaluateJavascript(js, null)
-                            },
+                            // Remove JS injection from here
+                            onPageFinished = { _ -> },
                             onReceivedError = { _, _ -> }
                         )
 
-                        // Create assumed URL for summary content to store offline
-                        val summaryUrl = "https://tutorialyoutubemadesimple.app/summary/$quizId"
+                        // Modify the summaryHtml directly to fix image styles
+                        val imgTagRegex = Regex("""<img\s+([^>]*?)>""", RegexOption.IGNORE_CASE)
+                        val styleAttributeRegex =
+                            Regex("""\sstyle\s*=\s*['"][^'"]*['"]""", RegexOption.IGNORE_CASE)
+                        val widthAttributeRegex =
+                            Regex("""\swidth\s*=\s*['"]?\d+['"]?""", RegexOption.IGNORE_CASE)
+                        val heightAttributeRegex =
+                            Regex("""\sheight\s*=\s*['"]?\d+['"]?""", RegexOption.IGNORE_CASE)
 
-                        // Load HTML content directly
-                        loadDataWithBaseURL(summaryUrl, summaryHtml, "text/html", "UTF-8", null)
+                        val modifiedSummaryHtml = imgTagRegex.replace(summaryHtml) { matchResult ->
+                            var attributes = matchResult.groupValues[1]
+                            // Remove existing style, width, height attributes
+                            attributes = styleAttributeRegex.replace(attributes, "")
+                            attributes = widthAttributeRegex.replace(attributes, "")
+                            attributes = heightAttributeRegex.replace(attributes, "")
+                            // Ensure attributes string starts with a space if not empty, and add style *before* closing >
+                            val attributesPrefix =
+                                if (attributes.isNotBlank() && !attributes.startsWith(" ")) " " else ""
+                            """<img${attributesPrefix}${attributes.trim()} style="max-width: 100%; height: auto; display: block;">"""
+                        }
+
+                        // Prepend only the viewport meta tag to the modified HTML
+                        val viewportMeta =
+                            "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                        val finalHtml = viewportMeta + modifiedSummaryHtml
+
+                        // Load the modified HTML content with a null base URL
+                        loadDataWithBaseURL(null, finalHtml, "text/html", "UTF-8", null)
                     }
                 }
             )
