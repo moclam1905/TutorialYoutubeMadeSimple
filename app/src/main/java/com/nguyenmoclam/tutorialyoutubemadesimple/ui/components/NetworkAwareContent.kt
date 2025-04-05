@@ -202,9 +202,6 @@ fun OfflineSvgContent(
     )
 }
 
-/**
- * Loại nội dung để hiển thị
- */
 enum class ContentType {
     SUMMARY,
     MINDMAP

@@ -37,8 +37,7 @@ fun AndroidWebViewWithOfflineContent(
     
     // State
     var isLoading by remember { mutableStateOf(true) }
-    
-    // Hiển thị WebView với nội dung HTML
+
     Box(modifier = modifier.fillMaxSize()) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),

@@ -75,7 +75,7 @@ class SVGView(context: Context) : FrameLayout(context) {
     // ProgressBar displayed during processing
     private val progressBar: ProgressBar = ProgressBar(context).apply {
         val size = context.resources.getDimensionPixelSize(android.R.dimen.app_icon_size)
-        val layoutParams = FrameLayout.LayoutParams(size, size).apply {
+        val layoutParams = LayoutParams(size, size).apply {
             gravity = Gravity.CENTER
         }
         this.layoutParams = layoutParams
@@ -465,7 +465,6 @@ class SVGView(context: Context) : FrameLayout(context) {
      * Show progress bar
      */
     private fun showProgressBar() {
-        // Sử dụng coroutineScope đã có sẵn Dispatchers.Main
         coroutineScope.launch {
             progressBar.visibility = VISIBLE
             progressBar.bringToFront()

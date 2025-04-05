@@ -2,6 +2,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.navigation
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,6 +29,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 @Composable
 fun AppNavigation(
     navController: NavHostController,
+    homeScreenLazyListState: LazyListState, // Add parameter for HomeScreen state
     viewModel: QuizViewModel,
     quizViewModel: QuizCreationViewModel,
     settingsViewModel: SettingsViewModel,
@@ -37,9 +39,12 @@ fun AppNavigation(
         navController = navController,
         startDestination = AppScreens.Home.route
     ) {
-        // Home Screen
+        // Home Screen - Pass the LazyListState
         composable(AppScreens.Home.route) {
-            HomeScreen(navController = navController)
+            HomeScreen(
+                navController = navController,
+                lazyListState = homeScreenLazyListState // Pass the state down
+            )
         }
         // Create Quiz Screen
         composable(AppScreens.CreateQuiz.route) {

@@ -11,6 +11,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
@@ -25,7 +26,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -38,7 +45,6 @@ import androidx.navigation.compose.rememberNavController
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppNavigation
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavItem
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.BottomNavigationVisibilityState
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LanguageChangeHelper
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkStateListener
@@ -50,6 +56,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SplashViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.util.Locale
 import javax.inject.Inject
 
@@ -66,7 +73,7 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var networkUtils: NetworkUtils
-    
+
     @Inject
     lateinit var networkStateListener: NetworkStateListener
 
@@ -82,10 +89,10 @@ class MainActivity : ComponentActivity() {
 
         // Keep the splash screen visible until initialization is complete
         splashScreen.setKeepOnScreenCondition {
-            !splashViewModel.state.value.isInitialized && 
-            (splashViewModel.state.value.isLoading || splashViewModel.state.value.networkAvailable)
+            !splashViewModel.state.value.isInitialized &&
+                    (splashViewModel.state.value.isLoading || splashViewModel.state.value.networkAvailable)
         }
-        
+
         // Initialize network connectivity monitoring
         networkUtils.observeNetworkConnectivity()
 
@@ -114,36 +121,58 @@ class MainActivity : ComponentActivity() {
                 val quizCreationViewModel: QuizCreationViewModel = viewModel()
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestinationRoute = navBackStackEntry?.destination?.route
+                val currentDestination = navBackStackEntry?.destination
+
+                // State for HomeScreen's LazyColumn, hoisted to MainActivity
+                val homeScreenLazyListState = rememberLazyListState()
+                val currentRoute = currentDestination?.route
+
+                // Use the reusable composable to get scroll direction state
+                val isScrollingDown by rememberIsScrollingDown(homeScreenLazyListState)
+
+                // Use derivedStateOf for the final visibility calculation
+                val isBottomBarVisible by remember(
+                    currentRoute,
+                    isScrollingDown,
+                    remember { derivedStateOf { homeScreenLazyListState.firstVisibleItemIndex } },
+                    remember { derivedStateOf { homeScreenLazyListState.firstVisibleItemScrollOffset } }
+                ) {
+                    derivedStateOf {
+                        val isAtTop =
+                            homeScreenLazyListState.firstVisibleItemIndex == 0 && homeScreenLazyListState.firstVisibleItemScrollOffset == 0
+                        val shouldShowBasedOnScroll =
+                            isAtTop || isScrollingDown // Show if at top OR scrolling down
+
+                        val finalVisibility = when (currentRoute) {
+                            AppScreens.Home.route -> shouldShowBasedOnScroll
+                            AppScreens.CreateQuiz.route, AppScreens.Settings.route -> true
+                            else -> false
+                        }
+                        finalVisibility
+                    }
+                }
 
                 // Provide NetworkUtils and NetworkStateListener to the composable tree
                 CompositionLocalProvider(
                     LocalNetworkUtils provides networkUtils,
                     LocalNetworkStateListener provides networkStateListener
                 ) {
-
-                    // Observe bottom navigation visibility state
-                    val isBottomNavVisible by BottomNavigationVisibilityState.isVisible
-
                     Surface(color = MaterialTheme.colorScheme.background) {
                         Scaffold(
                             bottomBar = {
-                                if (currentDestinationRoute?.startsWith(AppScreens.QuizDetail.route) != true &&
-                                    currentDestinationRoute?.startsWith(AppScreens.VideoPlayer.route) != true
+                                // Use the derived state value for visibility
+                                AnimatedVisibility(
+                                    visible = isBottomBarVisible, // Read derived state value
+                                    enter = slideInVertically(initialOffsetY = { it }),
+                                    exit = slideOutVertically(targetOffsetY = { it })
                                 ) {
-                                    // Animate bottom navigation visibility
-                                    AnimatedVisibility(
-                                        visible = isBottomNavVisible,
-                                        enter = slideInVertically(initialOffsetY = { it }),
-                                        exit = slideOutVertically(targetOffsetY = { it })
-                                    ) {
-                                        BottomNavigationBar(navController)
-                                    }
+                                    BottomNavigationBar(navController)
                                 }
                             },
                         ) { innerPadding ->
                             AppNavigation(
                                 navController = navController,
+                                homeScreenLazyListState = homeScreenLazyListState, // Pass the state down
                                 viewModel = quizViewModel,
                                 quizViewModel = quizCreationViewModel,
                                 settingsViewModel = settingsViewModel,
@@ -240,4 +269,30 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+}
+
+/**
+ * A composable function that remembers whether the user is currently scrolling down in a LazyList.
+ *
+ * @param listState The LazyListState to observe.
+ * @return A State<Boolean> which is true if scrolling down, false otherwise.
+ */
+@Composable
+fun rememberIsScrollingDown(listState: androidx.compose.foundation.lazy.LazyListState): State<Boolean> {
+    val isScrollingDown = remember { mutableStateOf(false) } // Default to not scrolling down
+
+    LaunchedEffect(listState) { // Key based on the listState object
+        var previousOffset = listState.firstVisibleItemScrollOffset
+
+        snapshotFlow { listState.firstVisibleItemScrollOffset }
+            .distinctUntilChanged()
+            .collect { currentOffset ->
+                val scrollingDown = currentOffset < previousOffset
+                if (isScrollingDown.value != scrollingDown) {
+                    isScrollingDown.value = scrollingDown
+                }
+                previousOffset = currentOffset // Update previous offset for the next emission
+            }
+    }
+    return isScrollingDown
 }
