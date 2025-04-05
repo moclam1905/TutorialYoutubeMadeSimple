@@ -277,5 +277,9 @@
     <string name="offline_content_available">You can still use content saved in the cache</string>
     <string name="check_connection">Check Connection</string>
     <string name="continue_using_app">Continue Using App</string>
+    <string name="next_chapter">Next Chapter</string>
+    <string name="toggle_search">Toggle Search</string>
+    <string name="clear_search">Clear Search</string>
+    <string name="previous_chapter">Previous Chapter</string>
 
 </resources>

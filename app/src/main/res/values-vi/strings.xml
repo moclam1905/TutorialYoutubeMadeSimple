@@ -277,5 +277,9 @@
     <string name="offline_content_available">Bạn vẫn có thể sử dụng nội dung đã lưu trong bộ nhớ cache</string>
     <string name="check_connection">Kiểm tra kết nối</string>
     <string name="continue_using_app">Tiếp tục sử dụng ứng dụng</string>
+    <string name="next_chapter">Chương tiếp theo</string>
+    <string name="toggle_search">Bật/tắt tìm kiếm</string>
+    <string name="clear_search">Xóa tìm kiếm</string>
+    <string name="previous_chapter">Chương trước</string>
 
 </resources>
