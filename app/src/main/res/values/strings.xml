@@ -282,4 +282,18 @@
     <string name="clear_search">Clear Search</string>
     <string name="previous_chapter">Previous Chapter</string>
 
+    <string name="watch_video">Watch Video</string>
+    <string name="app_logo">App Logo</string>
+    <string name="collapse">Collapse</string>
+    <string name="expand">Expand</string>
+    <string name="close_menu">Close Menu</string>
+    <string name="open_menu">Open Menu</string>
+    <string name="correct_answer">Correct Answer</string>
+    <string name="incorrect_answer">Incorrect Answer</string>
+    <string name="finish_quiz_button">Finish Quiz</string>
+    <string name="next">Next</string>
+    <string name="unknown_error">An unknown error occurred.</string>
+    <string name="offline_mode_snackbar">Switched to offline mode due to no network connection</string>
+    <string name="offline">Offline</string>
+
 </resources>

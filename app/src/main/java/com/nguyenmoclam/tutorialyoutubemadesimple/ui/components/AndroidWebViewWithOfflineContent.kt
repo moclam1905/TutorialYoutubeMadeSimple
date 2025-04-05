@@ -19,6 +19,35 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 
+
+/**
+ * Helper function to modify HTML content for optimal display in a WebView,
+ * especially fixing image styles and adding viewport meta tag.
+ */
+private fun modifyHtmlForOfflineWebView(htmlContent: String): String {
+    val imgTagRegex = Regex("""<img\s+([^>]*?)>""", RegexOption.IGNORE_CASE)
+    val styleAttributeRegex = Regex("""\sstyle\s*=\s*['"][^'"]*['"]""", RegexOption.IGNORE_CASE)
+    val widthAttributeRegex = Regex("""\swidth\s*=\s*['"]?\d+['"]?""", RegexOption.IGNORE_CASE)
+    val heightAttributeRegex = Regex("""\sheight\s*=\s*['"]?\d+['"]?""", RegexOption.IGNORE_CASE)
+
+    val modifiedHtml = imgTagRegex.replace(htmlContent) { matchResult ->
+        var attributes = matchResult.groupValues[1]
+        // Remove existing style, width, height attributes
+        attributes = styleAttributeRegex.replace(attributes, "")
+        attributes = widthAttributeRegex.replace(attributes, "")
+        attributes = heightAttributeRegex.replace(attributes, "")
+        // Ensure attributes string starts with a space if not empty, and add style *before* closing >
+        val attributesPrefix =
+            if (attributes.isNotBlank() && !attributes.startsWith(" ")) " " else ""
+        """<img${attributesPrefix}${attributes.trim()} style="max-width: 100%; height: auto; display: block;">"""
+    }
+
+    // Prepend viewport meta tag
+    val viewportMeta = "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+    return viewportMeta + modifiedHtml
+}
+
+
 /**
  * Component to display HTML content in WebView in offline mode.
  * Does not make any network requests and only displays stored HTML content.
@@ -34,14 +63,14 @@ fun AndroidWebViewWithOfflineContent(
 ) {
     val context = LocalContext.current
     val networkUtils = LocalNetworkUtils.current
-    
+
     // State
     var isLoading by remember { mutableStateOf(true) }
 
     Box(modifier = modifier.fillMaxSize()) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
-            factory = { 
+            factory = {
                 WebView(context).apply {
                     settings.apply {
                         javaScriptEnabled = isJavaScriptEnabled
@@ -55,8 +84,14 @@ fun AndroidWebViewWithOfflineContent(
                         // Allow loading resources from files
                         allowFileAccess = true
                         allowContentAccess = true
+                        // Improve scrolling and viewport handling
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
+                        setSupportZoom(true)
+                        builtInZoomControls = true
+                        displayZoomControls = false // Hide zoom buttons, allow pinch-to-zoom
                     }
-                    
+
                     // Set up WebViewClient with offline support
                     webViewClient = WebViewClientWithOfflineSupport(
                         offlineDataManager = offlineDataManager,
@@ -68,17 +103,19 @@ fun AndroidWebViewWithOfflineContent(
                 }
             },
             update = { view ->
-                // Load HTML content directly from string, with baseUrl to support relative resources
+                // Modify the HTML content before loading
+                val finalHtml = modifyHtmlForOfflineWebView(htmlContent)
+                // Load the modified HTML content directly from string, with baseUrl to support relative resources
                 view.loadDataWithBaseURL(
-                    "file:///android_asset/",
-                    htmlContent,
+                    "file:///android_asset/", // Using asset base URL might help with relative paths if needed
+                    finalHtml,
                     "text/html",
                     "UTF-8",
                     null
                 )
             }
         )
-        
+
         // Display loading state
         if (isLoading) {
             CircularProgressIndicator(
@@ -86,7 +123,7 @@ fun AndroidWebViewWithOfflineContent(
             )
         }
     }
-    
+
     // Cleanup when component is destroyed
     DisposableEffect(Unit) {
         onDispose {

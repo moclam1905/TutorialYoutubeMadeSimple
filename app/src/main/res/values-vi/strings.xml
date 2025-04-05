@@ -282,4 +282,18 @@
     <string name="clear_search">Xóa tìm kiếm</string>
     <string name="previous_chapter">Chương trước</string>
 
+    <string name="watch_video">Xem video</string>
+    <string name="app_logo">Logo ứng dụng</string>
+    <string name="collapse">Thu gọn</string>
+    <string name="expand">Mở rộng</string>
+    <string name="close_menu">Đóng menu</string>
+    <string name="open_menu">Mở menu</string>
+    <string name="correct_answer">Câu trả lời đúng</string>
+    <string name="incorrect_answer">Câu trả lời sai</string>
+    <string name="finish_quiz_button">Kết thúc bài kiểm tra</string>
+    <string name="next">Tiếp theo</string>
+    <string name="unknown_error">Đã xảy ra lỗi không xác định.</string>
+    <string name="offline_mode_snackbar">Chuyển sang chế độ ngoại tuyến do mất kết nối mạng</string>
+    <string name="offline">Ngoại tuyến</string>
+
 </resources>
