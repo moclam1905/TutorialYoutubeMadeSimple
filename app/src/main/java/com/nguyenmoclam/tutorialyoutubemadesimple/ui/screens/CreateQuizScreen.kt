@@ -158,8 +158,10 @@ fun CreateQuizScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Error message display
-            ErrorMessage(viewModel)
+            ErrorMessage(
+                errorMessage = viewModel.errorMessage,
+                isLoading = viewModel.isLoading
+            )
 
             // Content based on current step
             when (currentStep) {
