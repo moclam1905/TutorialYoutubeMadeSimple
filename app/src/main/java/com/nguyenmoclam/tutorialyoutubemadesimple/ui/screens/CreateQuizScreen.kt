@@ -2,23 +2,13 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.Button
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -43,6 +33,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ErrorMessage
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavigationButtons
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step1Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step2Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step3Content
@@ -143,111 +134,73 @@ fun CreateQuizScreen(
                 )
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        Column(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+
+        ) { paddingValues ->
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .navigationBarsPadding()
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Step indicator
-            StepIndicator(currentStep = currentStep, totalSteps = 3)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ErrorMessage(
-                errorMessage = viewModel.errorMessage,
-                isLoading = viewModel.isLoading
-            )
-
-            // Content based on current step
-            when (currentStep) {
-                1 -> Step1Content(
-                    youtubeUrlValue = TextFieldValue(viewModel.youtubeUrl),
-                    onYoutubeUrlChange = { viewModel.updateYoutubeUrl(it.text) },
-                    selectedLanguage = viewModel.selectedLanguage,
-                    onLanguageSelected = { viewModel.updateSelectedLanguage(it) },
-                    showLanguageDropdown = showLanguageDropdown,
-                    onShowLanguageDropdownChange = { showLanguageDropdown = it },
-                    languages = languages
-                )
-
-                2 -> Step2Content(
-                    questionType = viewModel.questionType,
-                    onQuestionTypeChange = { viewModel.updateQuestionType(it) },
-                    questionCountMode = viewModel.questionCountMode,
-                    onQuestionCountModeChange = { viewModel.updateQuestionCountMode(it) },
-                    questionLevel = viewModel.questionLevel,
-                    onQuestionLevelChange = { viewModel.updateQuestionLevel(it) },
-                    manualQuestionCount = viewModel.manualQuestionCount,
-                    onManualQuestionCountChange = { viewModel.updateManualQuestionCount(it) }
-                )
-
-                3 -> Step3Content(
-                    generateSummary = viewModel.generateSummary,
-                    onGenerateSummaryChange = { viewModel.updateGenerateSummary(it) },
-                    generateQuestions = viewModel.generateQuestions,
-                    onGenerateQuestionsChange = { viewModel.updateGenerateQuestions(it) },
+            item {
+                StepIndicator(currentStep = currentStep, totalSteps = 3)
+                Spacer(modifier = Modifier.height(16.dp))
+                ErrorMessage(
+                    errorMessage = viewModel.errorMessage,
                     isLoading = viewModel.isLoading
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Content based on current step
+            item {
+                when (currentStep) {
+                    1 -> Step1Content(
+                        youtubeUrlValue = TextFieldValue(viewModel.youtubeUrl),
+                        onYoutubeUrlChange = { viewModel.updateYoutubeUrl(it.text) },
+                        selectedLanguage = viewModel.selectedLanguage,
+                        onLanguageSelected = { viewModel.updateSelectedLanguage(it) },
+                        showLanguageDropdown = showLanguageDropdown,
+                        onShowLanguageDropdownChange = { showLanguageDropdown = it },
+                        languages = languages
+                    )
 
-            // Navigation buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Back button (hidden on first step)
-                if (currentStep > 1) {
-                    Button(
-                        onClick = { moveToPreviousStep() },
-                        modifier = Modifier.weight(1f),
-                        enabled = !viewModel.isLoading
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(stringResource(R.string.back_button))
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
-                    Spacer(modifier = Modifier.width(8.dp))
+                    2 -> Step2Content(
+                        questionType = viewModel.questionType,
+                        onQuestionTypeChange = { viewModel.updateQuestionType(it) },
+                        questionCountMode = viewModel.questionCountMode,
+                        onQuestionCountModeChange = { viewModel.updateQuestionCountMode(it) },
+                        questionLevel = viewModel.questionLevel,
+                        onQuestionLevelChange = { viewModel.updateQuestionLevel(it) },
+                        manualQuestionCount = viewModel.manualQuestionCount,
+                        onManualQuestionCountChange = { viewModel.updateManualQuestionCount(it) }
+                    )
+
+                    3 -> Step3Content(
+                        generateSummary = viewModel.generateSummary,
+                        onGenerateSummaryChange = { viewModel.updateGenerateSummary(it) },
+                        generateQuestions = viewModel.generateQuestions,
+                        onGenerateQuestionsChange = { viewModel.updateGenerateQuestions(it) },
+                        isLoading = viewModel.isLoading
+                    )
                 }
-
-                // Next/Create button
-                Button(
-                    onClick = { moveToNextStep() },
-                    modifier = Modifier.weight(1f),
-                    enabled = !viewModel.isLoading && when (currentStep) {
-                        1 -> viewModel.youtubeUrl.isNotBlank()
-                        2 -> viewModel.questionCountMode != "manual" ||
-                                (viewModel.manualQuestionCount.toIntOrNull() != null &&
-                                        viewModel.manualQuestionCount.toIntOrNull()!! in 1..20)
-
-                        3 -> viewModel.generateSummary || viewModel.generateQuestions
-                        else -> false
-                    }
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            if (currentStep < 3) stringResource(R.string.next_button) else stringResource(
-                                R.string.create_quiz_title
-                            )
-                        )
-                        if (currentStep < 3) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(Icons.Filled.ArrowForward, contentDescription = "Next")
-                        }
-                    }
-                }
+            }
+            item {
+                NavigationButtons(
+                    currentStep = currentStep,
+                    onBack = { moveToPreviousStep() },
+                    onNext = { moveToNextStep() },
+                    viewModel = viewModel
+                )
+                Spacer(
+                    modifier = Modifier
+                        .padding(bottom = 64.dp)
+                        .navigationBarsPadding()
+                )
             }
         }
     }
 }
+
