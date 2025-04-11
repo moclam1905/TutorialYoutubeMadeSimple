@@ -295,5 +295,8 @@
     <string name="unknown_error">An unknown error occurred.</string>
     <string name="offline_mode_snackbar">Switched to offline mode due to no network connection</string>
     <string name="offline">Offline</string>
+    <string name="all_questions">All Questions</string>
+    <string name="in_progress_question">In Progress</string>
+    <string name="completed">Completed</string>
 
 </resources>

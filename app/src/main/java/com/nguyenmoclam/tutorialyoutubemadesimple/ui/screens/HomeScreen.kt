@@ -1,5 +1,11 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,9 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,6 +31,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.HomeTopAppBar
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.QuizListContent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ScreenTitle
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.SearchBar
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.SubFilterChips
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,12 +79,37 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Filter Tabs - State managed locally for simplicity, extracted to FilterTabs composable
-            var selectedTabIndex by remember { mutableIntStateOf(0) }
+            // --- Filter Logic ---
+            // Read filter state directly from ViewModel's state
             FilterTabs(
-                selectedTabIndex = selectedTabIndex,
-                onTabSelected = { index -> selectedTabIndex = index }
+                selectedTabIndex = state.selectedMainFilterIndex,
+                onTabSelected = { index, key ->
+                    // Notify ViewModel about filter change, passing index and key
+                    // ViewModel will handle resetting sub-filter state internally
+                    viewModel.updateFilter(mainFilterKey = key, mainFilterIndex = index)
+                }
             )
+
+            // Conditionally display Sub-Filters for "Question" with animation
+            AnimatedVisibility(
+                visible = state.selectedMainFilter == "Question",
+                enter = fadeIn(animationSpec = tween(200)) + expandVertically(animationSpec = tween(300)),
+                exit = fadeOut(animationSpec = tween(200)) + shrinkVertically(animationSpec = tween(300))
+            ) {
+                SubFilterChips(
+                    selectedSubFilterIndex = state.selectedSubFilterIndex,
+                    onSubFilterSelected = { index, subKey ->
+                        // Notify ViewModel about filter change, passing main filter key and sub-filter details
+                        viewModel.updateFilter(
+                            mainFilterKey = state.selectedMainFilter, // Pass current main filter key
+                            mainFilterIndex = state.selectedMainFilterIndex, // Pass current main filter index
+                            subFilterKey = subKey,
+                            subFilterIndex = index
+                        )
+                    }
+                )
+            }
+            // --- End Filter Logic ---
 
             Spacer(modifier = Modifier.height(16.dp))
 

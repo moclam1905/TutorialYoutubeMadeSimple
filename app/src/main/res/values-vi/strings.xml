@@ -295,5 +295,9 @@
     <string name="unknown_error">Đã xảy ra lỗi không xác định.</string>
     <string name="offline_mode_snackbar">Chuyển sang chế độ ngoại tuyến do mất kết nối mạng</string>
     <string name="offline">Ngoại tuyến</string>
+    <string name="all_questions">Tất cả câu hỏi</string>
+    <string name="in_progress_question">Đang thực hiện</string>
+    <string name="completed">Đã hoàn thành</string>
+
 
 </resources>
