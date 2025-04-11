@@ -27,12 +27,20 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Summary
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Transcript
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.TranscriptSegment
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.TimeUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlin.collections.map
+
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.Dispatchers
 
 class QuizRepositoryImpl @Inject constructor(
     private val quizDao: QuizDao,
@@ -44,14 +52,19 @@ class QuizRepositoryImpl @Inject constructor(
     private val contentQuestionDao: ContentQuestionDao,
     private val keyPointDao: KeyPointDao,
     private val mindMapDao: MindMapDao,
-    private val transcriptSegmentDao: TranscriptSegmentDao
+    private val transcriptSegmentDao: TranscriptSegmentDao,
+    private val networkUtils: NetworkUtils,
+    private val offlineDataManager: OfflineDataManager
 ) : QuizRepository {
     override suspend fun insertQuiz(quiz: Quiz): Long {
         return quizDao.insertQuiz(QuizMapper.toEntity(quiz))
     }
 
     override suspend fun insertSummary(summary: Summary) {
-        summaryDao.insertSummary(SummaryMapper.toEntity(summary))
+        val summaryEntity = SummaryMapper.toEntity(summary).copy(
+            lastSyncTimestamp = System.currentTimeMillis()
+        )
+        summaryDao.insertSummary(summaryEntity)
     }
 
     override suspend fun insertQuestions(questions: List<Question>) {
@@ -62,8 +75,100 @@ class QuizRepositoryImpl @Inject constructor(
         return quizDao.getQuizById(quizId)?.let { QuizMapper.toDomain(it) }
     }
 
+    private val offlineMutex = Mutex()
+    private val OFFLINE_TIMEOUT = 5000L // 5 seconds timeout
+
+    private suspend fun <T> withOfflineSupport(
+        getFromDb: suspend () -> T?,
+        getFromOffline: suspend () -> T?,
+        saveToOffline: suspend (T) -> Unit
+    ): T? = withContext(Dispatchers.IO) {
+        try {
+            withTimeout(OFFLINE_TIMEOUT) {
+                offlineMutex.withLock {
+                    try {
+                        val isNetworkAvailable = networkUtils.isNetworkAvailable()
+
+                        // Get from database first with timeout
+                        val dbData = try {
+                            withTimeout(2000) { // 2 seconds timeout for DB operations
+                                getFromDb()
+                            }
+                        } catch (e: Exception) {
+                            null // Handle DB timeout gracefully
+                        }
+
+                        // Try offline data if needed
+                        if (!isNetworkAvailable && dbData == null) {
+                            try {
+                                withTimeout(1000) { // 1 second timeout for offline operations
+                                    getFromOffline()
+                                }
+                            } catch (e: Exception) {
+                                null // Handle offline timeout gracefully
+                            }
+                        } else {
+                            // Sync with offline storage if needed
+                            if (dbData != null && isNetworkAvailable) {
+                                try {
+                                    withTimeout(1000) { // 1 second timeout for sync operations
+                                        saveToOffline(dbData)
+                                    }
+                                } catch (e: Exception) {
+                                    // Log sync error but continue with dbData
+                                }
+                            }
+                            dbData
+                        }
+                    } catch (e: Exception) {
+                        null // Handle any other errors within the mutex lock
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Handle timeout or other errors outside mutex lock
+            null
+        }
+    }
+
     override suspend fun getSummaryByQuizId(quizId: Long): Summary? {
-        return summaryDao.getSummaryForQuiz(quizId).first()?.let { SummaryMapper.toDomain(it) }
+        return withOfflineSupport(
+            getFromDb = {
+                summaryDao.getSummaryForQuiz(quizId).first()?.let { SummaryMapper.toDomain(it) }
+            },
+            getFromOffline = {
+                offlineDataManager.getSummaryHtml(quizId)?.let { html ->
+                    Summary(
+                        id = 0,
+                        quizId = quizId,
+                        content = html
+                    )
+                }
+            },
+            saveToOffline = { summary ->
+                offlineDataManager.saveSummaryHtml(
+                    quizId,
+                    summary.content
+                )
+            }
+        )
+    }
+
+    override suspend fun updateSummaryLastSyncTimestamp(summaryId: Long) {
+        val summary = summaryDao.getSummaryById(summaryId)
+        summary?.let {
+            summaryDao.updateSummary(it.copy(lastSyncTimestamp = System.currentTimeMillis()))
+        }
+    }
+
+    override suspend fun getSummariesNeedSync(): List<Summary> {
+        val summaries = summaryDao.getAllSummaries().first()
+        val quizzes = quizDao.getAllQuizzes().first()
+
+        return summaries.filter { summary ->
+            val quiz = quizzes.find { it.quizId == summary.quizId }
+            quiz?.let { summary.lastSyncTimestamp < it.lastUpdated } == true
+        }.map { SummaryMapper.toDomain(it) }
     }
 
     override fun getQuestionsForQuiz(quizId: Long): Flow<List<Question>> {
@@ -219,16 +324,62 @@ class QuizRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getMindMapByQuizId(quizId: Long): MindMap? {
-        // Get the entity from DAO and convert to domain model if not null
-        return mindMapDao.getMindMapForQuiz(quizId)?.let { entity ->
-            MindMapMapper.toDomain(entity)
-        }
+        return withOfflineSupport(
+            getFromDb = {
+                mindMapDao.getMindMapForQuiz(quizId)?.let { MindMapMapper.toDomain(it) }
+            },
+            getFromOffline = {
+                offlineDataManager.getMindMapSvg(quizId)?.let { svg ->
+                    MindMap(
+                        id = 0,
+                        quizId = quizId,
+                        keyPoints = emptyList(),
+                        mermaidCode = svg,
+                        lastUpdated = System.currentTimeMillis()
+                    )
+                }
+            },
+            saveToOffline = { mindMap ->
+                offlineDataManager.saveMindMapSvg(
+                    quizId,
+                    mindMap.mermaidCode
+                )
+            }
+        )
     }
 
     override suspend fun deleteMindMapForQuiz(quizId: Long) {
         // Delete the mind map for the given quiz ID
         mindMapDao.deleteMindMapForQuiz(quizId)
     }
+
+    /**
+     * Get all quizzes as a list (not as a Flow)
+     * Useful for offline synchronization and data cleanup
+     */
+    override suspend fun getAllQuizzesAsList(): List<Quiz> = withContext(Dispatchers.IO) {
+        return@withContext quizDao.getAllQuizzes().first().map { QuizMapper.toDomain(it) }
+    }
+
+    /**
+     * Update the synchronization status of a quiz
+     * @param quizId ID of the quiz
+     * @param isSynced true if the quiz is synced, false otherwise
+     */
+    override suspend fun updateQuizSyncStatus(quizId: Long, isSynced: Boolean) =
+        withContext(Dispatchers.IO) {
+            val quiz = quizDao.getQuizById(quizId) ?: return@withContext
+            // Cause QuizEntity does not have isSynced and lastSyncTimestamp fields, we only update lastUpdated
+            val updatedQuiz = quiz.copy(
+                lastUpdated = System.currentTimeMillis()
+            )
+            quizDao.updateQuiz(updatedQuiz)
+        }
+
+    override suspend fun updateQuizLocalThumbnailPath(quizId: Long, localPath: String) =
+        withContext(Dispatchers.IO) {
+            quizDao.updateLocalThumbnailPath(quizId, localPath)
+        }
 
     override suspend fun getQuizCount(): Int {
         return quizDao.getQuizCount()
@@ -341,7 +492,7 @@ class QuizRepositoryImpl @Inject constructor(
 
         // Process segments to identify potential chapters if not already marked
         val processedSegments = processSegmentsForChapters(segments)
-        
+
         // Insert segments with the transcript ID
         val segmentEntities = processedSegments.mapIndexed { index, segment ->
             TranscriptSegmentMapper.toEntity(segment.copy(transcriptId = transcriptId))
@@ -351,36 +502,36 @@ class QuizRepositoryImpl @Inject constructor(
 
         return transcriptId
     }
-    
+
     /**
      * Process segments to identify potential chapters based on text content patterns.
      * This helps ensure chapters are properly marked even if they weren't identified during initial parsing.
-     * 
+     *
      * Note: This method is now a fallback for when chapters aren't already identified from YouTube.
      * It will only process segments that aren't already marked as chapters.
      */
     private fun processSegmentsForChapters(segments: List<TranscriptSegment>): List<TranscriptSegment> {
         // If segments list is empty, return as is
         if (segments.isEmpty()) return segments
-        
+
         // If we already have chapters from YouTube API, prioritize those and only process unmarked segments
         val hasExistingChapters = segments.any { it.isChapterStart }
-        
+
         return segments.mapIndexed { index, segment ->
             // Skip if already marked as chapter
             if (segment.isChapterStart) return@mapIndexed segment
-            
+
             // If we already have chapters from YouTube, be more conservative about adding new ones
             // to avoid conflicting chapter structures
             if (hasExistingChapters) {
                 // Only look for explicit chapter markers in text when we already have some chapters
-                val chapterRegex = "\\[(.+?)\\]".toRegex()
+                val chapterRegex = "\\[(.+?)]".toRegex()
                 val chapterMatch = chapterRegex.find(segment.text)
-                
+
                 if (chapterMatch != null) {
                     // Extract chapter title
                     val chapterTitle = chapterMatch.groupValues[1].trim()
-                    
+
                     // Create new segment with chapter information
                     segment.copy(
                         isChapterStart = true,
@@ -394,13 +545,13 @@ class QuizRepositoryImpl @Inject constructor(
             } else {
                 // More aggressive chapter detection when no chapters from YouTube
                 // Check for chapter patterns in text
-                val chapterRegex = "\\[(.+?)\\]".toRegex()
+                val chapterRegex = "\\[(.+?)]".toRegex()
                 val chapterMatch = chapterRegex.find(segment.text)
-                
+
                 if (chapterMatch != null) {
                     // Extract chapter title
                     val chapterTitle = chapterMatch.groupValues[1].trim()
-                    
+
                     // Create new segment with chapter information
                     segment.copy(
                         isChapterStart = true,
@@ -412,8 +563,8 @@ class QuizRepositoryImpl @Inject constructor(
                     // Check for other common chapter indicators
                     val isLikelyChapter = segment.text.startsWith("Chapter", ignoreCase = true) ||
                             segment.text.startsWith("Section", ignoreCase = true) ||
-                            (index > 0 && segment.timestampMillis - segments[index-1].timestampMillis > 30000) // Gap > 30s might indicate chapter
-                    
+                            (index > 0 && segment.timestampMillis - segments[index - 1].timestampMillis > 30000) // Gap > 30s might indicate chapter
+
                     if (isLikelyChapter) {
                         segment.copy(
                             isChapterStart = true,
@@ -468,7 +619,7 @@ class QuizRepositoryImpl @Inject constructor(
                 // If we already have a timestamp and text, save the previous segment
                 if (currentTimestamp.isNotEmpty() && currentText.isNotEmpty()) {
                     val timestampMillis = TimeUtils.convertTimestampToMillis(currentTimestamp)
-                    
+
                     // Check for significant time gap (potential chapter boundary)
                     if (lastTimestampMillis > 0 && timestampMillis - lastTimestampMillis > 30000) { // 30 seconds gap
                         isChapterStart = true
@@ -477,7 +628,7 @@ class QuizRepositoryImpl @Inject constructor(
                             chapterTitle = currentText.take(50).trim()
                         }
                     }
-                    
+
                     segments.add(
                         TranscriptSegment(
                             transcriptId = transcriptId,
@@ -488,7 +639,7 @@ class QuizRepositoryImpl @Inject constructor(
                             chapterTitle = chapterTitle
                         )
                     )
-                    
+
                     lastTimestampMillis = timestampMillis
 
                     // Reset for the next segment
@@ -503,11 +654,12 @@ class QuizRepositoryImpl @Inject constructor(
 
                 // Check for explicit chapter markers
                 // 1. Text in brackets [Chapter Title]
-                val bracketChapterRegex = "\\[(.+?)\\]".toRegex()
+                val bracketChapterRegex = "\\[(.+?)]".toRegex()
                 val bracketChapterMatch = bracketChapterRegex.find(currentText)
-                
+
                 // 2. Text starting with "Chapter" or similar keywords
-                val keywordChapterRegex = "^(Chapter|Section|Part|Topic)\\s+\\d+:?\\s*(.+)".toRegex(RegexOption.IGNORE_CASE)
+                val keywordChapterRegex =
+                    "^(Chapter|Section|Part|Topic)\\s+\\d+:?\\s*(.+)".toRegex(RegexOption.IGNORE_CASE)
                 val keywordChapterMatch = keywordChapterRegex.find(currentText)
 
                 when {
@@ -517,6 +669,7 @@ class QuizRepositoryImpl @Inject constructor(
                         // Remove the chapter title from the text
                         currentText = currentText.replace(bracketChapterMatch.value, "").trim()
                     }
+
                     keywordChapterMatch != null -> {
                         isChapterStart = true
                         chapterTitle = keywordChapterMatch.value.trim()
@@ -530,14 +683,15 @@ class QuizRepositoryImpl @Inject constructor(
             } else {
                 // This line is a continuation of the current text
                 if (currentText.isNotEmpty()) {
-                    currentText += " " + trimmedLine
+                    currentText += " $trimmedLine"
                 } else {
                     currentText = trimmedLine
                 }
-                
+
                 // Check if this continuation line contains chapter information
                 if (!isChapterStart) {
-                    val continuationChapterRegex = "^(Chapter|Section|Part|Topic)\\s+\\d+:?\\s*(.+)".toRegex(RegexOption.IGNORE_CASE)
+                    val continuationChapterRegex =
+                        "^(Chapter|Section|Part|Topic)\\s+\\d+:?\\s*(.+)".toRegex(RegexOption.IGNORE_CASE)
                     if (continuationChapterRegex.containsMatchIn(trimmedLine)) {
                         isChapterStart = true
                         chapterTitle = trimmedLine.trim()
@@ -560,7 +714,7 @@ class QuizRepositoryImpl @Inject constructor(
                 )
             )
         }
-        
+
         // Second pass: If no chapters were detected, try to infer them from significant time gaps
         if (segments.none { it.isChapterStart } && segments.size > 3) {
             // Find segments with significant time gaps and mark them as chapter starts
@@ -568,12 +722,13 @@ class QuizRepositoryImpl @Inject constructor(
                 if (index > 0) {
                     val previousSegment = segments[index - 1]
                     val gap = segment.timestampMillis - previousSegment.timestampMillis
-                    
+
                     // If gap is significant (> 30 seconds), mark as chapter start
                     if (gap > 30000) {
                         segment.copy(
                             isChapterStart = true,
-                            chapterTitle = segment.text.take(50).trim() // Use beginning of text as title
+                            chapterTitle = segment.text.take(50)
+                                .trim() // Use beginning of text as title
                         )
                     } else {
                         segment

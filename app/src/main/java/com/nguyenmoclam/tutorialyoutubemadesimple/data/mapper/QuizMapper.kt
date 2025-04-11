@@ -16,7 +16,8 @@ object QuizMapper {
             questionCount = domain.questionCount,
             summaryEnabled = domain.summaryEnabled,
             questionsEnabled = domain.questionsEnabled,
-            lastUpdated = domain.lastUpdated
+            lastUpdated = domain.lastUpdated,
+            localThumbnailPath = domain.localThumbnailPath // Map domain to entity
         )
     }
 
@@ -32,7 +33,8 @@ object QuizMapper {
             questionCount = entity.questionCount,
             summaryEnabled = entity.summaryEnabled,
             questionsEnabled = entity.questionsEnabled,
-            lastUpdated = entity.lastUpdated
+            lastUpdated = entity.lastUpdated,
+            localThumbnailPath = entity.localThumbnailPath // Map entity to domain
         )
     }
 }

@@ -193,12 +193,3 @@ fun DrawScope.drawSinWave(
 
     drawPath(path, brush)
 }
-
-@Preview(showBackground = true)
-@Composable
-fun MultiWaveLoadingAnimation() {
-    MultiWaveLoadingAnimation(
-        progress = 50f, // 50% water level
-        modifier = Modifier.size(250.dp)
-    )
-}

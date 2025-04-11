@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "43ed979a5a544c63af24483c0d1b1751",
+    "identityHash": "3e0a378a650c5fa9696b8400315da88a",
     "entities": [
       {
         "tableName": "quizzes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `videoUrl` TEXT NOT NULL, `thumbnailUrl` TEXT NOT NULL, `language` TEXT NOT NULL, `questionType` TEXT NOT NULL, `questionCount` INTEGER NOT NULL, `summaryEnabled` INTEGER NOT NULL, `questionsEnabled` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `videoUrl` TEXT NOT NULL, `thumbnailUrl` TEXT NOT NULL, `language` TEXT NOT NULL, `questionType` TEXT NOT NULL, `questionCount` INTEGER NOT NULL, `summaryEnabled` INTEGER NOT NULL, `questionsEnabled` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, `localThumbnailPath` TEXT)",
         "fields": [
           {
             "fieldPath": "quizId",
@@ -73,6 +73,12 @@
             "columnName": "lastUpdated",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "localThumbnailPath",
+            "columnName": "localThumbnailPath",
+            "affinity": "TEXT",
+            "notNull": false
           }
         ],
         "primaryKey": {
@@ -218,7 +224,7 @@
       },
       {
         "tableName": "summaries",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`summaryId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `quizId` INTEGER NOT NULL, `content` TEXT NOT NULL, FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`summaryId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `quizId` INTEGER NOT NULL, `content` TEXT NOT NULL, `lastSyncTimestamp` INTEGER NOT NULL, FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "summaryId",
@@ -236,6 +242,12 @@
             "fieldPath": "content",
             "columnName": "content",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSyncTimestamp",
+            "columnName": "lastSyncTimestamp",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -736,7 +748,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '43ed979a5a544c63af24483c0d1b1751')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3e0a378a650c5fa9696b8400315da88a')"
     ]
   }
 }

@@ -11,6 +11,13 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
 import kotlinx.coroutines.flow.Flow
 
 interface QuizRepository {
+    suspend fun updateSummaryLastSyncTimestamp(summaryId: Long)
+
+    /**
+     * Get list of summaries that need to be synced
+     * @return List of summaries that need to be synced, sorted by lastSyncTimestamp
+     */
+    suspend fun getSummariesNeedSync(): List<Summary>
     suspend fun insertQuiz(quiz: Quiz): Long
     suspend fun insertSummary(summary: Summary)
     suspend fun insertQuestions(questions: List<Question>)
@@ -39,6 +46,7 @@ interface QuizRepository {
     suspend fun insertTranscript(transcript: Transcript): Long
     suspend fun getTranscriptByQuizId(quizId: Long): Transcript?
     suspend fun deleteTranscriptForQuiz(quizId: Long)
+
     /**
      * Get a transcript for a specific quiz.
      */
@@ -62,7 +70,10 @@ interface QuizRepository {
     /**
      * Save a transcript with its segments.
      */
-    suspend fun saveTranscriptWithSegments(transcript: Transcript, segments: List<TranscriptSegment>): Long
+    suspend fun saveTranscriptWithSegments(
+        transcript: Transcript,
+        segments: List<TranscriptSegment>
+    ): Long
 
     /**
      * Update a transcript.
@@ -93,5 +104,10 @@ interface QuizRepository {
     suspend fun insertMindMap(mindMap: MindMap, quizId: Long)
     suspend fun getMindMapByQuizId(quizId: Long): MindMap?
     suspend fun deleteMindMapForQuiz(quizId: Long)
+
+    // Offline sync methods
+    suspend fun getAllQuizzesAsList(): List<Quiz>
+    suspend fun updateQuizSyncStatus(quizId: Long, isSynced: Boolean)
+    suspend fun updateQuizLocalThumbnailPath(quizId: Long, localPath: String)
 
 }

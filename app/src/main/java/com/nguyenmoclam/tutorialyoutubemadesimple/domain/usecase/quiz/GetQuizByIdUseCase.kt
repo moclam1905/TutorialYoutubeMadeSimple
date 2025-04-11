@@ -20,4 +20,11 @@ class GetQuizByIdUseCase @Inject constructor(
     suspend operator fun invoke(quizId: Long): Quiz? {
         return quizRepository.getQuizById(quizId)
     }
+
+    /**
+     * Get the QuizRepository instance used by the use case.
+     */
+    fun getQuizRepository(): QuizRepository{
+        return quizRepository
+    }
 }

@@ -1,5 +1,6 @@
 [versions]
 agp = "8.8.1"
+androidsvg = "1.4"
 appcompat = "1.6.1"
 coilCompose = "3.1.0"
 commonsText = "1.9"
@@ -30,6 +31,7 @@ jvmBytecode = "17"
 datastore = "1.0.0"
 
 [libraries]
+androidsvg = { module = "com.caverock:androidsvg", version.ref = "androidsvg" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }

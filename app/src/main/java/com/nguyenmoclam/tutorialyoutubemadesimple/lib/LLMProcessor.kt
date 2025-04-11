@@ -39,7 +39,11 @@ class LLMProcessor @Inject constructor(
      * @return A list of [Topic] objects, each containing a title and up to 3 questions.
      *         Returns at most 5 topics to maintain focus on the most important content.
      */
-    suspend fun extractTopicsAndQuestions(transcript: String, title: String): List<Topic> {
+    suspend fun extractTopicsAndQuestions(
+        transcript: String,
+        title: String,
+        language: String = "English"
+    ): List<Topic> {
         val prompt = """
             You are an expert content analyzer. Given a YouTube video transcript, identify at most 5 most interesting topics discussed and generate at most 3 most thought-provoking questions for each topic.
             These questions don't need to be directly asked in the video. It's good to have clarification questions.
@@ -49,6 +53,9 @@ class LLMProcessor @Inject constructor(
             TRANSCRIPT:
             $transcript
 
+            LANGUAGE:
+            $language
+
             IMPORTANT INSTRUCTIONS:
             1. You MUST format your response as a valid JSON object
             2. Each topic MUST have a title and questions array
@@ -57,6 +64,7 @@ class LLMProcessor @Inject constructor(
             5. Questions should be clear and engaging
             6. DO NOT include any markdown code blocks or additional text
             7. Ensure all strings are properly escaped
+            8. All topics and questions MUST be in the specified language: $language
 
             Expected JSON format:
             {
@@ -88,7 +96,11 @@ class LLMProcessor @Inject constructor(
      * @return A list of processed [Topic] objects with rephrased titles and questions, including simple answers
      *         Returns empty list if input topics is empty
      */
-    suspend fun processContent(topics: List<Topic>, transcript: String): List<Topic> {
+    suspend fun processContent(
+        topics: List<Topic>,
+        transcript: String,
+        language: String = "English"
+    ): List<Topic> {
         if (topics.isEmpty()) return emptyList()
 
         val prompt = """
@@ -107,8 +119,12 @@ class LLMProcessor @Inject constructor(
             TRANSCRIPT EXCERPT:
             $transcript
 
+            LANGUAGE:
+            $language
+
             For topic titles and questions:
             1. Keep them catchy and interesting, but short
+            2. All content MUST be in the specified language: $language
 
             For your answers:
             1. Format them using HTML with <b> and <i> tags for highlighting.
@@ -459,7 +475,11 @@ class LLMProcessor @Inject constructor(
      * @param title The title of the YouTube video.
      * @return A list of key point strings (at most 5) representing the core ideas of the video.
      */
-    suspend fun extractKeyPointsForMindMap(transcript: String, title: String): List<String> {
+    suspend fun extractKeyPointsForMindMap(
+        transcript: String,
+        title: String,
+        language: String = "English"
+    ): List<String> {
         val prompt = """
         You are an expert content analyzer specializing in educational content. Given a YouTube video transcript, identify the main key points or core concepts discussed in the video. These key points will be used to create a mind map for educational purposes.
 
@@ -467,6 +487,9 @@ class LLMProcessor @Inject constructor(
 
         TRANSCRIPT:
         $transcript
+
+        LANGUAGE:
+        $language
 
         IMPORTANT INSTRUCTIONS:
         1. You MUST format your response as a valid JSON object.
@@ -481,6 +504,7 @@ class LLMProcessor @Inject constructor(
         7. Arrange key points in a logical order that follows the content's natural progression.
         8. DO NOT include any markdown code blocks or additional text.
         9. Ensure all strings are properly escaped.
+        10. All key points MUST be in the specified language: $language
 
         Expected JSON format:
         {
@@ -505,16 +529,20 @@ class LLMProcessor @Inject constructor(
      * @param title The title of the YouTube video (used as the central node).
      * @return A string containing the Mermaid mindmap code representing the title and its key points.
      */
-    suspend fun generateMermaidMindMapCode(keyPoints: List<String>, title: String): String {
+    suspend fun generateMermaidMindMapCode(
+        keyPoints: List<String>,
+        title: String,
+        language: String = "English"
+    ): String {
         if (keyPoints.isEmpty()) return ""
-        
+
         // Adjust number of sub-points based on number of key points
         val subPointsPerKeyPoint = when {
             keyPoints.size <= 5 -> "2-3"
             keyPoints.size <= 7 -> "2"
             else -> "1-2"
         }
-        
+
         val prompt = """
         You are an expert at generating educational mind maps. Based on the given video title and key points, produce a well-structured Mermaid mind map diagram that clearly visualizes the relationships between concepts.
 
@@ -522,6 +550,9 @@ class LLMProcessor @Inject constructor(
 
         KEY POINTS:
         ${keyPoints.joinToString("\n") { "- $it" }}
+
+        LANGUAGE:
+        $language
 
         IMPORTANT INSTRUCTIONS:
         1. Use the video title as the central root node of the mind map.
@@ -532,6 +563,7 @@ class LLMProcessor @Inject constructor(
         6. Ensure the mind map is well-balanced with similar depth across branches.
         7. Output the diagram in Mermaid syntax inside a markdown code block labeled 'mermaid'.
         8. DO NOT include any explanation or text outside the Mermaid code block.
+        9. All text in the mind map MUST be in the specified language: $language
 
         Expected Mermaid mindmap format:
         ```mermaid
@@ -561,6 +593,59 @@ class LLMProcessor @Inject constructor(
             response.trim()
         }
         return code
+    }
+
+    /**
+     * Fixes Mermaid mind map code that has syntax errors.
+     * @param originalCode The original Mermaid code with errors.
+     * @param errorMessage The error message describing the syntax issue.
+     * @param language The language of the content.
+     * @return A string containing the corrected Mermaid mindmap code.
+     */
+    suspend fun fixMindMapCode(
+        originalCode: String,
+        errorMessage: String,
+        language: String = "English"
+    ): String {
+        val prompt = """
+        You are an expert at fixing Mermaid syntax errors in mind maps. I have a Mermaid mind map diagram with syntax errors that needs to be fixed.
+
+        ORIGINAL MERMAID CODE WITH ERRORS:
+        ```mermaid
+        ${originalCode.trim()}
+        ```
+
+        ERROR MESSAGE:
+        $errorMessage
+
+        LANGUAGE:
+        $language
+
+        IMPORTANT INSTRUCTIONS:
+        1. Carefully analyze the error message and identify the syntax issues in the code.
+        2. Fix ONLY the syntax errors while preserving the content and structure of the mind map.
+        3. Ensure the fixed code follows proper Mermaid mindmap syntax (including correct indentation and one node per line).
+        4. If a node contains special characters (like &, (), emoji, or internal quotes), enclose the entire node text in double quotes.
+        5. If the node text contains parentheses (), which causes a syntax error, replace them with single quotes ' ' (e.g., (example) → 'example').
+        6. Keep all text in the specified language: $language.
+        7. Do not add or remove nodes, nor rename any existing text. Only fix syntax issues.
+        8. Return ONLY the fixed Mermaid code without any markdown formatting, explanations, or comments.
+
+        The response should contain only the corrected Mermaid mindmap code.
+        """.trimIndent()
+
+        val response = callLLM(prompt)
+        // Extract the Mermaid code from the LLM response
+        val fixedCode = if (response.contains("```")) {
+            if (response.contains("```mermaid")) {
+                response.substringAfter("```mermaid").substringBefore("```").trim()
+            } else {
+                response.substringAfter("```").substringBefore("```").trim()
+            }
+        } else {
+            response.trim()
+        }
+        return fixedCode
     }
 
     /**

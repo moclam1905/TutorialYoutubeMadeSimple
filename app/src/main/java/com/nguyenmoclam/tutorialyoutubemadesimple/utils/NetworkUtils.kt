@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Utility class for handling network connectivity checks and monitoring.
+ * Supports offline mode and network state tracking.
  */
 class NetworkUtils(context: Context) {
 
@@ -28,7 +29,7 @@ class NetworkUtils(context: Context) {
     private var connectionTypeRestriction = "any" // "any", "wifi_only" or "mobile_only"
     private var connectionTimeout = 120 // Default timeout in seconds
     private var retryPolicy = "exponential" // "none", "linear", or "exponential"
-
+    
     /**
      * Check if the device currently has an active internet connection.
      */
@@ -147,17 +148,21 @@ class NetworkUtils(context: Context) {
     }
 
     /**
-     * Check if content should be loaded based on data saver settings
-     * This considers both data saver mode and connection type restrictions
-     *
-     * @param highQuality If true, checks if high quality content should be loaded
-     * @return true if content should be loaded, false otherwise
+     * Check if content should be loaded based on network settings
+     * This method has been updated to always allow displaying cached content when there is no network connection
+     * Performs atomic check to avoid race conditions
      */
+    @Synchronized
     fun shouldLoadContent(highQuality: Boolean = false): Boolean {
-        // If network is not available, don't load content
-        if (!isNetworkAvailable()) return false
-
-        // Check connection type restriction
+        val isNetworkAvailable = isNetworkAvailable()
+        
+        // If network is not available, always allow displaying cached content
+        // Return true so the app can work in offline mode
+        if (!isNetworkAvailable) {
+            return true
+        }
+        
+        // Check connection type restrictions when network is available
         if (connectionTypeRestriction == "wifi_only" && !isWifiConnection()) {
             return false
         }

@@ -1,5 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -36,16 +37,17 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
+import java.io.File
 
 /**
- * A network-aware image loader component that respects network connectivity settings.
- * This component checks network settings before loading images and displays
- * appropriate messages when images cannot be loaded due to network restrictions.
+ * A network-aware image loader component that respects network connectivity settings
+ * and prioritizes loading from a local path if available.
  */
 @Composable
 fun NetworkAwareImageLoader(
     modifier: Modifier = Modifier,
-    imageUrl: String,
+    imageUrl: String, // Network URL (fallback)
+    localPath: String? = null, // Local file path (priority)
     contentDescription: String? = null,
     networkUtils: NetworkUtils,
     contentScale: ContentScale = ContentScale.Fit,
@@ -53,135 +55,134 @@ fun NetworkAwareImageLoader(
     onRetryClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
-
-    // Check if content should be loaded based on network settings
-    val shouldLoadContent = remember { networkUtils.shouldLoadContent() }
+    val shouldLoadContentFromNetwork = remember { networkUtils.shouldLoadContent() }
     val imageQuality = remember { networkUtils.getRecommendedImageQuality() }
-    val isDataSaverEnabled = remember { networkUtils.isDataSaverEnabled() }
     val connectionType = remember { networkUtils.getConnectionTypeRestriction() }
 
-    // If content should not be loaded due to network settings, show appropriate message
-    if (!shouldLoadContent) {
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = if (!networkUtils.isNetworkAvailable()) {
-                    Icons.Default.SignalWifiOff
-                } else {
-                    Icons.Default.CloudOff
-                },
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(48.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = if (!networkUtils.isNetworkAvailable()) {
-                    stringResource(R.string.no_internet_connection)
-                } else if (connectionType == "wifi_only" && !networkUtils.isWifiConnection()) {
-                    stringResource(R.string.wifi_only_mode_enabled)
-                } else if (connectionType == "mobile_only" && !networkUtils.isMobileDataConnection()) {
-                    stringResource(R.string.mobile_data_only_mode_enabled)
-                } else {
-                    stringResource(R.string.data_saver_mode_enabled)
-                },
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = onRetryClick,
-                modifier = Modifier.fillMaxWidth(0.7f)
-            ) {
-                Text(stringResource(R.string.retry_button))
+    // Determine the data source: Prioritize local path, fallback to network URL if allowed
+    val imageDataSource: Any? = remember(localPath, imageUrl, shouldLoadContentFromNetwork) {
+        if (!localPath.isNullOrBlank() && File(localPath).exists()) {
+             // Use local file if path is valid and file exists
+            File(localPath)
+        } else if (shouldLoadContentFromNetwork && imageUrl.isNotBlank()) {
+            // Fallback to network URL if allowed and URL is valid
+            // Optimize network URL based on quality settings
+            when (imageQuality) {
+                "low" -> imageUrl.replace("maxresdefault", "mqdefault").replace("hqdefault", "mqdefault")
+                "medium" -> imageUrl.replace("maxresdefault", "hqdefault")
+                else -> imageUrl // high or default
             }
+        } else {
+            // No valid source available (offline without local file, or network restricted)
+            null
         }
-        return
     }
 
-    // Adjust image URL based on recommended quality
-    val optimizedImageUrl = when (imageQuality) {
-        "low" -> imageUrl.replace("maxresdefault", "mqdefault")
-            .replace("hqdefault", "mqdefault")
-
-        "medium" -> imageUrl.replace("maxresdefault", "hqdefault")
-        else -> imageUrl // Keep high quality if network is good
-    }
-
-    // Load image with Coil
     Box(modifier = modifier) {
-        var isLoading by remember { mutableStateOf(true) }
-        var isError by remember { mutableStateOf(false) }
-
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(optimizedImageUrl)
-                .crossfade(true)
-                .diskCachePolicy(if (isDataSaverEnabled) CachePolicy.ENABLED else CachePolicy.DISABLED)
-                .memoryCachePolicy(CachePolicy.ENABLED) // Always use memory cache
-                .build(),
-            contentDescription = contentDescription,
-            contentScale = contentScale,
-            modifier = Modifier.fillMaxSize(),
-            onState = { state ->
-                isLoading = state is AsyncImagePainter.State.Loading
-                isError = state is AsyncImagePainter.State.Error
-            }
-        )
-
-        // Show placeholder while loading
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                if (placeholder != null) {
-                    placeholder()
-                } else {
-                    CircularProgressIndicator()
-                }
-            }
-        }
-
-        // Show error state
-        if (isError) {
+        if (imageDataSource == null) {
+            // No valid source: Show appropriate message or placeholder
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxSize() // Fill the box to center content
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                verticalArrangement = Arrangement.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.BrokenImage,
+                    imageVector = if (!networkUtils.isNetworkAvailable()) Icons.Default.SignalWifiOff else Icons.Default.CloudOff,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(48.dp)
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Text(
-                    text = stringResource(R.string.image_load_error),
+                    text = if (!networkUtils.isNetworkAvailable()) {
+                        // Offline and no local file found
+                        stringResource(R.string.no_internet_connection) // Use existing string
+                    } else if (connectionType == "wifi_only" && !networkUtils.isWifiConnection()) {
+                        stringResource(R.string.wifi_only_mode_enabled)
+                    } else if (connectionType == "mobile_only" && !networkUtils.isMobileDataConnection()) {
+                        stringResource(R.string.mobile_data_only_mode_enabled)
+                    } else if (networkUtils.isDataSaverEnabled()) {
+                         // Data saver might prevent network load if local file failed
+                        stringResource(R.string.data_saver_mode_enabled)
+                    } else {
+                         // Generic fallback if network is available but URL is blank or other issue
+                        stringResource(R.string.image_load_error)
+                    },
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center
                 )
+                // Show retry only if network seems available but loading failed (e.g., restriction)
+                if (networkUtils.isNetworkAvailable()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = onRetryClick) {
+                        Text(stringResource(R.string.retry_button))
+                    }
+                }
+            }
+        } else {
+            // Valid source: Load image with Coil
+            var isLoading by remember { mutableStateOf(true) }
+            var isError by remember { mutableStateOf(false) }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(imageDataSource) // Use the determined source (File or String URL)
+                    .crossfade(true)
+                    // Disk cache is useful even when loading from local file for transformations, etc.
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED) // Always use memory cache
+                    .build(),
+                contentDescription = contentDescription,
+                contentScale = contentScale,
+                modifier = Modifier.fillMaxSize(), // Image fills the Box
+                onState = { state ->
+                    isLoading = state is AsyncImagePainter.State.Loading
+                    isError = state is AsyncImagePainter.State.Error
+                }
+            )
 
-                Button(
-                    onClick = onRetryClick,
-                    modifier = Modifier.fillMaxWidth(0.7f)
+            // Show placeholder while loading
+            if (isLoading && placeholder != null) {
+                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    placeholder()
+                 }
+            } else if (isLoading) {
+                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                 }
+            }
+
+
+            // Show error state overlay if loading failed
+            if (isError) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text(stringResource(R.string.retry_button))
+                    Icon(
+                        imageVector = Icons.Default.BrokenImage,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.image_load_error),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = onRetryClick,
+                        modifier = Modifier.fillMaxWidth(0.7f)
+                    ) {
+                        Text(stringResource(R.string.retry_button))
+                    }
                 }
             }
         }
