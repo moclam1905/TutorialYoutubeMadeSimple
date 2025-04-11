@@ -27,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -247,10 +248,17 @@ fun MultipleChoiceOptionItem(
                 color = MaterialTheme.colorScheme.onPrimary
             )
             Spacer(modifier = Modifier.width(12.dp))
+            val textColor =
+                if (showFeedback && ((isSelected && isAnsweredCorrectly) || isCorrect || isSelected)) {
+                    Color.Black // Use black text on green or red background for better contrast
+                } else {
+                    LocalContentColor.current // Use default text color otherwise
+                }
             Text(
                 text = optionValue,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                color = textColor
             )
 
             // Feedback Icons / Radio Button
@@ -353,11 +361,18 @@ fun TrueFalseOptionItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val textColor =
+                if (showFeedback && ((isSelected && isAnsweredCorrectly) || isCorrectOption || isSelected)) {
+                    Color.Black // Use black text on green or red background
+                } else {
+                    LocalContentColor.current // Use default text color
+                }
             Text(
                 text = text,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                color = textColor
             )
 
             if (showFeedback) {
