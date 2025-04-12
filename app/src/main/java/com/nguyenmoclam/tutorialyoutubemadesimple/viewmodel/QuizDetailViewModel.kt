@@ -49,23 +49,31 @@ class QuizDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     enum class ProcessingMindMapStep(val messageRes: Int) {
-        FETCH_TRANSCRIPT(R.string.step_process_transcript),
-        EXTRACT_KEY_POINTS(R.string.generating_mindmap),
-        GENERATE_MIND_MAP(R.string.generating_mindmap),
-        SAVE_TO_DATABASE(R.string.error_generic),
+        FETCH_TRANSCRIPT_START(R.string.step_process_transcript),
+        FETCH_TRANSCRIPT_COMPLETE(R.string.step_process_transcript),
+        EXTRACT_KEY_POINTS_START(R.string.generating_mindmap),
+        EXTRACT_KEY_POINTS_COMPLETE(R.string.generating_mindmap),
+        GENERATE_MIND_MAP_START(R.string.generating_mindmap),
+        GENERATE_MIND_MAP_COMPLETE(R.string.generating_mindmap),
+        SAVE_TO_DATABASE_START(R.string.saving_database),
+        SAVE_TO_DATABASE_COMPLETE(R.string.saving_database),
         NONE(0);
-
+    
         fun getMessage(context: Context): String {
             return if (messageRes != 0) context.getString(messageRes) else ""
         }
-
+    
         fun getProgressPercentage(): Float {
             return when (this) {
                 NONE -> 0f
-                FETCH_TRANSCRIPT -> 25f
-                EXTRACT_KEY_POINTS -> 50f
-                GENERATE_MIND_MAP -> 75f
-                SAVE_TO_DATABASE -> 95f
+                FETCH_TRANSCRIPT_START -> 10f
+                FETCH_TRANSCRIPT_COMPLETE -> 25f
+                EXTRACT_KEY_POINTS_START -> 35f
+                EXTRACT_KEY_POINTS_COMPLETE -> 50f
+                GENERATE_MIND_MAP_START -> 65f
+                GENERATE_MIND_MAP_COMPLETE -> 80f
+                SAVE_TO_DATABASE_START -> 90f
+                SAVE_TO_DATABASE_COMPLETE -> 100f
             }
         }
     }
@@ -288,15 +296,6 @@ class QuizDetailViewModel @Inject constructor(
                 }
             }
         }
-
-
-//        // Use FindNextUnansweredQuestionUseCase to find the next question
-//        val nextIndex = findNextUnansweredQuestionUseCase(
-//            startIndex = questionIndex + 1,
-//            questions = state.questions,
-//            answeredQuestions = state.answeredQuestions,
-//            skippedQuestions = updatedSkippedQuestions
-//        )
 
         // Use CheckQuizCompletionUseCase to determine if quiz is completed
         val completionResult = checkQuizCompletionUseCase(
@@ -567,7 +566,7 @@ class QuizDetailViewModel @Inject constructor(
         state = state.copy(
             isLoading = true,
             errorMessage = null,
-            currentMindMapStep = ProcessingMindMapStep.FETCH_TRANSCRIPT
+            currentMindMapStep = ProcessingMindMapStep.FETCH_TRANSCRIPT_START
         )
         viewModelScope.launch {
             try {
@@ -582,16 +581,26 @@ class QuizDetailViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Update state to show we're extracting key points
-                state = state.copy(currentMindMapStep = ProcessingMindMapStep.EXTRACT_KEY_POINTS)
+                // Update state to show transcript fetch complete
+                state = state.copy(currentMindMapStep = ProcessingMindMapStep.FETCH_TRANSCRIPT_COMPLETE)
+
+                // Update state to show we're starting to extract key points
+                state = state.copy(currentMindMapStep = ProcessingMindMapStep.EXTRACT_KEY_POINTS_START)
 
                 // Call use case to generate mind map
-                state = state.copy(currentMindMapStep = ProcessingMindMapStep.GENERATE_MIND_MAP)
+                state = state.copy(currentMindMapStep = ProcessingMindMapStep.EXTRACT_KEY_POINTS_COMPLETE)
+
+                // Update state to show we're starting mind map generation
+                state = state.copy(currentMindMapStep = ProcessingMindMapStep.GENERATE_MIND_MAP_START)
+                
                 val result = generateMindMapUseCase(
                     transcript.content,
                     transcript.language,
                     state.quiz?.title
                 )
+
+                // Update state to show mind map generation is complete
+                state = state.copy(currentMindMapStep = ProcessingMindMapStep.GENERATE_MIND_MAP_COMPLETE)
 
                 if (result.error != null) {
                     // Handle LLM generation error
@@ -601,8 +610,8 @@ class QuizDetailViewModel @Inject constructor(
                         currentMindMapStep = ProcessingMindMapStep.NONE
                     )
                 } else {
-                    // Update state to show we're saving to database
-                    state = state.copy(currentMindMapStep = ProcessingMindMapStep.SAVE_TO_DATABASE)
+                    // Update state to show we're starting to save to database
+                    state = state.copy(currentMindMapStep = ProcessingMindMapStep.SAVE_TO_DATABASE_START)
 
                     // Get extracted key points from use case
                     val keyPoints = generateMindMapUseCase.getLastExtractedKeyPoints()
@@ -614,7 +623,10 @@ class QuizDetailViewModel @Inject constructor(
                     )
                     saveMindMapUseCase(mindMap, quizId)
 
-                    // Update state with the generated mind map code and set loading to false
+                    // Update state to show database save is complete
+                    state = state.copy(currentMindMapStep = ProcessingMindMapStep.SAVE_TO_DATABASE_COMPLETE)
+
+                    // Update final state
                     state = state.copy(
                         isLoading = false,
                         mindMapCode = result.mermaidCode,

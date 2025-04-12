@@ -299,6 +299,6 @@
     <string name="all_questions">Tất cả câu hỏi</string>
     <string name="in_progress_question">Đang thực hiện</string>
     <string name="completed">Đã hoàn thành</string>
-
+    <string name="saving_database">Lưu vào cơ sở dữ liệu</string>
 
 </resources>

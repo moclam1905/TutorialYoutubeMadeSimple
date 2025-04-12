@@ -299,5 +299,6 @@
     <string name="all_questions">All Questions</string>
     <string name="in_progress_question">In Progress</string>
     <string name="completed">Completed</string>
+    <string name="saving_database">Saving to database</string>
 
 </resources>
