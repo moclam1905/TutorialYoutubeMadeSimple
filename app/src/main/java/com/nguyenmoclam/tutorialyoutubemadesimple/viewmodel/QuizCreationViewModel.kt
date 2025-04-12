@@ -37,10 +37,24 @@ import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 enum class ProcessingCreateStep(val messageRes: Int) {
-    FETCH_METADATA(R.string.step_fetch_metadata),
-    FETCH_TRANSCRIPT(R.string.step_process_transcript),
-    GENERATE_SUMMARY_AND_QUESTIONS(R.string.step_create_quiz), // Combined state for parallel processing
-    SAVE_TO_DATABASE(R.string.error_generic),
+    FETCH_METADATA_START(R.string.step_fetch_metadata),
+    FETCH_METADATA_COMPLETE(R.string.step_fetch_metadata),
+    FETCH_TRANSCRIPT_START(R.string.step_process_transcript),
+    FETCH_TRANSCRIPT_COMPLETE(R.string.step_process_transcript),
+    PROCESS_TRANSCRIPT_START(R.string.step_process_transcript),
+    PROCESS_TRANSCRIPT_COMPLETE(R.string.step_process_transcript),
+    GENERATE_SUMMARY_START(R.string.step_create_quiz),
+    GENERATE_SUMMARY_PROCESSING_25(R.string.step_create_quiz),
+    GENERATE_SUMMARY_PROCESSING_50(R.string.step_create_quiz),
+    GENERATE_SUMMARY_PROCESSING_75(R.string.step_create_quiz),
+    GENERATE_SUMMARY_COMPLETE(R.string.step_create_quiz),
+    GENERATE_QUESTIONS_START(R.string.step_create_quiz),
+    GENERATE_QUESTIONS_PROCESSING_25(R.string.step_create_quiz),
+    GENERATE_QUESTIONS_PROCESSING_50(R.string.step_create_quiz),
+    GENERATE_QUESTIONS_PROCESSING_75(R.string.step_create_quiz),
+    GENERATE_QUESTIONS_COMPLETE(R.string.step_create_quiz),
+    SAVE_TO_DATABASE_START(R.string.saving_database),
+    SAVE_TO_DATABASE_COMPLETE(R.string.saving_database),
     NONE(0);
 
     fun getMessage(context: Context): String {
@@ -50,10 +64,24 @@ enum class ProcessingCreateStep(val messageRes: Int) {
     fun getProgressPercentage(): Float {
         return when (this) {
             NONE -> 0f
-            FETCH_METADATA -> 10f
-            FETCH_TRANSCRIPT -> 30f
-            GENERATE_SUMMARY_AND_QUESTIONS -> 70f
-            SAVE_TO_DATABASE -> 95f
+            FETCH_METADATA_START -> 5f
+            FETCH_METADATA_COMPLETE -> 10f
+            FETCH_TRANSCRIPT_START -> 15f
+            FETCH_TRANSCRIPT_COMPLETE -> 20f
+            PROCESS_TRANSCRIPT_START -> 25f
+            PROCESS_TRANSCRIPT_COMPLETE -> 30f
+            GENERATE_SUMMARY_START -> 35f
+            GENERATE_SUMMARY_PROCESSING_25 -> 40f
+            GENERATE_SUMMARY_PROCESSING_50 -> 45f
+            GENERATE_SUMMARY_PROCESSING_75 -> 50f
+            GENERATE_SUMMARY_COMPLETE -> 55f
+            GENERATE_QUESTIONS_START -> 60f
+            GENERATE_QUESTIONS_PROCESSING_25 -> 65f
+            GENERATE_QUESTIONS_PROCESSING_50 -> 70f
+            GENERATE_QUESTIONS_PROCESSING_75 -> 75f
+            GENERATE_QUESTIONS_COMPLETE -> 80f
+            SAVE_TO_DATABASE_START -> 90f
+            SAVE_TO_DATABASE_COMPLETE -> 100f
         }
     }
 }
@@ -144,7 +172,7 @@ class QuizCreationViewModel @Inject constructor(
             return
         }
 
-        state = QuizState(isLoading = true, currentStep = ProcessingCreateStep.FETCH_METADATA)
+        state = QuizState(isLoading = true, currentStep = ProcessingCreateStep.FETCH_METADATA_START)
 
         viewModelScope.launch(coroutineExceptionHandler) {
             // Extract video ID using the use case
@@ -161,13 +189,15 @@ class QuizCreationViewModel @Inject constructor(
             if (metadata.error != null) {
                 throw IllegalStateException(metadata.error)
             }
+            
+            state = state.copy(currentStep = ProcessingCreateStep.FETCH_METADATA_COMPLETE)
 
             val fetchedTitle = metadata.title
             val fetchedThumb = metadata.thumbnailUrl
             val fetchedDescription = metadata.description
 
             // Process transcript using the use case
-            state = state.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT)
+            state = state.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT_START)
             val transcriptResult = processYouTubeTranscriptUseCase(
                 videoId = videoId,
                 languages = listOf("en"), transcriptMode = transcriptMode
@@ -176,6 +206,9 @@ class QuizCreationViewModel @Inject constructor(
             if (transcriptResult.error != null) {
                 throw IllegalStateException(handleTranscriptError(transcriptResult.error))
             }
+            
+            state = state.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT_COMPLETE)
+            state = state.copy(currentStep = ProcessingCreateStep.PROCESS_TRANSCRIPT_START)
 
             val transcriptContent = transcriptResult.text
 
@@ -222,10 +255,6 @@ class QuizCreationViewModel @Inject constructor(
 
                 // Process chapters if available
                 if (transcriptResult.chapters.isNotEmpty()) {
-                    Log.d(
-                        "QuizCreationViewModel",
-                        "Processing ${transcriptResult.chapters.size} chapters"
-                    )
                     // Mark segments that correspond to chapter start times
                     transcriptResult.chapters.forEach { chapter ->
                         val chapterStartTimeMs = (chapter.startSeconds * 1000).toLong()
@@ -245,10 +274,6 @@ class QuizCreationViewModel @Inject constructor(
                                 )
                             // Update the original list with the modified list
                             segments = mutableSegments
-                            Log.d(
-                                "QuizCreationViewModel",
-                                "Added chapter: ${chapter.title} at ${segments[closestSegmentIndex].timestamp}"
-                            )
                         }
                     }
                 }
@@ -279,10 +304,6 @@ class QuizCreationViewModel @Inject constructor(
 
                     // If parsing produced segments with chapters, update the transcript
                     if (parsedSegments.isNotEmpty() && parsedSegments.any { it.isChapterStart }) {
-                        Log.d(
-                            "QuizCreationViewModel",
-                            "Detected ${parsedSegments.count { it.isChapterStart }} chapters from content"
-                        )
                         saveTranscriptWithSegmentsUseCase(transcript, parsedSegments)
                     }
                 } else {
@@ -316,38 +337,47 @@ class QuizCreationViewModel @Inject constructor(
                     saveTranscriptWithSegmentsUseCase(transcript, parsedSegments)
                 }
             }
+            state = state.copy(currentStep = ProcessingCreateStep.PROCESS_TRANSCRIPT_COMPLETE)
 
             val newState = if (generateSummary && generateQuestions) {
                 supervisorScope {
-                    state =
-                        state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
 
                     val summaryDeferred = async {
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_START)
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_PROCESSING_25)
                         val result = generateQuizSummaryUseCase(
                             fetchedTitle,
                             fetchedThumb,
                             transcriptContent,
                             selectedLanguage
                         )
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_PROCESSING_50)
                         if (result.error != null) {
                             throw IllegalStateException(result.error)
                         }
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_PROCESSING_75)
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_COMPLETE)
                         result.content
                     }
 
                     val questionsDeferred = async {
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_START)
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_PROCESSING_25)
                         val result = generateQuestionsUseCase(
                             transcriptContent,
                             selectedLanguage,
                             questionType,
                             numberOfQuestions
                         )
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_PROCESSING_50)
                         if (result.error != null) {
                             throw IllegalStateException(result.error)
                         }
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_PROCESSING_75)
                         // Save key points extracted during question generation
                         val keyPoints = generateQuestionsUseCase.getLastExtractedKeyPoints()
                         saveKeyPointsUseCase(keyPoints, quizId)
+                        state = state.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_COMPLETE)
                         result.content
                     }
 
@@ -355,7 +385,7 @@ class QuizCreationViewModel @Inject constructor(
                         val summary = summaryDeferred.await()
                         val questionsJson = questionsDeferred.await()
 
-                        state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
+                        state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_START)
                         // Save summary to database using domain model and use case
                         createQuizSummaryUseCase(
                             Summary(
@@ -375,7 +405,7 @@ class QuizCreationViewModel @Inject constructor(
 
                         state.copy(
                             isLoading = false,
-                            currentStep = ProcessingCreateStep.NONE,
+                            currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_COMPLETE,
                             quizSummary = summary,
                             quizIdInserted = quizId
                         )
@@ -384,15 +414,14 @@ class QuizCreationViewModel @Inject constructor(
                     }
                 }
             } else if (generateSummary) {
-                state =
-                    state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
-                val summaryResult =
-                    generateQuizSummaryUseCase(
-                        fetchedTitle,
-                        fetchedThumb,
-                        transcriptContent,
-                        selectedLanguage
-                    )
+                state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_START)
+                val summaryResult = generateQuizSummaryUseCase(
+                    fetchedTitle,
+                    fetchedThumb,
+                    transcriptContent,
+                    selectedLanguage
+                )
+                state = state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_COMPLETE)
 
                 if (summaryResult.error != null) {
                     throw IllegalStateException(summaryResult.error)
@@ -400,7 +429,7 @@ class QuizCreationViewModel @Inject constructor(
 
                 val summary = summaryResult.content
 
-                state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
+                state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_START)
                 // Save summary to database using domain model and use case
                 createQuizSummaryUseCase(
                     Summary(
@@ -411,19 +440,19 @@ class QuizCreationViewModel @Inject constructor(
 
                 state.copy(
                     isLoading = false,
-                    currentStep = ProcessingCreateStep.NONE,
+                    currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_COMPLETE,
                     quizSummary = summary,
                     quizIdInserted = quizId
                 )
             } else if (generateQuestions) {
-                state =
-                    state.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_AND_QUESTIONS)
+                state = state.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_START)
                 val questionsResult = generateQuestionsUseCase(
                     transcriptContent,
                     selectedLanguage,
                     questionType,
                     numberOfQuestions
                 )
+                state = state.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_COMPLETE)
 
                 if (questionsResult.error != null) {
                     throw IllegalStateException(questionsResult.error)
@@ -431,7 +460,7 @@ class QuizCreationViewModel @Inject constructor(
 
                 val questionsJson = questionsResult.content
 
-                state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE)
+                state = state.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_START)
                 // Save key points extracted during question generation
                 val keyPoints = generateQuestionsUseCase.getLastExtractedKeyPoints()
                 saveKeyPointsUseCase(keyPoints, quizId)
@@ -442,7 +471,7 @@ class QuizCreationViewModel @Inject constructor(
 
                 state.copy(
                     isLoading = false,
-                    currentStep = ProcessingCreateStep.NONE,
+                    currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_COMPLETE,
                     quizIdInserted = quizId
                 )
             } else {

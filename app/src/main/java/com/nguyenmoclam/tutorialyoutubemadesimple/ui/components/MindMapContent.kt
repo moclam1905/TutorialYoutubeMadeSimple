@@ -27,7 +27,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.foundation.background
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Snackbar
@@ -249,6 +251,7 @@ fun MindMapContent(
 
     var parseErrorMessage by remember { mutableStateOf<String?>(null) }
     var currentCode by remember { mutableStateOf(code) }
+    var isFixingCode by remember { mutableStateOf(false) } // State for progress indicator
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -266,211 +269,241 @@ fun MindMapContent(
     // Generate the HTML content with Mermaid diagram
     val htmlContent = remember(currentCode) { generateMermaidHtml(currentCode) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.padding(16.dp)
-        ) { snackbarData ->
-            Snackbar(
-                snackbarData = snackbarData,
-                containerColor = if (parseErrorMessage != null) {
-                    Color(0xFFBA1A1A) // Error color
-                } else {
-                    Color(0xFF386A20) // Success color
-                }
-            )
-        }
-        if (isUsingSVG && svgString != null) {
-            AndroidView(
-                factory = { context ->
-                    SVGView(context).apply {
-                        tag = "svg_view"
+    Box(modifier = Modifier.fillMaxSize()) { // Outer Box for overlay
+        // Main content Box
+        Box(modifier = Modifier.fillMaxSize()) {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(16.dp)
+            ) { snackbarData ->
+                Snackbar(
+                    snackbarData = snackbarData,
+                    containerColor = if (parseErrorMessage != null) {
+                        Color(0xFFBA1A1A) // Error color
+                    } else {
+                        Color(0xFF386A20) // Success color
                     }
-                },
-                update = { view -> view.setSVG(svgString!!) },
-                modifier = Modifier.fillMaxSize()
-            )
-        } else {
-            NetworkAwareWebView(
-                url = "",  // Empty URL since we're using HTML content directly
-                html = htmlContent,
-                networkUtils = networkUtils,
-                isJavaScriptEnabled = true,
-                onPageFinished = {},  // no-op or handle if needed
-                jsInterface = { webView ->
-                    webView.apply {
-                        // Enable zoom support
-                        settings.setSupportZoom(true)
-                        settings.builtInZoomControls = true
-                        settings.displayZoomControls = false // Hide default zoom controls
-
-                        // Save reference to WebView for later use
-                        webViewRef.value = this
-
-                        // Add JavaScript interface
-                        addJavascriptInterface(
-                            MindMapJavaScriptInterface(
-                                context,
-                                { isSuccess, errorMsg ->
-                                    parseErrorMessage = if (isSuccess) null else errorMsg
-
-                                    // Show Snackbar notification
-                                    scope.launch {
-                                        if (isSuccess) {
-                                            snackbarHostState.showSnackbar(
-                                                message = context.getString(R.string.mind_map_created_successfully),
-                                                duration = SnackbarDuration.Short
-                                            )
-                                            webView.evaluateJavascript(
-                                                "javascript:getSVGContent();",
-                                                null
-                                            )
-                                        } else {
-                                            snackbarHostState.showSnackbar(
-                                                message = errorMsg
-                                                    ?: context.getString(R.string.error_occurred),
-                                                duration = SnackbarDuration.Long
-                                            )
-                                        }
-                                    }
-                                },
-                                { svg ->
-                                    svgString = svg
-                                    isUsingSVG = true
-                                }
-                            ),
-                            "AndroidInterface"
-                        )
-                    }
-                }
-            )
-        }
-
-        // Action buttons
-        if (isFullscreen) {
-            // Exit fullscreen button when in fullscreen mode
-            FloatingActionButton(
-                onClick = {
-                    isFullscreen = false
-                    webViewRef.value?.evaluateJavascript(
-                        "javascript:toggleFullscreen(false);",
-                        null
-                    )
-                },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(
-                    Icons.Default.FullscreenExit,
-                    contentDescription = stringResource(R.string.exit_fullscreen_mindmap)
                 )
             }
-        } else {
-            // Button row when not in fullscreen mode
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                // Fullscreen button
+            if (isUsingSVG && svgString != null) {
+                AndroidView(
+                    factory = { context ->
+                        SVGView(context).apply {
+                            tag = "svg_view"
+                        }
+                    },
+                    update = { view -> view.setSVG(svgString!!) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                NetworkAwareWebView(
+                    url = "",  // Empty URL since we're using HTML content directly
+                    html = htmlContent,
+                    networkUtils = networkUtils,
+                    isJavaScriptEnabled = true,
+                    onPageFinished = {},  // no-op or handle if needed
+                    jsInterface = { webView ->
+                        webView.apply {
+                            // Enable zoom support
+                            settings.setSupportZoom(true)
+                            settings.builtInZoomControls = true
+                            settings.displayZoomControls = false // Hide default zoom controls
+
+                            // Save reference to WebView for later use
+                            webViewRef.value = this
+
+                            // Add JavaScript interface
+                            addJavascriptInterface(
+                                MindMapJavaScriptInterface(
+                                    context,
+                                    { isSuccess, errorMsg ->
+                                        parseErrorMessage = if (isSuccess) null else errorMsg
+
+                                        // Show Snackbar notification
+                                        scope.launch {
+                                            if (isSuccess) {
+                                                snackbarHostState.showSnackbar(
+                                                    message = context.getString(R.string.mind_map_created_successfully),
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                webView.evaluateJavascript(
+                                                    "javascript:getSVGContent();",
+                                                    null
+                                                )
+                                            } else {
+                                                snackbarHostState.showSnackbar(
+                                                    message = errorMsg
+                                                        ?: context.getString(R.string.error_occurred),
+                                                    duration = SnackbarDuration.Long
+                                                )
+                                            }
+                                        }
+                                    },
+                                    { svg ->
+                                        svgString = svg
+                                        isUsingSVG = true
+                                    }
+                                ),
+                                "AndroidInterface"
+                            )
+                        }
+                    }
+                )
+            }
+
+            // Action buttons
+            if (isFullscreen) {
+                // Exit fullscreen button when in fullscreen mode
                 FloatingActionButton(
                     onClick = {
-                        isFullscreen = true
+                        isFullscreen = false
                         webViewRef.value?.evaluateJavascript(
-                            "javascript:toggleFullscreen(true);",
+                            "javascript:toggleFullscreen(false);",
                             null
                         )
                     },
-                    modifier = Modifier.padding(end = 8.dp)
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
                 ) {
                     Icon(
-                        Icons.Default.Fullscreen,
-                        contentDescription = stringResource(R.string.fullscreen_mindmap)
+                        Icons.Default.FullscreenExit,
+                        contentDescription = stringResource(R.string.exit_fullscreen_mindmap)
                     )
                 }
-
-                // Save button
-                FloatingActionButton(
-                    onClick = {
-                        if (isUsingSVG) {
-                            // Get SVGView reference directly from composable
-                            val svgView =
-                                (context as? ComponentActivity)?.window?.decorView?.rootView
-                                    ?.findViewWithTag<SVGView>("svg_view")
-                            svgView?.saveAsBitmap()?.let { bitmap ->
-                                MindMapJavaScriptInterface(
-                                    context,
-                                    { _, _ -> },
-                                    { _ -> }).saveBitmapToStorage(bitmap)
-                            }
-                        } else {
-                            // Use existing JavaScript method for WebView
+            } else {
+                // Button row when not in fullscreen mode
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                ) {
+                    // Fullscreen button
+                    FloatingActionButton(
+                        onClick = {
+                            isFullscreen = true
                             webViewRef.value?.evaluateJavascript(
-                                "javascript:captureMindMap();",
+                                "javascript:toggleFullscreen(true);",
                                 null
                             )
-                        }
-                    },
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Save,
-                        contentDescription = stringResource(R.string.save_mindmap)
-                    )
-                }
+                        },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Fullscreen,
+                            contentDescription = stringResource(R.string.fullscreen_mindmap)
+                        )
+                    }
 
-                val infiniteTransition =
-                    rememberInfiniteTransition(label = "RefreshButtonAnimation")
-                val scale = if (parseErrorMessage != null) {
-                    // Animation for the refresh button when there is an error
-                    infiniteTransition.animateFloat(
-                        initialValue = 1f,
-                        targetValue = 1.2f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(durationMillis = 800),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "ScaleAnimation"
-                    ).value
-                } else {
-                    1f
-                }
-
-                FloatingActionButton(
-                    onClick = {
-                        val error = parseErrorMessage
-                        if (error != null) {
-                            scope.launch {
-                                val fixedCode = onFixCodeRequested(currentCode, error)
-                                currentCode = fixedCode
-                            }
-                        }
-                    },
-
-                    // Material3 FAB don't have enabled,
-                    // so we block onClick and/or change color/alpha for "disable" shadow
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                        }
-                        .let {
-                            if (parseErrorMessage == null) {
-                                it.alpha(0.3f)
+                    // Save button
+                    FloatingActionButton(
+                        onClick = {
+                            if (isUsingSVG) {
+                                // Get SVGView reference directly from composable
+                                val svgView =
+                                    (context as? ComponentActivity)?.window?.decorView?.rootView
+                                        ?.findViewWithTag<SVGView>("svg_view")
+                                svgView?.saveAsBitmap()?.let { bitmap ->
+                                    MindMapJavaScriptInterface(
+                                        context,
+                                        { _, _ -> },
+                                        { _ -> }).saveBitmapToStorage(bitmap)
+                                }
                             } else {
-                                it
+                                // Use existing JavaScript method for WebView
+                                webViewRef.value?.evaluateJavascript(
+                                    "javascript:captureMindMap();",
+                                    null
+                                )
                             }
-                        }
-                ) {
-                    Icon(
-                        Icons.Default.Refresh,
-                        contentDescription = "Fix code with LLM"
-                    )
+                        },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Save,
+                            contentDescription = stringResource(R.string.save_mindmap)
+                        )
+                    }
+
+                    val infiniteTransition =
+                        rememberInfiniteTransition(label = "RefreshButtonAnimation")
+                    val scale = if (parseErrorMessage != null) {
+                        // Animation for the refresh button when there is an error
+                        infiniteTransition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = 1.2f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(durationMillis = 800),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "ScaleAnimation"
+                        ).value
+                    } else {
+                        1f
+                    }
+
+                    FloatingActionButton(
+                        onClick = {
+                            val error = parseErrorMessage
+                            if (error != null) {
+                                isFixingCode = true // Show progress
+                                scope.launch {
+                                    try {
+                                        val fixedCode = onFixCodeRequested(currentCode, error)
+                                        currentCode = fixedCode
+                                        parseErrorMessage = null // Clear error after successful fix
+                                    } catch (e: Exception) {
+                                        // Handle potential errors during fixing
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = context.getString(R.string.error_fixing_code) + ": ${e.localizedMessage}",
+                                                duration = SnackbarDuration.Long
+                                            )
+                                        }
+                                    } finally {
+                                        isFixingCode = false // Hide progress
+                                    }
+                                }
+                            }
+                        },
+
+                        // Material3 FAB don't have enabled,
+                        // so we block onClick and/or change color/alpha for "disable" shadow
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                            .let {
+                                if (parseErrorMessage == null) {
+                                    it.alpha(0.3f)
+                                } else {
+                                    it
+                                }
+                            }
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Fix code with LLM"
+                        )
+                    }
                 }
-            }
-        }
+            } // End Main content Box
+
+            // Progress Indicator Overlay
+            if (isFixingCode) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f)) // Semi-transparent background
+                        .padding(16.dp), // Optional padding
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } // End Progress Indicator Overlay
+        } // End Outer Box
     }
 }
 

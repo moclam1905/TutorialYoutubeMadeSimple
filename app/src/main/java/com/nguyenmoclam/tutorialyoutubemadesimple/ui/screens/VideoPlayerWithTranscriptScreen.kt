@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -31,8 +29,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.SearchBarCompone
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.TabAndSearchComponent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.VideoPlayerComponent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.extractVideoId
-import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkStateListener
-import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkSnackbarManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.TranscriptViewModel
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.utils.YouTubePlayerTracker
@@ -53,12 +49,6 @@ fun VideoPlayerWithTranscriptScreen(
     val state by viewModel.state.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val filteredSegments by viewModel.filteredSegments.collectAsState()
-
-    // Network state
-    val networkStateListener = LocalNetworkStateListener.current
-
-    // SnackbarHostState is used to display a notification when the network connection is restored
-    val snackbarHostState = remember { SnackbarHostState() }
 
     // Tab selection state
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -125,17 +115,9 @@ fun VideoPlayerWithTranscriptScreen(
         }
     }
 
-    // Show network status snackbar
-    NetworkSnackbarManager.NetworkStatusSnackbar(
-        snackbarHostState = snackbarHostState,
-        networkStateListener = networkStateListener,
-        showReconnectionMessage = true,
-        showDisconnectionMessage = true
-    )
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         Column(
             modifier = Modifier

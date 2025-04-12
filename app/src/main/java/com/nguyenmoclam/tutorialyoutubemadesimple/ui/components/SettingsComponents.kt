@@ -432,7 +432,9 @@ fun NetworkSettings(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(stringResource(R.string.data_saver_mode))
                 Text(
                     stringResource(R.string.reduce_data_usage),
@@ -442,7 +444,8 @@ fun NetworkSettings(
             }
             Switch(
                 checked = state.dataSaverMode,
-                onCheckedChange = onDataSaverModeChanged
+                onCheckedChange = onDataSaverModeChanged,
+                modifier = Modifier.padding(start = 16.dp)
             )
         }
 

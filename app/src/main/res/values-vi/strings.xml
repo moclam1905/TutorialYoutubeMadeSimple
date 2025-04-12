@@ -240,6 +240,7 @@
     <string name="zoom_out_mindmap">Thu nhỏ</string>
     <string name="error_webview_not_found">Không thể tìm thấy WebView</string>
     <string name="error_saving_mind_map">Lỗi khi lưu bản đồ tư duy: %1$s</string>
+    <string name="error_fixing_code">Lỗi khi sửa mã</string>
     <string name="mind_map_saved">Bản đồ tư duy đã được lưu vào thư viện</string>
     <string name="error_creating_file">Lỗi: Không thể tạo tệp</string>
     <string name="error_saving_image">Lỗi khi lưu hình ảnh: %1$s</string>
@@ -295,5 +296,9 @@
     <string name="unknown_error">Đã xảy ra lỗi không xác định.</string>
     <string name="offline_mode_snackbar">Chuyển sang chế độ ngoại tuyến do mất kết nối mạng</string>
     <string name="offline">Ngoại tuyến</string>
+    <string name="all_questions">Tất cả câu hỏi</string>
+    <string name="in_progress_question">Đang thực hiện</string>
+    <string name="completed">Đã hoàn thành</string>
+    <string name="saving_database">Lưu vào cơ sở dữ liệu</string>
 
 </resources>

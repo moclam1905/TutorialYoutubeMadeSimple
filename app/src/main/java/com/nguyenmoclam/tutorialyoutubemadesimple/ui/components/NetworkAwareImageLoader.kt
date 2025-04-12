@@ -35,6 +35,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.size.Size
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import java.io.File
@@ -133,6 +134,7 @@ fun NetworkAwareImageLoader(
                     // Disk cache is useful even when loading from local file for transformations, etc.
                     .diskCachePolicy(CachePolicy.ENABLED)
                     .memoryCachePolicy(CachePolicy.ENABLED) // Always use memory cache
+                    .size(Size.ORIGINAL) // Add size hint (Coil might infer this anyway)
                     .build(),
                 contentDescription = contentDescription,
                 contentScale = contentScale,

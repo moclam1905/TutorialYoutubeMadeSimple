@@ -56,7 +56,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 transcriptMode = preferences[PreferenceKeys.TRANSCRIPT_MODE] ?: "anonymous",
                 dataSaverMode = preferences[PreferenceKeys.DATA_SAVER_MODE] == true,
                 connectionType = preferences[PreferenceKeys.CONNECTION_TYPE] ?: "any",
-                connectionTimeout = preferences[PreferenceKeys.CONNECTION_TIMEOUT] ?: 30,
+                connectionTimeout = preferences[PreferenceKeys.CONNECTION_TIMEOUT] ?: 120,
                 retryPolicy = preferences[PreferenceKeys.RETRY_POLICY] ?: "exponential",
                 appLanguage = preferences[PreferenceKeys.APP_LANGUAGE] ?: "system",
                 isNetworkAvailable = networkUtils.isNetworkAvailable()

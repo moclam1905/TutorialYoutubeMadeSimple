@@ -303,7 +303,7 @@ fun SettingScreen(
                             viewModel.setAutoNextQuestion(false)
                             viewModel.setDataSaverMode(false)
                             viewModel.setConnectionType("any")
-                            viewModel.setConnectionTimeout(30)
+                            viewModel.setConnectionTimeout(120)
                             viewModel.setRetryPolicy("exponential")
                             viewModel.setAppLanguage("system")
                             showResetDialog = false

@@ -14,5 +14,9 @@ data class HomeViewState(
     val quizStatsCache: Map<Long, QuizStats> = emptyMap(),
     val showDeleteConfirmDialog: Long? = null,
     val networkRestricted: Boolean = false,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val selectedMainFilter: String = "All", // Key/Name of the main filter
+    val selectedQuestionSubFilter: String = "All", // Key/Name of the sub-filter
+    val selectedMainFilterIndex: Int = 0, // Index of the selected main filter tab
+    val selectedSubFilterIndex: Int = 0 // Index of the selected sub-filter chip
 )

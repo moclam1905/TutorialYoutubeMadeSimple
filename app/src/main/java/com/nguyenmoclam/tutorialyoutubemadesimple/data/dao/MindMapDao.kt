@@ -13,7 +13,10 @@ interface MindMapDao {
 
     @Query("SELECT * FROM mindmaps WHERE quizId = :quizId")
     suspend fun getMindMapForQuiz(quizId: Long): MindMapEntity?
-    
+
+    @Query("SELECT DISTINCT quizId FROM mindmaps")
+    suspend fun getAllQuizIdsWithMindmap(): List<Long>? // Return list of IDs
+
     @Query("DELETE FROM mindmaps WHERE quizId = :quizId")
     suspend fun deleteMindMapForQuiz(quizId: Long)
 }

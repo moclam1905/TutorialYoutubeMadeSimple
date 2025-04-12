@@ -8,8 +8,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import java.io.ByteArrayInputStream
 
 /**
@@ -69,9 +67,9 @@ class WebViewClientWithOfflineSupport(
             return when {
                 // Handle HTML resources
                 url.endsWith(".html") || url.endsWith(".htm") || !url.contains(".") -> {
-                    val content = runBlocking(Dispatchers.IO) {
-                        offlineDataManager.getWebContent(url)
-                    } ?: "<html><body><h1>Content not available offline</h1></body></html>"
+                    // Use blocking call directly as shouldInterceptRequest runs off the main thread
+                    val content = offlineDataManager.getWebContentBlocking(url)
+                        ?: "<html><body><h1>Content not available offline</h1></body></html>"
 
                     Log.d(TAG, "Loaded offline HTML content for URL: $url")
                     WebResourceResponse(
@@ -83,9 +81,8 @@ class WebViewClientWithOfflineSupport(
 
                 // Handle CSS resources
                 url.endsWith(".css") -> {
-                    val byteArray = runBlocking(Dispatchers.IO) {
-                        offlineDataManager.getWebResource(url)
-                    }
+                    // Use blocking call directly
+                    val byteArray = offlineDataManager.getWebResourceBlocking(url)
 
                     if (byteArray != null) {
                         Log.d(TAG, "Loaded offline CSS for URL: $url")
@@ -107,9 +104,8 @@ class WebViewClientWithOfflineSupport(
 
                 // Handle JavaScript resources
                 url.endsWith(".js") -> {
-                    val byteArray = runBlocking(Dispatchers.IO) {
-                        offlineDataManager.getWebResource(url)
-                    }
+                     // Use blocking call directly
+                    val byteArray = offlineDataManager.getWebResourceBlocking(url)
 
                     if (byteArray != null) {
                         Log.d(TAG, "Loaded offline JavaScript for URL: $url")
@@ -133,9 +129,8 @@ class WebViewClientWithOfflineSupport(
                 url.contains(".png") || url.contains(".jpg") || url.contains(".jpeg") || url.contains(
                     ".svg"
                 ) -> {
-                    val byteArray = runBlocking(Dispatchers.IO) {
-                        offlineDataManager.getWebResource(url)
-                    }
+                     // Use blocking call directly
+                    val byteArray = offlineDataManager.getWebResourceBlocking(url)
 
                     if (byteArray != null) {
                         Log.d(TAG, "Loaded offline image for URL: $url")
@@ -155,11 +150,10 @@ class WebViewClientWithOfflineSupport(
                     }
                 }
 
-                // Handle other resources
+                // Handle other resources (Treat as HTML by default if extension unknown)
                 else -> {
-                    val content = runBlocking(Dispatchers.IO) {
-                        offlineDataManager.getWebContent(url)
-                    } ?: ""
+                     // Use blocking call directly
+                    val content = offlineDataManager.getWebContentBlocking(url) ?: ""
 
                     Log.d(TAG, "Loaded other offline content for URL: $url")
                     WebResourceResponse(

@@ -39,5 +39,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <profileable android:shell="true" />
+
     </application>
 </manifest>

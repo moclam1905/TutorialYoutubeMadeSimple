@@ -1,16 +1,16 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -24,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -91,32 +92,69 @@ fun SearchBar(
 @Composable
 fun FilterTabs(
     selectedTabIndex: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int, String) -> Unit
 ) {
     val tabs = listOf(
-        stringResource(R.string.all),
-        stringResource(R.string.popular),
-        stringResource(R.string.new_filter),
-        stringResource(R.string.trending)
+        R.string.all to "All",
+        R.string.summary_tab to "Summary",
+        R.string.questions_tab to "Question",
+        R.string.mindmap_tab to "Mindmap"
+        // Add more filters here if needed, mapping string resource to a key
     )
 
-    Row(
+    ScrollableTabRow(
+        selectedTabIndex = selectedTabIndex,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+        edgePadding = 0.dp,
+        divider = {},
+        indicator = {}
     ) {
-        tabs.forEachIndexed { index, title ->
+        tabs.forEachIndexed { index, (titleRes, titleKey) ->
             FilterTab(
-                title = title,
+                title = stringResource(titleRes),
                 selected = selectedTabIndex == index,
-                onClick = { onTabSelected(index) }
+                onClick = { onTabSelected(index, titleKey) }
             )
-            if (index < tabs.lastIndex) { // Add spacer only between tabs
-                Spacer(modifier = Modifier.width(8.dp))
-            }
         }
     }
 }
+
+/**
+ * Composable for displaying sub-filter chips (e.g., for Question status).
+ */
+@Composable
+fun SubFilterChips(
+    selectedSubFilterIndex: Int,
+    onSubFilterSelected: (Int, String) -> Unit // Pass index and key
+) {
+    val subFilters = listOf(
+        R.string.all_questions to "All",
+        R.string.in_progress_question to "InProgress",
+        R.string.completed to "Completed"
+    )
+
+    ScrollableTabRow(
+        selectedTabIndex = selectedSubFilterIndex,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp),
+        edgePadding = 0.dp,
+        divider = {},
+        indicator = {}
+    ) {
+        subFilters.forEachIndexed { index, (titleRes, titleKey) ->
+            FilterTab(
+                title = stringResource(titleRes),
+                selected = selectedSubFilterIndex == index,
+                onClick = { onSubFilterSelected(index, titleKey) }
+            )
+        }
+    }
+}
+
 
 @Composable
 fun FilterTab(
@@ -200,6 +238,7 @@ fun QuizListContent(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class) // Add OptIn annotation
 @Composable
 fun QuizList(
     quizzes: List<Quiz>,
@@ -217,17 +256,23 @@ fun QuizList(
         modifier = Modifier.fillMaxSize()
     ) {
         items(items = quizzes, key = { quiz -> quiz.id }) { quiz ->
-            // Pass lambdas directly capturing quiz.id (Long)
-            LearningChallengeItem( // This will be imported from ChallengeItemComponents
-                quiz = quiz,
-                isStatsExpanded = expandedStatsMap[quiz.id] == true,
-                quizStats = quizStatsCache[quiz.id],
-                onToggleStats = { onToggleStats(quiz.id) },
-                onDeleteQuiz = { onDeleteQuiz(quiz.id) },
-                daysSinceLastUpdate = getDaysSinceLastUpdate(quiz.lastUpdated),
-                onQuizClick = { onQuizClick(quiz.id) },
-                searchQuery = searchQuery
-            )
+            // Add animateItemPlacement modifier for list animations
+            Box(modifier = Modifier.animateItemPlacement(
+                // Optional: Add animation spec like tween
+                 tween(durationMillis = 300)
+            )) {
+                // Pass lambdas directly capturing quiz.id (Long)
+                LearningChallengeItem( // This will be imported from ChallengeItemComponents
+                    quiz = quiz,
+                    isStatsExpanded = expandedStatsMap[quiz.id] == true,
+                    quizStats = quizStatsCache[quiz.id],
+                    onToggleStats = { onToggleStats(quiz.id) },
+                    onDeleteQuiz = { onDeleteQuiz(quiz.id) },
+                    daysSinceLastUpdate = getDaysSinceLastUpdate(quiz.lastUpdated),
+                    onQuizClick = { onQuizClick(quiz.id) },
+                    searchQuery = searchQuery
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
@@ -276,4 +321,3 @@ fun EmptyStateMessage(messageRes: Int) {
         )
     }
 }
-

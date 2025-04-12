@@ -240,6 +240,7 @@
     <string name="save_mindmap_error">Error saving mind map: %1$s</string>
     <string name="error_webview_not_found">Could not find WebView</string>
     <string name="error_saving_mind_map">Error saving mind map: %1$s</string>
+    <string name="error_fixing_code">Error fixing code</string>
     <string name="mind_map_saved">Mind map saved to gallery</string>
     <string name="error_creating_file">Error: Could not create file</string>
     <string name="error_saving_image">Error saving image: %1$s</string>
@@ -295,5 +296,9 @@
     <string name="unknown_error">An unknown error occurred.</string>
     <string name="offline_mode_snackbar">Switched to offline mode due to no network connection</string>
     <string name="offline">Offline</string>
+    <string name="all_questions">All Questions</string>
+    <string name="in_progress_question">In Progress</string>
+    <string name="completed">Completed</string>
+    <string name="saving_database">Saving to database</string>
 
 </resources>
