@@ -6,13 +6,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -26,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -103,10 +102,14 @@ fun FilterTabs(
         // Add more filters here if needed, mapping string resource to a key
     )
 
-    Row(
+    ScrollableTabRow(
+        selectedTabIndex = selectedTabIndex,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+        edgePadding = 0.dp,
+        divider = {},
+        indicator = {}
     ) {
         tabs.forEachIndexed { index, (titleRes, titleKey) ->
             FilterTab(
@@ -114,9 +117,6 @@ fun FilterTabs(
                 selected = selectedTabIndex == index,
                 onClick = { onTabSelected(index, titleKey) }
             )
-            if (index < tabs.lastIndex) { // Add spacer only between tabs
-                Spacer(modifier = Modifier.width(8.dp))
-            }
         }
     }
 }
@@ -135,22 +135,22 @@ fun SubFilterChips(
         R.string.completed to "Completed"
     )
 
-    Row(
+    ScrollableTabRow(
+        selectedTabIndex = selectedSubFilterIndex,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .padding(top = 8.dp)
+            .padding(top = 8.dp),
+        edgePadding = 0.dp,
+        divider = {},
+        indicator = {}
     ) {
         subFilters.forEachIndexed { index, (titleRes, titleKey) ->
-            // Reuse FilterTab styling or create a dedicated SubFilterTab if needed
             FilterTab(
                 title = stringResource(titleRes),
                 selected = selectedSubFilterIndex == index,
                 onClick = { onSubFilterSelected(index, titleKey) }
             )
-            if (index < subFilters.lastIndex) {
-                Spacer(modifier = Modifier.width(8.dp))
-            }
         }
     }
 }
