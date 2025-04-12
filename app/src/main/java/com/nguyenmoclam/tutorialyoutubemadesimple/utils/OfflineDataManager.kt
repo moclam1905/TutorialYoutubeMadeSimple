@@ -487,22 +487,30 @@ class OfflineDataManager @Inject constructor(
     }
 
     /**
-     * Get saved web content
+     * Get saved web content (suspend version).
      */
     suspend fun getWebContent(url: String): String? = withContext(Dispatchers.IO) {
+        getWebContentBlocking(url) // Delegate to blocking version within IO context
+    }
+
+    /**
+     * Get saved web content (BLOCKING version for synchronous contexts like WebViewClient).
+     * Performs file IO directly on the calling thread. DO NOT CALL ON MAIN THREAD.
+     */
+    fun getWebContentBlocking(url: String): String? {
         try {
             val file = getWebContentFile(url)
-            if (!file.exists()) return@withContext null
+            if (!file.exists()) return null
 
             FileInputStream(file).use { fis ->
                 val size = fis.available()
                 val buffer = ByteArray(size)
                 fis.read(buffer)
-                return@withContext String(buffer)
+                return String(buffer)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error reading web content: ${e.message}")
-            return@withContext null
+            return null
         }
     }
 
@@ -527,23 +535,40 @@ class OfflineDataManager @Inject constructor(
         }
     }
 
-    /**
-     * Get saved web resource
+     /**
+     * Get saved web resource (suspend version).
      */
     suspend fun getWebResource(url: String): ByteArray? = withContext(Dispatchers.IO) {
+        getWebResourceBlocking(url) // Delegate to blocking version within IO context
+    }
+
+    /**
+     * Get saved web resource (BLOCKING version for synchronous contexts like WebViewClient).
+     * Performs file IO directly on the calling thread. DO NOT CALL ON MAIN THREAD.
+     */
+    fun getWebResourceBlocking(url: String): ByteArray? {
         try {
             val file = getWebResourceFile(url)
-            if (!file.exists()) return@withContext null
+            if (!file.exists()) return null // Use standard return
 
             FileInputStream(file).use { fis ->
+                // Reading size via available() might be unreliable for large files,
+                // but often okay for typical web resources. A more robust way
+                // would be to read in chunks, but let's keep it simple for now.
                 val size = fis.available()
+                if (size <= 0) return ByteArray(0) // Handle empty file case
                 val buffer = ByteArray(size)
-                fis.read(buffer)
-                return@withContext buffer
+                val bytesRead = fis.read(buffer)
+                if (bytesRead < size) {
+                    // Handle case where not all bytes were read (unlikely with available())
+                    Log.w(TAG, "Could not read entire web resource file: $url")
+                    return buffer.copyOf(bytesRead) // Return what was read
+                }
+                return buffer // Use standard return
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error reading web resource: ${e.message}")
-            return@withContext null
+            return null
         }
     }
 
