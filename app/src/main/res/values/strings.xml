@@ -240,6 +240,7 @@
     <string name="save_mindmap_error">Error saving mind map: %1$s</string>
     <string name="error_webview_not_found">Could not find WebView</string>
     <string name="error_saving_mind_map">Error saving mind map: %1$s</string>
+    <string name="error_fixing_code">Error fixing code</string>
     <string name="mind_map_saved">Mind map saved to gallery</string>
     <string name="error_creating_file">Error: Could not create file</string>
     <string name="error_saving_image">Error saving image: %1$s</string>
