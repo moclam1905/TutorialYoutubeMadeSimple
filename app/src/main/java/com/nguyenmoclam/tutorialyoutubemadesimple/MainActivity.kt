@@ -22,6 +22,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,6 +51,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.theme.YouTubeSummaryTheme
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LanguageChangeHelper
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkStateListener
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkSnackbarManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkStateListener
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
@@ -83,6 +86,9 @@ class MainActivity : ComponentActivity() {
 
         // Get SplashViewModel instance
         val splashViewModel = ViewModelProvider(this)[SplashViewModel::class.java]
+
+        // Create a SnackbarHostState for network notifications
+        val snackbarHostState = SnackbarHostState()
 
         // Handle the splash screen transition
         val splashScreen = installSplashScreen()
@@ -158,7 +164,14 @@ class MainActivity : ComponentActivity() {
                     LocalNetworkStateListener provides networkStateListener
                 ) {
                     Surface(color = MaterialTheme.colorScheme.background) {
+                        // Show network status snackbar
+                        NetworkSnackbarManager.NetworkStatusSnackbar(
+                            snackbarHostState = snackbarHostState,
+                            networkStateListener = networkStateListener
+                        )
+
                         Scaffold(
+                            snackbarHost = { SnackbarHost(snackbarHostState) },
                             bottomBar = {
                                 // Use the derived state value for visibility
                                 AnimatedVisibility(

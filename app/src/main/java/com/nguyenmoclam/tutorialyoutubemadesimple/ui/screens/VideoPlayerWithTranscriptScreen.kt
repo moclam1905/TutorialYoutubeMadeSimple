@@ -32,7 +32,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.TabAndSearchComp
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.VideoPlayerComponent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.extractVideoId
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkStateListener
-import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkSnackbarManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.TranscriptViewModel
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.utils.YouTubePlayerTracker
@@ -125,17 +124,9 @@ fun VideoPlayerWithTranscriptScreen(
         }
     }
 
-    // Show network status snackbar
-    NetworkSnackbarManager.NetworkStatusSnackbar(
-        snackbarHostState = snackbarHostState,
-        networkStateListener = networkStateListener,
-        showReconnectionMessage = true,
-        showDisconnectionMessage = true
-    )
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         Column(
             modifier = Modifier
