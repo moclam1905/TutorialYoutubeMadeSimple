@@ -17,7 +17,8 @@ object QuizMapper {
             summaryEnabled = domain.summaryEnabled,
             questionsEnabled = domain.questionsEnabled,
             lastUpdated = domain.lastUpdated,
-            localThumbnailPath = domain.localThumbnailPath // Map domain to entity
+            localThumbnailPath = domain.localThumbnailPath, // Map domain to entity
+            reminderInterval = domain.reminderInterval // Map reminderInterval
         )
     }
 
@@ -34,7 +35,9 @@ object QuizMapper {
             summaryEnabled = entity.summaryEnabled,
             questionsEnabled = entity.questionsEnabled,
             lastUpdated = entity.lastUpdated,
-            localThumbnailPath = entity.localThumbnailPath // Map entity to domain
+            localThumbnailPath = entity.localThumbnailPath, // Map entity to domain
+            reminderInterval = entity.reminderInterval, // Map reminderInterval
+            // tags are loaded separately via TagDao
         )
     }
 }

@@ -7,6 +7,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.SummaryDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuestionDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TagDao // Add TagDao import
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TopicDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptSegmentDao
@@ -17,6 +18,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.MindMapMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.QuestionMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.QuizMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.SummaryMapper
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.TagMapper // Add TagMapper import
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.TopicMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.TranscriptMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.TranscriptSegmentMapper
@@ -27,6 +29,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Summary
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Transcript
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.TranscriptSegment
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.tag.Tag // Add Tag import
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.TimeUtils
@@ -53,6 +56,7 @@ class QuizRepositoryImpl @Inject constructor(
     private val keyPointDao: KeyPointDao,
     private val mindMapDao: MindMapDao,
     private val transcriptSegmentDao: TranscriptSegmentDao,
+    private val tagDao: TagDao, // Inject TagDao
     private val networkUtils: NetworkUtils,
     private val offlineDataManager: OfflineDataManager
 ) : QuizRepository {
@@ -747,5 +751,50 @@ class QuizRepositoryImpl @Inject constructor(
         }
 
         return segments
+    }
+
+    // --- Quiz Settings Implementation ---
+
+    // Add lastUpdated parameter to match interface and DAO call
+    override suspend fun updateQuizTitleDescription(quizId: Long, title: String, description: String, lastUpdated: Long) {
+        quizDao.updateQuizTitleDescription(quizId, title, description, lastUpdated)
+    }
+
+    // Add lastUpdated parameter to match interface and DAO call
+    override suspend fun updateQuizReminderInterval(quizId: Long, reminderInterval: Long?, lastUpdated: Long) {
+        quizDao.updateQuizReminderInterval(quizId, reminderInterval, lastUpdated)
+    }
+
+    // --- Tag Implementation ---
+
+    override fun getAllTags(): Flow<List<Tag>> {
+        return tagDao.getAllTags().map { TagMapper.listToDomain(it) }
+    }
+
+    override fun getTagsForQuiz(quizId: Long): Flow<List<Tag>> {
+        return tagDao.getTagsForQuiz(quizId).map { TagMapper.listToDomain(it) }
+    }
+
+    override suspend fun updateTagsForQuiz(quizId: Long, tags: List<Tag>) {
+        // Convert domain tags to entities before passing to DAO
+        val tagEntities = TagMapper.listToEntity(tags)
+        tagDao.updateTagsForQuiz(quizId, tagEntities)
+    }
+
+    override suspend fun insertTag(tag: Tag): Long {
+        // Convert domain tag to entity
+        val tagEntity = TagMapper.toEntity(tag)
+        // Insert and get the ID (or -1 if ignored)
+        val insertedId = tagDao.insertTag(tagEntity)
+        // If ignored (tag exists), fetch the existing tag's ID
+        return if (insertedId == -1L) {
+            tagDao.getTagByName(tag.name)?.tagId ?: -1L // Return existing ID or -1 if fetch fails
+        } else {
+            insertedId // Return newly inserted ID
+        }
+    }
+
+     override suspend fun getTagByName(name: String): Tag? {
+        return tagDao.getTagByName(name)?.let { TagMapper.toDomain(it) }
     }
 }

@@ -8,6 +8,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Summary
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Transcript
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.TranscriptSegment
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.tag.Tag // Correct import path
 import kotlinx.coroutines.flow.Flow
 
 interface QuizRepository {
@@ -109,5 +110,17 @@ interface QuizRepository {
     suspend fun getAllQuizzesAsList(): List<Quiz>
     suspend fun updateQuizSyncStatus(quizId: Long, isSynced: Boolean)
     suspend fun updateQuizLocalThumbnailPath(quizId: Long, localPath: String)
+
+    // Quiz Settings Methods
+    // Add lastUpdated parameter to match DAO and implementation
+    suspend fun updateQuizTitleDescription(quizId: Long, title: String, description: String, lastUpdated: Long)
+    suspend fun updateQuizReminderInterval(quizId: Long, reminderInterval: Long?, lastUpdated: Long)
+
+    // Tag Methods
+    fun getAllTags(): Flow<List<Tag>>
+    fun getTagsForQuiz(quizId: Long): Flow<List<Tag>>
+    suspend fun updateTagsForQuiz(quizId: Long, tags: List<Tag>)
+    suspend fun insertTag(tag: Tag): Long // Returns the ID of the inserted or existing tag
+    suspend fun getTagByName(name: String): Tag?
 
 }

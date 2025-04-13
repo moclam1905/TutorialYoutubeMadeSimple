@@ -301,4 +301,32 @@
     <string name="completed">Completed</string>
     <string name="saving_database">Saving to database</string>
 
+    <!-- Quiz Setting Screen -->
+    <string name="quiz_settings_title">Quiz Settings</string>
+    <string name="loading_settings">Loading settings…</string>
+    <string name="quiz_not_found_error">Quiz not found.</string>
+    <string name="settings_saved_success">Settings saved successfully!</string>
+    <string name="quiz_title_label">Quiz Title</string>
+    <string name="quiz_description_label">Quiz Description</string>
+    <string name="reminder_notification_title">Reminder Notification</string>
+    <string name="reminder_frequency_label">Frequency</string>
+    <string name="reminder_off">Off</string>
+    <string name="reminder_daily">Daily</string>
+    <string name="reminder_weekly">Weekly</string>
+    <string name="tags_title">Tags</string>
+    <string name="add_new_tag_label">Add new tag</string>
+    <string name="add_tag_button">Add</string>
+    <string name="selected_tags_label">Selected Tags:</string>
+    <string name="no_tags_selected">No tags selected.</string>
+    <string name="deselect_tag_desc">Deselect tag %1$s</string>
+    <string name="available_tags_label">Available Tags:</string>
+    <string name="no_available_tags">No other tags available.</string>
+    <string name="reset_settings">Reset Changes</string>
+    <string name="save_settings">Save Changes</string>
+
+    <!-- Reminder Worker -->
+    <string name="reminder_channel_name">Quiz Reminders</string>
+    <string name="reminder_channel_description">Notifications to remind you to review quizzes</string>
+    <string name="reminder_notification_text">Time to review: %1$s</string> <!-- %1$s will be the quiz title -->
+
 </resources>

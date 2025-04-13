@@ -37,4 +37,16 @@ interface QuizDao {
 
     @Query("UPDATE quizzes SET localThumbnailPath = :localPath WHERE quizId = :quizId")
     suspend fun updateLocalThumbnailPath(quizId: Long, localPath: String)
+
+    /**
+     * Updates the title and description of a specific quiz.
+     */
+    @Query("UPDATE quizzes SET title = :title, description = :description, lastUpdated = :lastUpdated WHERE quizId = :quizId")
+    suspend fun updateQuizTitleDescription(quizId: Long, title: String, description: String, lastUpdated: Long)
+
+    /**
+     * Updates the reminder interval for a specific quiz.
+     */
+    @Query("UPDATE quizzes SET reminderInterval = :reminderInterval, lastUpdated = :lastUpdated WHERE quizId = :quizId")
+    suspend fun updateQuizReminderInterval(quizId: Long, reminderInterval: Long?, lastUpdated: Long)
 }

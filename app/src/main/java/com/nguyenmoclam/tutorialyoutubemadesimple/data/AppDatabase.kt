@@ -13,6 +13,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizResultDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.SummaryDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TagDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TopicDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptSegmentDao
@@ -23,7 +24,9 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuestionEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizProgressEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizResultEntity
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizTagCrossRef
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.SummaryEntity
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TagEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TopicEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TranscriptEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TranscriptSegmentEntity
@@ -44,7 +47,9 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TranscriptSegmentE
         ContentQuestionEntity::class,
         KeyPointEntity::class,
         MindMapEntity::class,
-        TranscriptSegmentEntity::class
+        TranscriptSegmentEntity::class,
+        TagEntity::class,
+        QuizTagCrossRef::class
     ],
     version = 1,
     exportSchema = true
@@ -62,6 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun contentQuestionDao(): ContentQuestionDao
     abstract fun mindMapDao(): MindMapDao
     abstract fun transcriptSegmentDao(): TranscriptSegmentDao
+    abstract fun tagDao(): TagDao
 
     companion object {
         const val DATABASE_NAME = "youtube_tutorial_app_db"
