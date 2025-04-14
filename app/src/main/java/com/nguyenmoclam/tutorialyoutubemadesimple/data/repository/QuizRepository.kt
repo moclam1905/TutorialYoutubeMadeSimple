@@ -26,6 +26,13 @@ interface QuizRepository {
     suspend fun getSummaryByQuizId(quizId: Long): Summary?
     fun getQuestionsForQuiz(quizId: Long): Flow<List<Question>>
     fun getAllQuizzes(): Flow<List<Quiz>>
+    
+    /**
+     * Get filtered quizzes based on selected tag IDs.
+     * If no tags are selected, returns all quizzes.
+     */
+    fun getFilteredQuizzes(selectedTagIds: Set<Long>): Flow<List<Quiz>>
+    
     suspend fun deleteQuiz(quizId: Long)
     suspend fun getQuizCount(): Int
     suspend fun getUsedStorageBytes(): Long
@@ -117,10 +124,13 @@ interface QuizRepository {
     suspend fun updateQuizReminderInterval(quizId: Long, reminderInterval: Long?, lastUpdated: Long)
 
     // Tag Methods
-    fun getAllTags(): Flow<List<Tag>>
+    fun getAllTags(): Flow<List<Tag>> // Keep this for other potential uses
+    fun getAllTagsWithCount(): Flow<List<com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.tag.TagWithCount>> // New function
     fun getTagsForQuiz(quizId: Long): Flow<List<Tag>>
     suspend fun updateTagsForQuiz(quizId: Long, tags: List<Tag>)
     suspend fun insertTag(tag: Tag): Long // Returns the ID of the inserted or existing tag
     suspend fun getTagByName(name: String): Tag?
-
+    suspend fun addTagToQuiz(quizId: Long, tagName: String): Long
+    suspend fun removeTagFromQuiz(quizId: Long, tagId: Long)
+    fun getQuizzesForTag(tagId: Long): Flow<List<Quiz>>
 }

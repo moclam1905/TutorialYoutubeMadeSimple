@@ -69,14 +69,13 @@ fun ScreenTitle(titleRes: Int) {
 fun SearchBar(
     searchQuery: String,
     onQueryChange: (String) -> Unit,
-    placeholderRes: Int
+    placeholderRes: Int,
+    modifier: Modifier = Modifier
 ) {
     OutlinedTextField(
         value = searchQuery,
         onValueChange = onQueryChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = modifier,
         placeholder = { Text(stringResource(placeholderRes)) },
         leadingIcon = {
             Icon(
@@ -257,10 +256,12 @@ fun QuizList(
     ) {
         items(items = quizzes, key = { quiz -> quiz.id }) { quiz ->
             // Add animateItemPlacement modifier for list animations
-            Box(modifier = Modifier.animateItemPlacement(
-                // Optional: Add animation spec like tween
-                 tween(durationMillis = 300)
-            )) {
+            Box(
+                modifier = Modifier.animateItemPlacement(
+                    // Optional: Add animation spec like tween
+                    tween(durationMillis = 300)
+                )
+            ) {
                 // Pass lambdas directly capturing quiz.id (Long)
                 LearningChallengeItem( // This will be imported from ChallengeItemComponents
                     quiz = quiz,

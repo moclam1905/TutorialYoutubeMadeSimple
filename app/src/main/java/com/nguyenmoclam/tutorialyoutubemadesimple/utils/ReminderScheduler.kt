@@ -3,11 +3,12 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.utils
 import android.content.Context
 import androidx.work.*
 import com.nguyenmoclam.tutorialyoutubemadesimple.worker.ReminderWorker
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class ReminderScheduler @Inject constructor(
-    context: Context
+    @ApplicationContext private val context: Context
 ) {
     private val workManager = WorkManager.getInstance(context)
 

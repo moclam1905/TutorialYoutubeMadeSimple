@@ -1,15 +1,23 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.data.dao
 
 import androidx.room.Dao
+import androidx.room.Embedded // Import Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizEntity // Add missing import
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizTagCrossRef
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TagEntity
 
 import kotlinx.coroutines.flow.Flow
+
+// Data class to hold TagEntity and its associated quiz count
+data class TagWithCount(
+    @Embedded val tag: TagEntity,
+    val quizCount: Int
+)
 
 /**
  * Data Access Object for the Tag entity and its relationship with Quiz.
@@ -43,6 +51,19 @@ interface TagDao {
     fun getAllTags(): Flow<List<TagEntity>>
 
     /**
+     * Gets all tags along with the count of quizzes associated with each tag.
+     * Uses a LEFT JOIN to include tags even if they have no associated quizzes.
+     */
+    @Query("""
+        SELECT t.*, COUNT(qtr.quizId) as quizCount
+        FROM tags t
+        LEFT JOIN quiz_tag_cross_ref qtr ON t.tagId = qtr.tagId
+        GROUP BY t.tagId
+        ORDER BY t.name ASC
+    """)
+    fun getTagsWithQuizCount(): Flow<List<TagWithCount>>
+
+    /**
      * Gets a tag by its name (case-insensitive).
      */
     @Query("SELECT * FROM tags WHERE LOWER(name) = LOWER(:name) LIMIT 1")
@@ -66,6 +87,28 @@ interface TagDao {
      */
     @Query("DELETE FROM quiz_tag_cross_ref WHERE quizId = :quizId")
     suspend fun deleteTagsForQuiz(quizId: Long)
+    
+    /**
+     * Gets all quizzes associated with a specific tag.
+     */
+    @Query("""
+        SELECT q.* FROM quizzes q
+        INNER JOIN quiz_tag_cross_ref qtr ON q.quizId = qtr.quizId
+        WHERE qtr.tagId = :tagId
+        ORDER BY q.lastUpdated DESC
+    """)
+    fun getQuizzesForTag(tagId: Long): Flow<List<QuizEntity>>
+    
+    /**
+     * Gets all quizzes that have any of the specified tags.
+     */
+    @Query("""
+        SELECT DISTINCT q.* FROM quizzes q
+        INNER JOIN quiz_tag_cross_ref qtr ON q.quizId = qtr.quizId
+        WHERE qtr.tagId IN (:tagIds)
+        ORDER BY q.lastUpdated DESC
+    """)
+    fun getQuizzesWithAnyOfTags(tagIds: Set<Long>): Flow<List<QuizEntity>>
 
     /**
      * Transaction to update the tags for a specific quiz.

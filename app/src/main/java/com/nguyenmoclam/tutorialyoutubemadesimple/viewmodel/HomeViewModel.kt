@@ -2,12 +2,12 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.QuizRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.state.QuizStateManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.mindmap.GetQuizIdsWithMindmapUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.progress.GetAllQuizProgressMapUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.DeleteQuizUseCase
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetAllQuizzesUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetDaysSinceLastUpdateUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz.GetQuizStatsUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
@@ -25,15 +25,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-@OptIn(FlowPreview::class) // Needed for debounce
+
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val getAllQuizzesUseCase: GetAllQuizzesUseCase,
     private val getQuizStatsUseCase: GetQuizStatsUseCase,
     private val getDaysSinceLastUpdateUseCase: GetDaysSinceLastUpdateUseCase,
     private val deleteQuizUseCase: DeleteQuizUseCase,
     private val getAllQuizProgressMapUseCase: GetAllQuizProgressMapUseCase,
     private val getQuizIdsWithMindmapUseCase: GetQuizIdsWithMindmapUseCase,
+    private val quizRepository: QuizRepository, // Inject QuizRepository for filtered queries
     private val quizStateManager: QuizStateManager,
     private val networkUtils: NetworkUtils
 ) : ViewModel() {
@@ -42,18 +43,14 @@ class HomeViewModel @Inject constructor(
     private val _state = MutableStateFlow(HomeViewState())
     val state: StateFlow<HomeViewState> = _state
 
-    // Holds the complete list of quizzes fetched from the source
-    private var allQuizzes: List<Quiz> = emptyList()
-
     // SharedFlow for raw search query input
     private val searchQueryFlow = MutableSharedFlow<String>(replay = 1)
 
     init {
-        // Observe quiz state manager and refresh data when needed
+        // Load all available tags with their quiz counts
         viewModelScope.launch {
-            quizStateManager.quizzes.collect { quizzes ->
-                allQuizzes = quizzes
-                applyFiltersAndSearch() // Apply combined filters
+            quizRepository.getAllTagsWithCount().collect { tagsWithCount ->
+                _state.update { it.copy(allTagsWithCount = tagsWithCount) }
             }
         }
 
@@ -83,43 +80,20 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch { searchQueryFlow.emit("") }
     }
 
+    // Simplified refresh function - just triggers the main filter logic
     fun refreshQuizzes() {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) } // Show loading indicator
-            try {
-                // Check if offline data is available, regardless of offline mode being enabled or not
-                val offlineQuizzes = getAllQuizzesUseCase().first()
-
-                if (offlineQuizzes.isNotEmpty()) {
-                    allQuizzes = offlineQuizzes
-                    quizStateManager.updateQuizzes(offlineQuizzes)
-                    applyFiltersAndSearch() // Apply combined filters
-                } else if (networkUtils.shouldLoadContent()) {
-                    val quizzes = getAllQuizzesUseCase().first()
-                    allQuizzes = quizzes
-                    quizStateManager.updateQuizzes(quizzes)
-                    applyFiltersAndSearch() // Apply combined filters
-                } else {
-                    _state.update { currentState ->
-                        currentState.copy(
-                            isLoading = false,
-                            networkRestricted = true,
-                            quizzes = emptyList() // Clear list if network restricted and no offline data
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                // Handle potential errors during data fetching
-                _state.update { it.copy(isLoading = false, quizzes = emptyList()) }
-                // Optionally log the error or show a message
-            }
-        }
+        applyFiltersAndSearch()
     }
 
     /**
      * Updates the selected main and sub-filters (both keys and indices) and triggers filtering, showing a loading state.
      */
-    fun updateFilter(mainFilterKey: String, mainFilterIndex: Int, subFilterKey: String = "All", subFilterIndex: Int = 0) {
+    fun updateFilter(
+        mainFilterKey: String,
+        mainFilterIndex: Int,
+        subFilterKey: String = "All",
+        subFilterIndex: Int = 0
+    ) {
         val isQuestionFilter = mainFilterKey == "Question"
         // Set loading state immediately before starting the filtering process
         _state.update {
@@ -143,71 +117,86 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Update the state immediately for instant UI feedback in the search bar
             // but don't trigger filtering yet.
-             _state.update { it.copy(searchQuery = query) }
+            _state.update { it.copy(searchQuery = query) }
             // Emit to the flow which will handle debouncing and triggering the actual search/filter
             searchQueryFlow.emit(query)
         }
     }
 
     /**
-     * Apply main filter, sub-filter (for Questions), and search query to the list of all quizzes.
-     * Fetches necessary progress and mindmap data for efficient filtering.
+     * Fetches the base list of quizzes (filtered by tags) and then applies
+     * main filter, sub-filter (for Questions), and search query.
+     * Also fetches necessary progress and mindmap data for efficient filtering.
      */
     private fun applyFiltersAndSearch() {
         viewModelScope.launch {
-            val currentState = _state.value
-            val mainFilter = currentState.selectedMainFilter
-            val subFilter = currentState.selectedQuestionSubFilter
-            // Read the debounced search query from the state
-            val searchQuery = currentState.searchQuery.trim().lowercase()
+            _state.update { it.copy(isLoading = true) } // Show loading indicator
+            try {
+                val currentState = _state.value
+                val selectedTagIds = currentState.selectedTagIds
+                val mainFilter = currentState.selectedMainFilter
+                val subFilter = currentState.selectedQuestionSubFilter
+                val searchQuery = currentState.searchQuery.trim().lowercase()
 
-            // Fetch progress and mindmap data using Use Cases
-            val progressMapDeferred = async(Dispatchers.IO) { getAllQuizProgressMapUseCase() }
-            val mindmapQuizIdsDeferred = async(Dispatchers.IO) { getQuizIdsWithMindmapUseCase() }
+                // Fetch progress and mindmap data using Use Cases (can run concurrently with quiz fetch)
+                val progressMapDeferred = async(Dispatchers.IO) { getAllQuizProgressMapUseCase() }
+                val mindmapQuizIdsDeferred =
+                    async(Dispatchers.IO) { getQuizIdsWithMindmapUseCase() }
 
-            val progressMap = progressMapDeferred.await()
-            val mindmapQuizIds = mindmapQuizIdsDeferred.await()
+                // 1. Fetch base list (already filtered by tags via Repository)
+                // Use first() to get the latest list from the Flow
+                var filteredList = quizRepository.getFilteredQuizzes(selectedTagIds).first()
 
-            var filteredList = allQuizzes
+                // Await concurrent tasks
+                val progressMap = progressMapDeferred.await()
+                val mindmapQuizIds = mindmapQuizIdsDeferred.await()
 
-            // 1. Apply Main Filter
-            filteredList = when (mainFilter) {
-                "Summary" -> filteredList.filter { it.summaryEnabled }
-                "Question" -> filteredList.filter { it.questionsEnabled }
-                "Mindmap" -> filteredList.filter { mindmapQuizIds.contains(it.id) }
-                else -> filteredList // "All"
-            }
-
-            // 2. Apply Sub Filter (only if Main Filter is "Question")
-            if (mainFilter == "Question") {
-                filteredList = when (subFilter) {
-                    "InProgress" -> filteredList.filter { quiz ->
-                        val progress = progressMap[quiz.id]
-                        progress != null && progress.completionTime == 0L
-                    }
-                    "Completed" -> filteredList.filter { quiz ->
-                        val progress = progressMap[quiz.id]
-                        progress != null && progress.completionTime > 0L
-                    }
-                    else -> filteredList // "All" questions
+                // 2. Apply Main Filter
+                filteredList = when (mainFilter) {
+                    "Summary" -> filteredList.filter { quiz: Quiz -> quiz.summaryEnabled }
+                    "Question" -> filteredList.filter { quiz: Quiz -> quiz.questionsEnabled }
+                    "Mindmap" -> filteredList.filter { quiz: Quiz -> mindmapQuizIds.contains(quiz.id) }
+                    else -> filteredList // "All" or other main filters
                 }
-            }
 
-            // 3. Apply Search Query
-            if (searchQuery.isNotEmpty()) {
-                filteredList = filteredList.filter { quiz ->
-                    quiz.title.lowercase().contains(searchQuery) ||
-                    quiz.description.lowercase().contains(searchQuery) == true // Optional: search description too
+                // 3. Apply Sub Filter (only if Main Filter is "Question")
+                if (mainFilter == "Question") {
+                    filteredList = when (subFilter) {
+                        "InProgress" -> filteredList.filter { quiz: Quiz ->
+                            val progress = progressMap[quiz.id]
+                            progress != null && progress.completionTime == 0L
+                        }
+
+                        "Completed" -> filteredList.filter { quiz: Quiz ->
+                            val progress = progressMap[quiz.id]
+                            progress != null && progress.completionTime > 0L
+                        }
+
+                        else -> filteredList // "All" questions
+                    }
                 }
-            }
 
-            // Update the state with the final filtered list
-            _state.update {
-                it.copy(
-                    quizzes = filteredList,
-                    isLoading = false,
-                    networkRestricted = false // Reset network restricted flag if data is loaded
-                )
+                // 4. Apply Search Query
+                if (searchQuery.isNotEmpty()) {
+                    filteredList = filteredList.filter { quiz: Quiz ->
+                        quiz.title.lowercase().contains(searchQuery) ||
+                                (quiz.description?.lowercase()
+                                    ?.contains(searchQuery) == true) // Safe call for nullable description
+                    }
+                }
+
+                // Update the state with the final filtered list
+                _state.update {
+                    it.copy(
+                        quizzes = filteredList,
+                        isLoading = false,
+                        networkRestricted = false // Reset network restricted flag if data is loaded
+                    )
+                }
+            } catch (e: Exception) {
+                // Handle potential errors during data fetching or filtering
+                _state.update { it.copy(isLoading = false, quizzes = emptyList()) }
+                // Optionally log the error e.g., Log.e("HomeViewModel", "Error applying filters", e)
             }
         }
     }
@@ -226,6 +215,57 @@ class HomeViewModel @Inject constructor(
         if (!isCurrentlyExpanded && !currentState.quizStatsCache.containsKey(quizId)) {
             loadQuizStats(quizId)
         }
+    }
+
+    /**
+     * Updates the search query for filtering tags within the bottom sheet.
+     */
+    fun updateTagSearchQuery(query: String) {
+        _state.update { it.copy(tagSearchQuery = query) }
+        // No need to trigger applyFiltersAndSearch here, filtering happens in UI/BottomSheet
+    }
+
+    /**
+     * Toggle the visibility of the tag filter bottom sheet.
+     */
+    fun toggleTagSheet() {
+        _state.update { currentState ->
+            currentState.copy(isTagSheetVisible = !currentState.isTagSheetVisible)
+        }
+    }
+
+    /**
+     * Select or deselect a tag for filtering.
+     */
+    fun selectTagFilter(tagId: Long) {
+        _state.update { currentState ->
+            val newSelectedTagIds = currentState.selectedTagIds.toMutableSet()
+            if (newSelectedTagIds.contains(tagId)) {
+                newSelectedTagIds.remove(tagId)
+            } else {
+                newSelectedTagIds.add(tagId)
+            }
+            currentState.copy(
+                selectedTagIds = newSelectedTagIds,
+                isLoading = true // Show loading indicator while filtering
+            )
+        }
+        // Apply filters with the updated tag selection
+        applyFiltersAndSearch()
+    }
+
+    /**
+     * Clear all selected tag filters.
+     */
+    fun clearTagFilters() {
+        _state.update { currentState ->
+            currentState.copy(
+                selectedTagIds = emptySet(),
+                isLoading = true // Show loading indicator while filtering
+            )
+        }
+        // Apply filters with cleared tag selection
+        applyFiltersAndSearch()
     }
 
     // Load statistics for a quiz using the GetQuizStatsUseCase

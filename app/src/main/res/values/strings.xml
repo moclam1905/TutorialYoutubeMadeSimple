@@ -77,6 +77,18 @@
     <string name="youtube_url_example">Example: https://youtu.be/VIDEO_ID</string>
     <string name="number_of_questions_label">Number of questions (1–50)</string>
     
+    <!-- Tag Filter -->
+    <string name="filter_by_tags">Filter by tags</string>
+    <string name="clear_tag_filters">Clear tag filters</string>
+    <string name="no_tags_available">No tags available</string>
+    <string name="tag_filter_button">Filter Tags</string>
+    <string name="tag_filter_dialog_title">Select Tags</string>
+    <string name="tag_filter_clear_all">Clear All</string>
+    <string name="tag_filter_apply">Apply Filters</string>
+    <string name="tag_filter_selected_count">%1$d tags selected</string>
+    <string name="tag_filter_no_results">No matching tags found</string>
+    <string name="search_tags_placeholder">Search tags…</string>
+    
     <!-- Tab Labels -->
     <string name="dashboard_tab">Dashboard</string>
     <string name="materials_tab">Materials</string>

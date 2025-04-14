@@ -77,6 +77,18 @@
     <string name="youtube_url_example">Ví dụ: https://youtu.be/VIDEO_ID</string>
     <string name="number_of_questions_label">Số lượng câu hỏi (1–50)</string>
 
+    <!-- Tag Filter -->
+    <string name="filter_by_tags">Lọc theo thẻ</string>
+    <string name="clear_tag_filters">Xóa bộ lọc thẻ</string>
+    <string name="no_tags_available">Không có thẻ nào</string>
+    <string name="tag_filter_button">Lọc thẻ</string>
+    <string name="tag_filter_dialog_title">Chọn thẻ</string>
+    <string name="tag_filter_clear_all">Xóa tất cả</string>
+    <string name="tag_filter_apply">Áp dụng bộ lọc</string>
+    <string name="tag_filter_selected_count">Đã chọn %1$d thẻ</string>
+    <string name="tag_filter_no_results">Không tìm thấy thẻ phù hợp</string>
+    <string name="search_tags_placeholder">Tìm kiếm thẻ…</string>
+
     <!-- Tab Labels -->
     <string name="dashboard_tab">Bảng điều khiển</string>
     <string name="materials_tab">Tài liệu</string>
