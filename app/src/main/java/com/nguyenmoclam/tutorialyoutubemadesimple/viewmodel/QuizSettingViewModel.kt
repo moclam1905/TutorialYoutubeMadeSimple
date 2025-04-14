@@ -49,7 +49,7 @@ class QuizSettingViewModel @Inject constructor(
     private val reminderScheduler: ReminderScheduler // Inject ReminderScheduler
 ) : ViewModel() {
 
-    private val quizId: Long = savedStateHandle.get<String>("quizId")?.toLongOrNull() ?: -1L
+    private val quizId: Long = savedStateHandle.get<Long>("quizId") ?: -1L
 
     private val _uiState = MutableStateFlow(QuizSettingUiState())
     val uiState: StateFlow<QuizSettingUiState> = _uiState.asStateFlow()

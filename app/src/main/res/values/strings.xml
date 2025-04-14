@@ -335,6 +335,12 @@
     <string name="no_available_tags">No other tags available.</string>
     <string name="reset_settings">Reset Changes</string>
     <string name="save_settings">Save Changes</string>
+    <string name="see_more">See more</string>
+    <string name="see_less">See less</string>
+    <string name="permission_rationale_title">Notification Permission Needed</string>
+    <string name="permission_rationale_message">To schedule reminders for this quiz, the app needs permission to send notifications. Please grant this permission.</string>
+    <string name="permission_rationale_confirm">Grant Permission</string>
+    <string name="permission_denied_snackbar">Notification permission denied. Reminders cannot be scheduled.</string>
 
     <!-- Reminder Worker -->
     <string name="reminder_channel_name">Quiz Reminders</string>
