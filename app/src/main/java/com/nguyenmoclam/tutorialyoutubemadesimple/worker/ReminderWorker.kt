@@ -1,6 +1,5 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.worker
 
-
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -35,30 +34,43 @@ class ReminderWorker @AssistedInject constructor(
         const val KEY_QUIZ_TITLE = "quiz_title" // Pass title directly to avoid DB query in worker
         private const val CHANNEL_ID = "quiz_reminder_channel"
         private const val NOTIFICATION_ID_BASE = 1000 // Base ID to avoid conflicts
+        private const val TAG = "ReminderWorker" // Add a TAG for logging
     }
 
     override suspend fun doWork(): Result { // Use ListenableWorker.Result
+        Log.d(TAG, "doWork started for worker with id: $id") // Log worker start
         val quizId = inputData.getLong(KEY_QUIZ_ID, -1L)
         val quizTitle = inputData.getString(KEY_QUIZ_TITLE) ?: "a quiz" // Default title
+        Log.d(TAG, "Processing reminder for quizId: $quizId, title: '$quizTitle'")
 
         if (quizId == -1L) {
+            Log.e(TAG, "Invalid quizId (-1), failing worker.")
+            return Result.failure()
             return Result.failure()
         }
 
-        // Create notification channel (required for Android O and above)
-        createNotificationChannel()
+        try { // Wrap core logic in try-catch for better error logging
+            // Create notification channel (required for Android O and above)
+            createNotificationChannel()
 
-        // Build the notification
-        showNotification(quizId, quizTitle)
+            // Build the notification
+            Log.d(TAG, "Attempting to show notification for quizId: $quizId")
+            showNotification(quizId, quizTitle)
 
-        return Result.success()
+            Log.d(TAG, "doWork finished successfully for quizId: $quizId")
+            return Result.success()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during doWork for quizId: $quizId", e)
+            return Result.failure()
+        }
     }
 
     private fun createNotificationChannel() {
         // Create the NotificationChannel
         val name = applicationContext.getString(R.string.reminder_channel_name)
         val descriptionText = applicationContext.getString(R.string.reminder_channel_description)
-        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        // Set importance to HIGH to enable heads-up display
+        val importance = NotificationManager.IMPORTANCE_HIGH
         val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
             description = descriptionText
         }
@@ -70,21 +82,28 @@ class ReminderWorker @AssistedInject constructor(
     }
 
     private fun showNotification(quizId: Long, quizTitle: String) {
-        // Intent to open the app, potentially navigating to the specific quiz
+        Log.d(
+            TAG,
+            "showNotification called for quizId: $quizId - Reverting to open MainActivity directly."
+        )
+
+        // Create a simple Intent to launch MainActivity
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            // Optional: Add extra data to navigate to the specific quiz detail screen
-            // Ensure the key matches what MainActivity expects for deep linking
-            putExtra("deep_link_quiz_id", quizId)
+            // Standard flags to bring existing task to front or start new one
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
+        Log.d(TAG, "Created intent for MainActivity: $intent")
+
         // Use FLAG_IMMUTABLE for PendingIntent
         val pendingIntentFlag =
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        // Create PendingIntent using getActivity without special options
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
             applicationContext,
-            quizId.toInt(), // Use quizId for unique request code
+            quizId.toInt(), // Use quizId for unique request code still
             intent,
             pendingIntentFlag
+            // No ActivityOptions bundle needed
         )
 
         val notificationTitle = applicationContext.getString(R.string.reminder_notification_title)
@@ -94,9 +113,11 @@ class ReminderWorker @AssistedInject constructor(
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground) // Ensure this drawable exists
             .setContentTitle(notificationTitle)
+            .setSmallIcon(android.R.drawable.ic_popup_reminder) // Use a proper notification icon (assuming it exists/will be created)
             .setContentText(notificationText)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // Set high priority for heads-up
+            .setCategory(NotificationCompat.CATEGORY_REMINDER) // Keep category for consistency
+            .setContentIntent(pendingIntent) // Standard tap action
             .setAutoCancel(true) // Dismiss notification when tapped
 
         // Check for notification permission before showing (Android 13+)
@@ -122,7 +143,16 @@ class ReminderWorker @AssistedInject constructor(
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
+                Log.d(
+                    TAG,
+                    "Permission granted, showing notification with id: $uniqueNotificationId for quizId: $quizId"
+                )
                 notify(uniqueNotificationId, builder.build())
+            } else {
+                Log.w(
+                    TAG,
+                    "Permission check failed just before notify for quizId: $quizId"
+                ) // Should not happen due to earlier check, but log just in case
             }
         }
     }

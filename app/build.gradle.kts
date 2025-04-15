@@ -97,8 +97,9 @@ dependencies {
     // Hilt dependencies
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
-    implementation ("androidx.hilt:hilt-work:1.2.0")
+    implementation (libs.androidx.hilt.work)
 
     // Room dependencies
     implementation(libs.androidx.room.runtime)
@@ -118,7 +119,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
 
     // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.10.0")// Add WorkManager KTX
+    implementation(libs.androidx.work.runtime.ktx)// Add WorkManager KTX
 
     // Coil
     implementation(libs.coil.compose)
