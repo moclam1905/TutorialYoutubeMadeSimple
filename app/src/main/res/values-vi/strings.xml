@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TutorialYoutubeMadeSimple</string>
+    <string name="app_name">InsightTube</string>
 
     <!-- Error messages -->
     <string name="error_invalid_url">URL/ID video không hợp lệ.</string>
