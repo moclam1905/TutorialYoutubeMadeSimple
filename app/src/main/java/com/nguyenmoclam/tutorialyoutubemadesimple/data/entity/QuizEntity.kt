@@ -11,7 +11,7 @@ import androidx.room.PrimaryKey
 data class QuizEntity(
     @PrimaryKey(autoGenerate = true)
     val quizId: Long = 0,
-    
+
     val title: String,
     val description: String,
     val videoUrl: String,
@@ -22,5 +22,6 @@ data class QuizEntity(
     val summaryEnabled: Boolean,
     val questionsEnabled: Boolean,
     val lastUpdated: Long, // Timestamp in milliseconds
-    val localThumbnailPath: String? = null // Path to locally stored thumbnail
+    val localThumbnailPath: String? = null, // Path to locally stored thumbnail
+    val reminderInterval: Long? = null // Interval in milliseconds, null or 0 means disabled
 )

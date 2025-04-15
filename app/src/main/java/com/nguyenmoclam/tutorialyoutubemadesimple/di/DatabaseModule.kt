@@ -11,6 +11,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizResultDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.SummaryDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TagDao // Import TagDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TopicDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptSegmentDao
@@ -147,5 +148,16 @@ object DatabaseModule {
     @Provides
     fun provideTranscriptSegmentDao(database: AppDatabase): TranscriptSegmentDao {
         return database.transcriptSegmentDao()
+    }
+
+    /**
+     * Provides the TagDao instance.
+     *
+     * @param database The AppDatabase instance
+     * @return The TagDao instance
+     */
+    @Provides
+    fun provideTagDao(database: AppDatabase): TagDao {
+        return database.tagDao()
     }
 }

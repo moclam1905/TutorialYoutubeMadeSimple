@@ -14,6 +14,7 @@ import androidx.navigation.navArgument
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.CreateQuizScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.HomeScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizSettingScreen // Add import
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.VideoPlayerWithTranscriptScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
@@ -75,6 +76,14 @@ fun AppNavigation(
                 quizViewModel = quizViewModel
             )
         }
+        // Quiz Setting Screen
+        composable(
+            route = AppScreens.QuizSetting.route + "/{quizId}",
+            arguments = listOf(navArgument("quizId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            // ViewModel will handle extracting quizId from SavedStateHandle
+            QuizSettingScreen(navController = navController)
+        }
         // Video Player with Transcript Screen
         composable(
             route = AppScreens.VideoPlayer.route + "/{quizId}/{videoUrl}",
@@ -102,6 +111,7 @@ sealed class AppScreens(val route: String) {
     object CreateQuiz : AppScreens("create_quiz")
     object Settings : AppScreens("settings")
     object QuizDetail : AppScreens("quiz_detail")
+    object QuizSetting : AppScreens("quiz_setting") // Add QuizSetting screen
     object VideoPlayer : AppScreens("video_player")
 
     fun withArgs(vararg args: String): String {

@@ -7,6 +7,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.SummaryDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuestionDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TagDao // Add TagDao import
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TopicDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptSegmentDao
@@ -17,6 +18,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.MindMapMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.QuestionMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.QuizMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.SummaryMapper
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.TagMapper // Add TagMapper import
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.TopicMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.TranscriptMapper
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.mapper.TranscriptSegmentMapper
@@ -26,7 +28,9 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Summary
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Transcript
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.TranscriptSegment
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizTagCrossRef // Add missing import
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.tag.Tag // Add Tag import
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.TimeUtils
@@ -53,6 +57,7 @@ class QuizRepositoryImpl @Inject constructor(
     private val keyPointDao: KeyPointDao,
     private val mindMapDao: MindMapDao,
     private val transcriptSegmentDao: TranscriptSegmentDao,
+    private val tagDao: TagDao, // Inject TagDao
     private val networkUtils: NetworkUtils,
     private val offlineDataManager: OfflineDataManager
 ) : QuizRepository {
@@ -747,5 +752,108 @@ class QuizRepositoryImpl @Inject constructor(
         }
 
         return segments
+    }
+
+    // --- Quiz Settings Implementation ---
+
+    // Add lastUpdated parameter to match interface and DAO call
+    override suspend fun updateQuizTitleDescription(quizId: Long, title: String, description: String, lastUpdated: Long) {
+        quizDao.updateQuizTitleDescription(quizId, title, description, lastUpdated)
+    }
+
+    // Add lastUpdated parameter to match interface and DAO call
+    override suspend fun updateQuizReminderInterval(quizId: Long, reminderInterval: Long?, lastUpdated: Long) {
+        quizDao.updateQuizReminderInterval(quizId, reminderInterval, lastUpdated)
+    }
+
+    // --- Tag Implementation ---
+
+    override fun getAllTags(): Flow<List<Tag>> {
+        return tagDao.getAllTags().map { TagMapper.listToDomain(it) }
+    }
+
+    override fun getAllTagsWithCount(): Flow<List<com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.tag.TagWithCount>> {
+        return tagDao.getTagsWithQuizCount().map { list ->
+            list.map { tagWithCountEntity ->
+                com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.tag.TagWithCount(
+                    tag = TagMapper.toDomain(tagWithCountEntity.tag),
+                    quizCount = tagWithCountEntity.quizCount
+                )
+            }
+        }
+    }
+
+    override fun getTagsForQuiz(quizId: Long): Flow<List<Tag>> {
+        return tagDao.getTagsForQuiz(quizId).map { TagMapper.listToDomain(it) }
+    }
+    
+    // Removed duplicate getAllTags() function
+    
+    override fun getFilteredQuizzes(selectedTagIds: Set<Long>): Flow<List<Quiz>> {
+        val quizFlow = if (selectedTagIds.isEmpty()) {
+            quizDao.getAllQuizzes() // Get all quizzes if no tags selected
+        } else {
+            quizDao.getQuizzesWithAnyOfTags(selectedTagIds) // Correct: Use quizDao to get quizzes by tags
+        }
+        return quizFlow.map { entities -> entities.map { QuizMapper.toDomain(it) } }
+    }
+    
+    override fun getQuizzesForTag(tagId: Long): Flow<List<Quiz>> {
+        // Specify type explicitly for map lambda
+        return tagDao.getQuizzesForTag(tagId).map { entities: List<com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizEntity> ->
+            entities.map { QuizMapper.toDomain(it) }
+        }
+    }
+    /**
+     * Helper function to get a tag by name or create it if it doesn't exist.
+     * Returns the ID of the tag.
+     */
+    private suspend fun getOrCreateTag(tagName: String): Long {
+        val existingTag = getTagByName(tagName)
+        return if (existingTag != null) {
+            existingTag.id
+        } else {
+            // Create a new Tag object (ID will be auto-generated by Room)
+            val newTag = Tag(name = tagName.trim())
+            insertTag(newTag) // insertTag handles getting the ID if it already exists concurrently
+        }
+    }
+    
+    override suspend fun addTagToQuiz(quizId: Long, tagName: String): Long {
+        // First, get or create the tag
+        val tagId = getOrCreateTag(tagName) // Use the helper function
+        
+        // Then create the cross reference
+        val crossRef = QuizTagCrossRef(quizId = quizId, tagId = tagId)
+        tagDao.insertQuizTagCrossRef(crossRef)
+        
+        return tagId
+    }
+    
+    override suspend fun removeTagFromQuiz(quizId: Long, tagId: Long) {
+        tagDao.deleteQuizTagCrossRef(quizId, tagId)
+    }
+
+    override suspend fun updateTagsForQuiz(quizId: Long, tags: List<Tag>) {
+        // Convert domain tags to entities before passing to DAO
+        val tagEntities = TagMapper.listToEntity(tags)
+        tagDao.updateTagsForQuiz(quizId, tagEntities)
+    }
+
+    override suspend fun insertTag(tag: Tag): Long {
+        // Convert domain tag to entity
+        val tagEntity = TagMapper.toEntity(tag)
+        // Insert and get the ID (or -1 if ignored)
+        val insertedId = tagDao.insertTag(tagEntity)
+        // If ignored (tag exists), fetch the existing tag's ID
+        return if (insertedId == -1L) {
+            tagDao.getTagByName(tag.name)?.tagId ?: -1L // Return existing ID or -1 if fetch fails
+        } else {
+            insertedId // Return newly inserted ID
+        }
+    }
+
+     override suspend fun getTagByName(name: String): Tag? {
+        return tagDao.getTagByName(name)?.let { TagMapper.toDomain(it) }
     }
 }

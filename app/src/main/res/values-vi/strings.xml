@@ -1,29 +1,29 @@
 <resources>
-    <string name="app_name">TutorialYoutubeMadeSimple</string>
+    <string name="app_name">InsightTube</string>
 
-    <!-- Thông báo lỗi -->
+    <!-- Error messages -->
     <string name="error_invalid_url">URL/ID video không hợp lệ.</string>
     <string name="error_no_summary">Không nhận được kết quả tóm tắt.</string>
     <string name="error_no_transcript">Không tìm thấy bản ghi cho video này.</string>
     <string name="error_generic">Đã xảy ra lỗi trong quá trình tóm tắt.</string>
-    <string name="error_export_file">Lỗi khi xuất tệp: %1$s</string>
+    <string name="error_export_file">Lỗi xuất tệp: %1$s</string>
     <string name="error_video_not_found">Không tìm thấy video. Vui lòng kiểm tra xem video có tồn tại không.</string>
-    <string name="error_transcripts_disabled">Bản ghi đã bị vô hiệu hóa cho video này.</string>
+    <string name="error_transcripts_disabled">Bản ghi bị tắt cho video này.</string>
     <string name="error_network">Lỗi mạng. Vui lòng kiểm tra kết nối của bạn.</string>
-    <string name="error_language_not_found">Không có bản ghi trong ngôn ngữ được hỗ trợ.</string>
+    <string name="error_language_not_found">Không có bản ghi bằng ngôn ngữ được hỗ trợ.</string>
 
-    <!-- Giá trị mặc định -->
+    <!-- Default values -->
     <string name="default_no_title">(Không có tiêu đề)</string>
 
-    <!-- Hộp thoại chia sẻ -->
+    <!-- Share dialog -->
     <string name="share_dialog_title">Chia sẻ tóm tắt qua…</string>
 
-    <!-- Nhãn đầu vào -->
+    <!-- Input labels -->
     <string name="input_url_label">Nhập URL hoặc ID YouTube</string>
     <string name="input_url_placeholder">Ví dụ: https://youtu.be/VIDEO_ID</string>
 
-    <!-- Nhãn nút -->
-    <string name="summarize_button">Tóm tắt video</string>
+    <!-- Button labels -->
+    <string name="summarize_button">Tóm tắt Video</string>
     <string name="back_button">Quay lại</string>
     <string name="export_share_button">Xuất HTML và Chia sẻ</string>
     <string name="retry_button">Thử lại</string>
@@ -31,135 +31,148 @@
     <string name="cancel_button">Hủy</string>
     <string name="apply_button">Áp dụng</string>
     <string name="exit_button">Thoát</string>
-    <string name="continue_quiz_button">Tiếp tục bài kiểm tra</string>
-    <string name="start_quiz_button">Bắt đầu bài kiểm tra</string>
-    <string name="retry_quiz_button">Làm lại bài kiểm tra</string>
-    <string name="next_question_button">Câu hỏi tiếp theo</string>
-    <string name="skip_question_button">Bỏ qua câu hỏi</string>
+    <string name="continue_quiz_button">Tiếp tục Quiz</string>
+    <string name="start_quiz_button">Bắt đầu Quiz</string>
+    <string name="retry_quiz_button">Chơi lại Quiz</string>
+    <string name="next_question_button">Câu tiếp theo</string>
+    <string name="skip_question_button">Bỏ qua câu</string>
     <string name="submit_answer_button">Nộp câu trả lời</string>
 
-    <!-- Trạng thái tải -->
+    <!-- Loading states -->
     <string name="loading_summary">Đang tóm tắt…</string>
 
-    <!-- Các bước xử lý -->
-    <string name="step_fetch_metadata">Đang lấy thông tin video từ YouTube API…</string>
-    <string name="step_process_transcript">Đang lấy và xử lý bản ghi video…</string>
+    <!-- Processing steps -->
+    <string name="step_fetch_metadata">Đang lấy siêu dữ liệu video từ YouTube API…</string>
+    <string name="step_process_transcript">Đang truy xuất và xử lý bản ghi video…</string>
     <string name="step_summary">Đang trích xuất và xử lý chủ đề bằng LLM…</string>
     <string name="step_questions">Đang xử lý nội dung câu hỏi…</string>
-    <string name="step_create_quiz">Đang tạo nội dung bài kiểm tra…</string>
+    <string name="step_create_quiz">Đang xử lý nội dung quiz…</string>
 
-    <!-- Hộp thoại thoát -->
-    <string name="exit_dialog_title">Thoát tóm tắt</string>
-    <string name="exit_dialog_message">Bạn có chắc chắn muốn thoát không? Tiến trình của bạn sẽ bị mất.</string>
-    <string name="exit_dialog_confirm">Đồng ý, Thoát</string>
+    <!-- Exit Dialog -->
+    <string name="exit_dialog_title">Thoát Tóm tắt</string>
+    <string name="exit_dialog_message">Bạn có chắc muốn thoát không? Tiến trình của bạn sẽ bị mất.</string>
+    <string name="exit_dialog_confirm">Có, Thoát</string>
     <string name="exit_dialog_cancel">Hủy</string>
 
-    <!-- Hộp thoại bài kiểm tra -->
-    <string name="exit_quiz_dialog_title">Thoát bài kiểm tra?</string>
-    <string name="exit_quiz_dialog_message">Nếu bạn thoát ngay bây giờ, tiến trình sẽ được lưu nhưng bộ đếm thời gian sẽ được đặt lại khi bạn quay lại.</string>
-    <string name="delete_quiz_dialog_title">Xóa bài kiểm tra</string>
-    <string name="delete_quiz_dialog_message">Bạn có chắc chắn muốn xóa bài kiểm tra này?</string>
-    <string name="theme_change_dialog_title">Xác nhận thay đổi theme</string>
-    <string name="theme_change_dialog_message">Bạn có muốn thay đổi theme? Thay đổi sẽ được áp dụng ngay lập tức.</string>
+    <!-- Quiz Dialog -->
+    <string name="exit_quiz_dialog_title">Thoát Quiz?</string>
+    <string name="exit_quiz_dialog_message">Nếu bạn thoát bây giờ, tiến trình sẽ được lưu nhưng bộ đếm thời gian sẽ được đặt lại khi bạn quay lại.</string>
+    <string name="delete_quiz_dialog_title">Xóa Quiz</string>
+    <string name="delete_quiz_dialog_message">Bạn có chắc muốn xóa quiz này không?</string>
+    <string name="theme_change_dialog_title">Xác nhận thay đổi giao diện</string>
+    <string name="theme_change_dialog_message">Bạn có muốn thay đổi giao diện không? Các thay đổi sẽ được áp dụng ngay lập tức.</string>
 
-    <!-- Tiêu đề màn hình -->
+
+    <!-- Screen Titles -->
     <string name="settings_title">Cài đặt</string>
-    <string name="learning_hub_title">Trung tâm học tập</string>
-    <string name="create_quiz_title">Tạo bài kiểm tra</string>
-    <string name="quiz_details_title">Chi tiết bài kiểm tra</string>
-    <string name="reset_settings_title">Đặt lại tất cả cài đặt</string>
-    <string name="reset_settings_message">Bạn có chắc chắn muốn đặt lại tất cả cài đặt về mặc định? Hành động này không thể hoàn tác.</string>
+    <string name="learning_hub_title">Trung tâm Học tập</string>
+    <string name="create_quiz_title">Tạo Quiz</string>
+    <string name="quiz_details_title">Chi tiết Quiz</string>
+    <string name="reset_settings_title">Đặt lại Tất cả Cài đặt</string>
+    <string name="reset_settings_message">Bạn có chắc muốn đặt lại tất cả cài đặt về giá trị mặc định không? Hành động này không thể hoàn tác.</string>
 
-    <!-- Trường nhập -->
+    <!-- Input Fields -->
     <string name="search_placeholder">Tìm kiếm thử thách…</string>
-    <string name="enter_youtube_url">Nhập URL video YouTube</string>
+    <string name="enter_youtube_url">Nhập URL Video YouTube</string>
     <string name="youtube_url_example">Ví dụ: https://youtu.be/VIDEO_ID</string>
-    <string name="number_of_questions_label">Số câu hỏi (1–50)</string>
+    <string name="number_of_questions_label">Số lượng câu hỏi (1–50)</string>
 
-    <!-- Nhãn Tab -->
+    <!-- Tag Filter -->
+    <string name="filter_by_tags">Lọc theo thẻ</string>
+    <string name="clear_tag_filters">Xóa bộ lọc thẻ</string>
+    <string name="no_tags_available">Không có thẻ nào</string>
+    <string name="tag_filter_button">Lọc thẻ</string>
+    <string name="tag_filter_dialog_title">Chọn thẻ</string>
+    <string name="tag_filter_clear_all">Xóa tất cả</string>
+    <string name="tag_filter_apply">Áp dụng bộ lọc</string>
+    <string name="tag_filter_selected_count">Đã chọn %1$d thẻ</string>
+    <string name="tag_filter_no_results">Không tìm thấy thẻ phù hợp</string>
+    <string name="search_tags_placeholder">Tìm kiếm thẻ…</string>
+
+    <!-- Tab Labels -->
     <string name="dashboard_tab">Bảng điều khiển</string>
     <string name="materials_tab">Tài liệu</string>
     <string name="summary_tab">Tóm tắt</string>
     <string name="questions_tab">Câu hỏi</string>
     <string name="settings_tab">Cài đặt</string>
 
-    <!-- Nhãn nội dung -->
-    <string name="select_language">Chọn ngôn ngữ:</string>
-    <string name="select_output_content">Chọn nội dung xuất:</string>
-    <string name="generate_summary">Tạo tóm tắt</string>
-    <string name="generate_questions">Tạo câu hỏi</string>
+    <!-- Content Labels -->
+    <string name="select_language">Chọn Ngôn ngữ:</string>
+    <string name="select_output_content">Chọn Nội dung Đầu ra:</string>
+    <string name="generate_summary">Tạo Tóm tắt</string>
+    <string name="generate_questions">Tạo Câu hỏi</string>
     <string name="no_summary_available">Không có tóm tắt</string>
     <string name="no_questions_available">Không có câu hỏi</string>
 
-    <!-- Cài đặt -->
-    <string name="question_order">Thứ tự câu hỏi</string>
-    <string name="maximum_retry_count">Số lần thử tối đa: %1$d</string>
-    <string name="show_answer_after_wrong">Hiển thị đáp án sau khi trả lời sai</string>
-    <string name="auto_next_question">Tự động chuyển câu hỏi tiếp theo</string>
+    <!-- Settings Labels -->
+    <string name="question_order">Thứ tự Câu hỏi</string>
+    <string name="maximum_retry_count">Số lần thử lại tối đa: %1$d</string>
+    <string name="show_answer_after_wrong">Hiển thị Đáp án Sau Khi Sai</string>
+    <string name="auto_next_question">Tự động Chuyển Câu hỏi</string>
     <string name="google_account">Tài khoản Google</string>
-    <string name="transcript_mode">Chế độ bản ghi</string>
-    <string name="storage_usage">Dung lượng đã sử dụng</string>
-    <string name="clear_cache">Xóa bộ nhớ đệm</string>
-    <string name="data_saver_mode">Chế độ tiết kiệm dữ liệu</string>
-    <string name="connection_type">Loại kết nối</string>
+    <string name="transcript_mode">Chế độ Bản ghi</string>
+    <string name="storage_usage">Sử dụng Bộ nhớ</string>
+    <string name="storage_used">Đã dùng: %1$s</string>
+    <string name="quizzes_count">Số lượng Quiz: %1$d</string>
+    <string name="clear_quiz_history">Xóa Lịch sử Quiz</string>
+    <string name="reset_learning_progress">Đặt lại Tiến trình Học</string>
+    <string name="clear_cache">Xóa Bộ nhớ đệm</string>
+    <string name="data_saver_mode">Chế độ Tiết kiệm Dữ liệu</string>
+    <string name="connection_type">Loại Kết nối</string>
+    <string name="connection_timeout">Thời gian chờ Kết nối: %1$d giây</string>
+    <string name="retry_policy">Chính sách Thử lại</string>
+    <string name="app_version">Phiên bản: %1$s</string>
+    <string name="github_repository">Kho lưu trữ GitHub</string>
+    <string name="privacy_policy">Chính sách Bảo mật</string>
+    <string name="contact_information">Thông tin Liên hệ</string>
+    <string name="license_information">Thông tin Giấy phép</string>
 
-    <!-- Kết quả bài kiểm tra -->
-    <string name="quiz_results_title">Kết quả bài kiểm tra</string>
+    <!-- Quiz Results -->
+    <string name="quiz_results_title">Kết quả Quiz</string>
     <string name="quiz_results_correct">Đúng</string>
     <string name="quiz_results_incorrect">Sai</string>
     <string name="quiz_results_skipped">Bỏ qua</string>
     <string name="quiz_completion_time">Thời gian hoàn thành: %1$s</string>
-
-    <string name="storage_used">Đã sử dụng: %1$s</string>
-    <string name="quizzes_count">Số bài kiểm tra: %1$d</string>
-    <string name="clear_quiz_history">Xóa lịch sử bài kiểm tra</string>
-    <string name="reset_learning_progress">Đặt lại tiến trình học tập</string>
-    <string name="connection_timeout">Thời gian chờ kết nối: %1$d giây</string>
-    <string name="retry_policy">Chính sách thử lại</string>
-    <string name="app_version">Phiên bản: %1$s</string>
-    <string name="github_repository">Kho GitHub</string>
-    <string name="privacy_policy">Chính sách bảo mật</string>
-    <string name="contact_information">Thông tin liên hệ</string>
-    <string name="license_information">Thông tin giấy phép</string>
-    <string name="quiz_ready_to_start">Sẵn sàng bắt đầu bài kiểm tra</string>
-    <string name="quiz_question_count">Bài kiểm tra này bao gồm %1$d câu hỏi.</string>
+    <string name="quiz_ready_to_start">Sẵn sàng Bắt đầu Quiz</string>
+    <string name="quiz_question_count">Quiz này có %1$d câu hỏi.</string>
     <string name="quiz_time_tracking_info">Thời gian của bạn sẽ được theo dõi từ khi bắt đầu cho đến khi hoàn thành tất cả câu hỏi.</string>
-    <string name="quiz_complete_message">Hoàn thành bài kiểm tra để xem kết quả của bạn.</string>
-    <string name="quiz_correct_questions">Câu trả lời đúng</string>
-    <string name="quiz_incorrect_questions">Câu trả lời sai</string>
-    <string name="quiz_skipped_questions">Câu hỏi bị bỏ qua</string>
+    <string name="quiz_complete_message">Hoàn thành quiz để xem kết quả của bạn.</string>
+    <string name="quiz_correct_questions">Câu hỏi Đúng</string>
+    <string name="quiz_incorrect_questions">Câu hỏi Sai</string>
+    <string name="quiz_skipped_questions">Câu hỏi Bỏ qua</string>
 
     <string name="signed_in">Đã đăng nhập</string>
     <string name="not_signed_in">Chưa đăng nhập</string>
     <string name="sign_out">Đăng xuất</string>
     <string name="sign_in">Đăng nhập</string>
-    <string name="clear_account_data">Xóa dữ liệu tài khoản</string>
+    <string name="clear_account_data">Xóa Dữ liệu Tài khoản</string>
     <string name="connected">Đã kết nối</string>
     <string name="no_connection">Không có kết nối</string>
+
     <string name="reduce_data_usage">Giảm sử dụng dữ liệu bằng cách tải nội dung chất lượng thấp hơn</string>
-    <string name="allow_mobile_data">Cho phép sử dụng dữ liệu di động</string>
-    <string name="wifi_only">Chỉ sử dụng Wi-Fi</string>
-    <string name="mobile_data_only">Chỉ dữ liệu di động</string>
-    <string name="no_retry">Không thử lại</string>
-    <string name="linear_backoff">Lùi tuyến tính</string>
-    <string name="exponential_backoff">Lùi hàm mũ</string>
+    <string name="allow_mobile_data">Cho phép Dữ liệu Di động</string>
+    <string name="wifi_only">Chỉ Wi-Fi</string>
+    <string name="mobile_data_only">Chỉ Dữ liệu Di động</string>
+    <string name="no_retry">Không Thử lại</string>
+    <string name="linear_backoff">Tuyến tính</string>
+    <string name="exponential_backoff">Luỹ thừa</string>
     <string name="english">Tiếng Anh</string>
-    <string name="system_default">Mặc định hệ thống</string>
+    <string name="system_default">Mặc định Hệ thống</string>
     <string name="vietnamese">Tiếng Việt</string>
-    <string name="light_mode">Chế độ sáng</string>
-    <string name="dark_mode">Chế độ tối</string>
+    <string name="light_mode">Chế độ Sáng</string>
+    <string name="dark_mode">Chế độ Tối</string>
     <string name="sequential">Tuần tự</string>
-    <string name="random_shuffle">Ngẫu nhiên (Trộn)</string>
-    <string name="use_google_account">Sử dụng tài khoản Google</string>
-    <string name="anonymous_mode">Chế độ ẩn danh</string>
-    <string name="question_number">Câu hỏi %1$d</string>
+    <string name="random_shuffle">Ngẫu nhiên (Xáo trộn)</string>
+    <string name="use_google_account">Sử dụng Tài khoản Google</string>
+    <string name="anonymous_mode">Chế độ Ẩn danh</string>
+    <string name="question_number">Câu %1$d</string>
     <string name="choose_language">Chọn ngôn ngữ để tạo nội dung dựa trên lựa chọn của người dùng</string>
-    <string name="question_type">Loại câu hỏi:</string>
+    <string name="question_type">Loại Câu hỏi:</string>
     <string name="multiple_choice">Trắc nghiệm</string>
     <string name="true_false">Đúng/Sai</string>
-    <string name="number_of_questions">Số lượng câu hỏi:</string>
-    <string name="auto_generate">Tự động tạo</string>
-    <string name="question_level">Mức độ câu hỏi:</string>
+    <string name="number_of_questions">Số lượng Câu hỏi:</string>
+    <string name="auto_generate">Tự động Tạo</string>
+    <string name="question_level">Mức độ Câu hỏi:</string>
     <string name="low">Thấp</string>
     <string name="five_questions">5–10 câu hỏi</string>
     <string name="medium">Trung bình</string>
@@ -168,137 +181,171 @@
     <string name="fifteen_questions">21–30 câu hỏi</string>
     <string name="manual">Thủ công</string>
     <string name="number_of_questions_range">Số lượng câu hỏi (1–20)</string>
-    <string name="step_1_enter_video">Bước 1: Nhập video YouTube</string>
-    <string name="step_2_configure_quiz">Bước 2: Cấu hình bài kiểm tra</string>
-    <string name="step_3_select_output">Bước 3: Chọn đầu ra</string>
-    <string name="enter_video">Nhập video</string>
+    <string name="step_1_enter_video">Bước 1: Nhập Video YouTube</string>
+    <string name="step_2_configure_quiz">Bước 2: Cấu hình Quiz</string>
+    <string name="step_3_select_output">Bước 3: Chọn Đầu ra</string>
+    <string name="enter_video">Nhập Video</string>
     <string name="configure">Cấu hình</string>
     <string name="output">Đầu ra</string>
-    <string name="language_change_title">Thay đổi ngôn ngữ</string>
-    <string name="language_change_message">Bạn có muốn thay đổi ngôn ngữ? Thay đổi sẽ được áp dụng ngay lập tức.</string>
+    <string name="language_change_title">Thay đổi Ngôn ngữ</string>
+    <string name="language_change_message">Bạn có muốn thay đổi ngôn ngữ không? Các thay đổi sẽ được áp dụng ngay lập tức.</string>
     <string name="confirm">Xác nhận</string>
     <string name="cancel">Hủy</string>
     <string name="next_button">Tiếp theo</string>
-    <string name="delete_quiz">Xóa bài kiểm tra</string>
-    <string name="delete_quiz_confirmation">Bạn có chắc chắn muốn xóa bài kiểm tra này?</string>
+    <string name="delete_quiz">Xóa Quiz</string>
+    <string name="delete_quiz_confirmation">Bạn có chắc muốn xóa quiz này không?</string>
     <string name="delete">Xóa</string>
-    <string name="learning_hub">Trung tâm học tập</string>
-    <string name="explore_challenges">Khám phá các thử thách lập trình</string>
+    <string name="learning_hub">Trung tâm Học tập</string>
+    <string name="explore_challenges">Khám phá thử thách lập trình</string>
     <string name="search_challenges">Tìm kiếm thử thách…</string>
     <string name="all">Tất cả</string>
     <string name="popular">Phổ biến</string>
     <string name="new_filter">Mới</string>
-    <string name="trending">Xu hướng</string>
-    <string name="no_quizzes_available">Không có bài kiểm tra nào. Hãy tạo bài kiểm tra đầu tiên của bạn!</string>
-    <string name="total_questions">Tổng cộng %1$d câu hỏi</string>
+    <string name="trending">Thịnh hành</string>
+    <string name="no_quizzes_available">Không có quiz nào. Tạo quiz đầu tiên của bạn!</string>
+    <string name="total_questions">Tổng %1$d câu hỏi</string>
     <string name="last_update">Cập nhật lần cuối: %1$d ngày trước</string>
-    <string name="view_stats">Xem thống kê</string>
-    <string name="quiz_statistics">Thống kê bài kiểm tra</string>
-    <string name="average_score">Điểm trung bình:</string>
-    <string name="average_completion_time">Thời gian hoàn thành trung bình:</string>
+    <string name="view_stats">Xem Thống kê</string>
+    <string name="quiz_statistics">Thống kê Quiz</string>
+    <string name="average_score">Điểm Trung bình:</string>
+    <string name="average_completion_time">Thời gian Hoàn thành Trung bình:</string>
     <string name="time_elapsed_seconds">%1$d giây</string>
-    <string name="no_quiz_attempts">Chưa có lần làm bài kiểm tra nào được ghi nhận</string>
-    <string name="quiz">Bài kiểm tra</string>
-    <string name="loading_quiz_details">Đang tải chi tiết bài kiểm tra…</string>
+    <string name="no_quiz_attempts">Chưa có lượt làm quiz nào được ghi nhận</string>
+    <string name="quiz">Quiz</string>
+    <string name="loading_quiz_details">Đang tải chi tiết quiz…</string>
     <string name="false_txt">Sai</string>
     <string name="true_txt">Đúng</string>
-    <string name="question_index">Câu hỏi %1$d trên %2$d</string>
+    <string name="question_index">Câu %1$d / %2$d</string>
     <string name="settings">Cài đặt</string>
-    <string name="theme">Chủ đề</string>
-    <string name="data_management">Quản lý dữ liệu</string>
-    <string name="confirm_delete_history">Xác nhận xóa lịch sử</string>
-    <string name="delete_history_message">Bạn có chắc chắn muốn xóa toàn bộ lịch sử bài kiểm tra? Hành động này không thể hoàn tác.</string>
-    <string name="confirm_reset_progress">Xác nhận đặt lại tiến độ</string>
-    <string name="reset_progress_message">Bạn có chắc chắn muốn đặt lại toàn bộ tiến độ học tập? Hành động này không thể hoàn tác.</string>
+    <string name="theme">Giao diện</string>
+    <string name="data_management">Quản lý Dữ liệu</string>
+    <string name="confirm_delete_history">Xác nhận Xóa Lịch sử</string>
+    <string name="delete_history_message">Bạn có chắc muốn xóa tất cả lịch sử quiz không? Hành động này không thể hoàn tác.</string>
+    <string name="confirm_reset_progress">Xác nhận Đặt lại Tiến trình</string>
+    <string name="reset_progress_message">Bạn có chắc muốn đặt lại tất cả tiến trình học không? Hành động này không thể hoàn tác.</string>
     <string name="reset">Đặt lại</string>
-    <string name="confirm_clear_cache">Xác nhận xóa bộ nhớ đệm</string>
-    <string name="clear_cache_message">Bạn có chắc chắn muốn xóa toàn bộ bộ nhớ đệm? Hành động này không thể hoàn tác.</string>
-    <string name="network_settings">Cài đặt mạng</string>
+    <string name="confirm_clear_cache">Xác nhận Xóa Bộ nhớ đệm</string>
+    <string name="clear_cache_message">Bạn có chắc muốn xóa tất cả bộ nhớ đệm không? Hành động này không thể hoàn tác.</string>
+    <string name="network_settings">Cài đặt Mạng</string>
     <string name="language">Ngôn ngữ</string>
-    <string name="app_information">Thông tin ứng dụng</string>
-    <string name="reset_all_settings">Đặt lại tất cả cài đặt</string>
-    <string name="restricted_network_error">Lỗi mạng bị giới hạn. Vui lòng kiểm tra cài đặt kết nối của bạn.</string>
+    <string name="app_information">Thông tin Ứng dụng</string>
+    <string name="reset_all_settings">Đặt lại Tất cả Cài đặt</string>
+    <string name="restricted_network_error">Truy cập mạng bị hạn chế.</string>
     <string name="no_internet_connection">Không có kết nối internet.</string>
-    <string name="wifi_only_mode_enabled">Chế độ chỉ dùng Wi-Fi đã bật.</string>
-    <string name="mobile_data_only_mode_enabled">Chế độ chỉ dùng dữ liệu di động đã bật.</string>
-    <string name="data_saver_mode_enabled">Chế độ tiết kiệm dữ liệu đã bật.</string>
-    <string name="image_load_error">Lỗi khi tải ảnh.</string>
+    <string name="wifi_only_mode_enabled">Chế độ chỉ Wi-Fi đang bật.</string>
+    <string name="mobile_data_only_mode_enabled">Chế độ chỉ dữ liệu di động đang bật.</string>
+    <string name="data_saver_mode_enabled">Chế độ tiết kiệm dữ liệu đang bật.</string>
+    <string name="image_load_error">Lỗi tải hình ảnh.</string>
     <string name="change_network_settings">Thay đổi cài đặt mạng.</string>
-    <string name="network_restricted">Kết nối mạng bị hạn chế</string>
+    <string name="network_restricted">Mạng bị Hạn chế</string>
     <string name="content_loading_restricted">Việc tải nội dung bị hạn chế do cài đặt tiết kiệm dữ liệu của bạn</string>
     <string name="error_occurred">Đã xảy ra lỗi</string>
-
-    <string name="mindmap_tab">Sơ đồ tư duy</string>
-    <string name="generate_mindmap">Tạo sơ đồ tư duy</string>
-    <string name="generating_mindmap">Đang tạo bản đồ tư duy…</string>
-    <string name="save_mindmap">Lưu bản đồ tư duy</string>
-    <string name="save_mindmap_success">Bản đồ tư duy đã được lưu vào thư viện</string>
-    <string name="save_mindmap_error">Lỗi khi lưu bản đồ tư duy: %1$s</string>
+    <string name="mindmap_tab">Sơ đồ Tư duy</string>
+    <string name="generate_mindmap">Tạo Sơ đồ Tư duy</string>
+    <string name="generating_mindmap">Đang tạo Sơ đồ Tư duy…</string>
+    <string name="save_mindmap">Lưu Sơ đồ Tư duy</string>
     <string name="fullscreen_mindmap">Toàn màn hình</string>
-    <string name="exit_fullscreen_mindmap">Thoát chế độ toàn màn hình</string>
+    <string name="exit_fullscreen_mindmap">Thoát Toàn màn hình</string>
     <string name="zoom_in_mindmap">Phóng to</string>
     <string name="zoom_out_mindmap">Thu nhỏ</string>
-    <string name="error_webview_not_found">Không thể tìm thấy WebView</string>
-    <string name="error_saving_mind_map">Lỗi khi lưu bản đồ tư duy: %1$s</string>
-    <string name="error_fixing_code">Lỗi khi sửa mã</string>
-    <string name="mind_map_saved">Bản đồ tư duy đã được lưu vào thư viện</string>
+    <string name="save_mindmap_success">Sơ đồ tư duy đã được lưu vào thư viện</string>
+    <string name="save_mindmap_error">Lỗi lưu sơ đồ tư duy: %1$s</string>
+    <string name="error_webview_not_found">Không tìm thấy WebView</string>
+    <string name="error_saving_mind_map">Lỗi lưu sơ đồ tư duy: %1$s</string>
+    <string name="error_fixing_code">Lỗi sửa mã</string>
+    <string name="mind_map_saved">Sơ đồ tư duy đã được lưu vào thư viện</string>
     <string name="error_creating_file">Lỗi: Không thể tạo tệp</string>
-    <string name="error_saving_image">Lỗi khi lưu hình ảnh: %1$s</string>
+    <string name="error_saving_image">Lỗi lưu hình ảnh: %1$s</string>
     <string name="chapter_timestamp">Chương %1$s</string>
     <string name="no_data">Không có dữ liệu</string>
     <string name="transcript">Bản ghi</string>
-    <string name="chapters">Các chương</string>
+    <string name="chapters">Chương</string>
     <string name="search_in_transcript">Tìm kiếm trong bản ghi…</string>
     <string name="results_found">Tìm thấy %1$d kết quả</string>
-    <string name="no_results_found">Không tìm thấy kết quả cho &quot;%1$s&quot;</string>
-    <string name="transcript_not_found">Không tìm thấy bản ghi cho bài kiểm tra này</string>
-    <string name="error_loading_transcript">Lỗi khi tải bản ghi: %1$s</string>
-    <string name="error_loading_segments">Lỗi khi tải các đoạn bản ghi: %1$s</string>
-    <string name="error_parsing_transcript">Lỗi khi phân tích bản ghi: %1$s</string>
-    <string name="progress">Tiến độ</string>
-    <string name="error_extracting_video_id">Không thể lấy videoId từ link: %1$s</string>
-    <string name="mind_map_created_successfully">Mind map được tạo thành công</string>
-    <string name="offline_mode">Chế độ ngoại tuyến</string>
-    <string name="offline_mode_description">Cho phép sử dụng ứng dụng khi không có kết nối internet</string>
+    <string name="no_results_found">Không tìm thấy kết quả nào cho "%1$s"</string>
+    <string name="transcript_not_found">Không tìm thấy bản ghi cho quiz này</string>
+    <string name="error_loading_transcript">Lỗi tải bản ghi: %1$s</string>
+    <string name="error_loading_segments">Lỗi tải các đoạn bản ghi: %1$s</string>
+    <string name="error_parsing_transcript">Lỗi phân tích bản ghi: %1$s</string>
+    <string name="progress">Tiến trình</string>
+    <string name="error_extracting_video_id">Không thể trích xuất videoId từ liên kết: %1$s</string>
+    <string name="mind_map_created_successfully">Sơ đồ tư duy đã được tạo thành công</string>
+    <string name="offline_mode">Chế độ Ngoại tuyến</string>
+    <string name="offline_mode_description">Cho phép sử dụng ứng dụng mà không cần kết nối internet</string>
 
-    <string name="auto_sync">Đồng bộ tự động</string>
-    <string name="auto_sync_description">Tự động đồng bộ dữ liệu khi có kết nối internet</string>
+    <string name="auto_sync">Tự động Đồng bộ</string>
+    <string name="auto_sync_description">Tự động đồng bộ dữ liệu khi có internet</string>
 
-    <string name="auto_download">Tải xuống tự động</string>
-    <string name="auto_download_description">Tự động tải nội dung cần thiết để sử dụng ngoại tuyến</string>
+    <string name="auto_download">Tự động Tải xuống</string>
+    <string name="auto_download_description">Tự động tải xuống nội dung cần thiết để sử dụng ngoại tuyến</string>
 
-    <string name="max_storage">Dung lượng tối đa</string>
-    <string name="max_storage_description">Thiết lập dung lượng lưu trữ tối đa cho nội dung ngoại tuyến</string>
+    <string name="max_storage">Bộ nhớ Tối đa</string>
+    <string name="max_storage_description">Đặt dung lượng bộ nhớ tối đa được sử dụng cho nội dung ngoại tuyến</string>
     <string name="summary_not_available_offline">Tóm tắt không khả dụng ở chế độ ngoại tuyến</string>
-    <string name="mindmap_not_available_offline">Mind map không khả dụng ở chế độ ngoại tuyến</string>
+    <string name="mindmap_not_available_offline">Sơ đồ tư duy không khả dụng ở chế độ ngoại tuyến</string>
     <string name="network_reconnected">Đã kết nối lại mạng</string>
     <string name="content_not_available_offline">Nội dung không khả dụng ở chế độ ngoại tuyến</string>
     <string name="offline_mode_active">Chế độ ngoại tuyến đang hoạt động</string>
     <string name="no_offline_transcript">Bản ghi không khả dụng ở chế độ ngoại tuyến</string>
-    <string name="offline_content_available">Bạn vẫn có thể sử dụng nội dung đã lưu trong bộ nhớ cache</string>
-    <string name="check_connection">Kiểm tra kết nối</string>
-    <string name="continue_using_app">Tiếp tục sử dụng ứng dụng</string>
-    <string name="next_chapter">Chương tiếp theo</string>
-    <string name="toggle_search">Bật/tắt tìm kiếm</string>
-    <string name="clear_search">Xóa tìm kiếm</string>
-    <string name="previous_chapter">Chương trước</string>
+    <string name="offline_content_available">Bạn vẫn có thể sử dụng nội dung đã lưu trong bộ nhớ đệm</string>
+    <string name="check_connection">Kiểm tra Kết nối</string>
+    <string name="continue_using_app">Tiếp tục Sử dụng Ứng dụng</string>
+    <string name="next_chapter">Chương Tiếp theo</string>
+    <string name="toggle_search">Bật/Tắt Tìm kiếm</string>
+    <string name="clear_search">Xóa Tìm kiếm</string>
+    <string name="previous_chapter">Chương Trước</string>
 
-    <string name="watch_video">Xem video</string>
-    <string name="app_logo">Logo ứng dụng</string>
+    <string name="watch_video">Xem Video</string>
+    <string name="app_logo">Logo Ứng dụng</string>
     <string name="collapse">Thu gọn</string>
     <string name="expand">Mở rộng</string>
-    <string name="close_menu">Đóng menu</string>
-    <string name="open_menu">Mở menu</string>
-    <string name="correct_answer">Câu trả lời đúng</string>
-    <string name="incorrect_answer">Câu trả lời sai</string>
-    <string name="finish_quiz_button">Kết thúc bài kiểm tra</string>
-    <string name="next">Tiếp theo</string>
+    <string name="close_menu">Đóng Menu</string>
+    <string name="open_menu">Mở Menu</string>
+    <string name="correct_answer">Câu trả lời Đúng</string>
+    <string name="incorrect_answer">Câu trả lời Sai</string>
+    <string name="finish_quiz_button">Kết thúc Quiz</string>
+    <string name="next">Tiếp</string>
     <string name="unknown_error">Đã xảy ra lỗi không xác định.</string>
-    <string name="offline_mode_snackbar">Chuyển sang chế độ ngoại tuyến do mất kết nối mạng</string>
+    <string name="offline_mode_snackbar">Đã chuyển sang chế độ ngoại tuyến do không có kết nối mạng</string>
     <string name="offline">Ngoại tuyến</string>
-    <string name="all_questions">Tất cả câu hỏi</string>
+    <string name="all_questions">Tất cả Câu hỏi</string>
     <string name="in_progress_question">Đang thực hiện</string>
     <string name="completed">Đã hoàn thành</string>
-    <string name="saving_database">Lưu vào cơ sở dữ liệu</string>
+    <string name="saving_database">Đang lưu vào cơ sở dữ liệu</string>
+
+    <!-- Quiz Setting Screen -->
+    <string name="quiz_settings_title">Cài đặt Quiz</string>
+    <string name="loading_settings">Đang tải cài đặt…</string>
+    <string name="quiz_not_found_error">Không tìm thấy quiz.</string>
+    <string name="settings_saved_success">Đã lưu cài đặt thành công!</string>
+    <string name="quiz_title_label">Tiêu đề Quiz</string>
+    <string name="quiz_description_label">Mô tả Quiz</string>
+    <string name="reminder_notification_title">Thông báo Nhắc nhở</string>
+    <string name="reminder_frequency_label">Tần suất</string>
+    <string name="reminder_off">Tắt</string>
+    <string name="reminder_daily">Hàng ngày</string>
+    <string name="reminder_weekly">Hàng tuần</string>
+    <string name="tags_title">Thẻ (Tags)</string>
+    <string name="add_new_tag_label">Thêm thẻ mới</string>
+    <string name="add_tag_button">Thêm</string>
+    <string name="selected_tags_label">Thẻ đã chọn:</string>
+    <string name="no_tags_selected">Chưa chọn thẻ nào.</string>
+    <string name="deselect_tag_desc">Bỏ chọn thẻ %1$s</string>
+    <string name="available_tags_label">Thẻ có sẵn:</string>
+    <string name="no_available_tags">Không có thẻ nào khác.</string>
+    <string name="reset_settings">Đặt lại Thay đổi</string>
+    <string name="save_settings">Lưu Thay đổi</string>
+
+    <!-- Reminder Worker -->
+    <string name="reminder_channel_name">Nhắc nhở Quiz</string>
+    <string name="reminder_channel_description">Thông báo nhắc bạn ôn tập các quiz</string>
+    <string name="reminder_notification_text">Đến lúc ôn tập: %1$s</string> <!-- %1$s will be the quiz title -->
+
+    <string name="see_more">Xem thêm</string>
+    <string name="see_less">Thu gọn</string>
+    <string name="permission_rationale_title">Cần quyền thông báo</string>
+    <string name="permission_rationale_message">Để đặt lời nhắc cho bài kiểm tra này, ứng dụng cần quyền gửi thông báo. Vui lòng cấp quyền này.</string>
+    <string name="permission_rationale_confirm">Cấp quyền</string>
+    <string name="permission_denied_snackbar">Quyền thông báo đã bị từ chối. Không thể đặt lời nhắc.</string>
 
 </resources>

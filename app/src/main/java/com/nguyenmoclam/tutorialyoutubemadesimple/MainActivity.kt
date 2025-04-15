@@ -38,10 +38,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import android.content.Intent // Add Intent import
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController // Add NavHostController import
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppNavigation
@@ -79,6 +81,8 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var networkStateListener: NetworkStateListener
+
+    private lateinit var navController: NavHostController // Store NavController
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -125,7 +129,7 @@ class MainActivity : ComponentActivity() {
             YouTubeSummaryTheme(darkTheme = isDarkTheme) {
                 val quizViewModel: QuizViewModel = viewModel()
                 val quizCreationViewModel: QuizCreationViewModel = viewModel()
-                val navController = rememberNavController()
+                navController = rememberNavController() // Assign to the class property
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
 
@@ -198,6 +202,35 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        // Handle initial intent in onCreate
+        handleIntent(intent)
+    }
+
+    // Handle new intents while the activity is running (e.g., from notification)
+    // Correct signature with non-nullable Intent
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent) // Call handleIntent directly with non-nullable intent
+    }
+
+    // Function to process intent and navigate if deep link data exists
+    private fun handleIntent(intent: Intent) {
+        if (intent.hasExtra("deep_link_quiz_id")) {
+            val quizId = intent.getLongExtra("deep_link_quiz_id", -1L)
+            if (quizId != -1L && ::navController.isInitialized) { // Check if navController is initialized
+                // Ensure we navigate on the main thread if called from background
+                runOnUiThread {
+                     navController.navigate(AppScreens.QuizDetail.route + "/$quizId") {
+                         // Optional: Configure navigation options (e.g., popUpTo, launchSingleTop)
+                         // popUpTo(AppScreens.Home.route) // Example: Go back to home first
+                         launchSingleTop = true
+                     }
+                }
+                // Clear the extra to prevent re-navigation on configuration change
+                intent.removeExtra("deep_link_quiz_id")
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -207,7 +240,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun BottomNavigationBar(navController: androidx.navigation.NavHostController) {
+    private fun BottomNavigationBar(navController: NavHostController) {
         val navItems = listOf(
             NavItem(
                 title = "Home",

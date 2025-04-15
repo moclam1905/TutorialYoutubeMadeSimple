@@ -2,6 +2,8 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.Quiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.QuizStats
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.tag.Tag // Keep for selectedTagIds if needed, or remove if TagWithCount is sufficient
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.tag.TagWithCount // Import TagWithCount
 
 /**
  * Data class representing the UI state for the Home screen.
@@ -18,5 +20,9 @@ data class HomeViewState(
     val selectedMainFilter: String = "All", // Key/Name of the main filter
     val selectedQuestionSubFilter: String = "All", // Key/Name of the sub-filter
     val selectedMainFilterIndex: Int = 0, // Index of the selected main filter tab
-    val selectedSubFilterIndex: Int = 0 // Index of the selected sub-filter chip
+    val selectedSubFilterIndex: Int = 0, // Index of the selected sub-filter chip
+    val allTagsWithCount: List<TagWithCount> = emptyList(), // Renamed and changed type
+    val selectedTagIds: Set<Long> = emptySet(), // Set of selected tag IDs for filtering
+    val isTagSheetVisible: Boolean = false, // Renamed for clarity (BottomSheet)
+    val tagSearchQuery: String = "" // State for tag search query
 )

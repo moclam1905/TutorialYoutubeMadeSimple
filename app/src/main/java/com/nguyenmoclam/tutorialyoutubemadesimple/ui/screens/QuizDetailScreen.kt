@@ -307,7 +307,13 @@ fun QuizDetailDrawerContent(
             onClick = {
                 scope.launch {
                     slidingNavState.closeMenu()
-                    navController.navigate(AppScreens.Settings.route)
+                    // Navigate to QuizSettingScreen with quizId
+                    val quizId = quizDetailViewModel.state.quiz?.id
+                    if (quizId != null && quizId > 0) { // Ensure quizId is valid
+                        navController.navigate(AppScreens.QuizSetting.route + "/$quizId")
+                    } else {
+                        // Handle error: Quiz ID not available (optional: show snackbar)
+                    }
                 }
             }
         )

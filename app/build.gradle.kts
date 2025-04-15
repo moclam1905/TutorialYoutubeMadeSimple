@@ -97,7 +97,9 @@ dependencies {
     // Hilt dependencies
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+    implementation (libs.androidx.hilt.work)
 
     // Room dependencies
     implementation(libs.androidx.room.runtime)
@@ -115,6 +117,9 @@ dependencies {
     implementation (libs.google.api.services.youtube)
 
     implementation(libs.androidx.appcompat)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)// Add WorkManager KTX
 
     // Coil
     implementation(libs.coil.compose)

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "3e0a378a650c5fa9696b8400315da88a",
+    "identityHash": "2448ff1d66b5cffdd3196284b4825471",
     "entities": [
       {
         "tableName": "quizzes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `videoUrl` TEXT NOT NULL, `thumbnailUrl` TEXT NOT NULL, `language` TEXT NOT NULL, `questionType` TEXT NOT NULL, `questionCount` INTEGER NOT NULL, `summaryEnabled` INTEGER NOT NULL, `questionsEnabled` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, `localThumbnailPath` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `videoUrl` TEXT NOT NULL, `thumbnailUrl` TEXT NOT NULL, `language` TEXT NOT NULL, `questionType` TEXT NOT NULL, `questionCount` INTEGER NOT NULL, `summaryEnabled` INTEGER NOT NULL, `questionsEnabled` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, `localThumbnailPath` TEXT, `reminderInterval` INTEGER)",
         "fields": [
           {
             "fieldPath": "quizId",
@@ -78,6 +78,12 @@
             "fieldPath": "localThumbnailPath",
             "columnName": "localThumbnailPath",
             "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "reminderInterval",
+            "columnName": "reminderInterval",
+            "affinity": "INTEGER",
             "notNull": false
           }
         ],
@@ -743,12 +749,117 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "tags",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tagId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "tagId",
+            "columnName": "tagId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "tagId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_tags_name",
+            "unique": true,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_tags_name` ON `${TABLE_NAME}` (`name`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "quiz_tag_cross_ref",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`quizId` INTEGER NOT NULL, `tagId` INTEGER NOT NULL, PRIMARY KEY(`quizId`, `tagId`), FOREIGN KEY(`quizId`) REFERENCES `quizzes`(`quizId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`tagId`) REFERENCES `tags`(`tagId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "quizId",
+            "columnName": "quizId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tagId",
+            "columnName": "tagId",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "quizId",
+            "tagId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_quiz_tag_cross_ref_quizId",
+            "unique": false,
+            "columnNames": [
+              "quizId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quiz_tag_cross_ref_quizId` ON `${TABLE_NAME}` (`quizId`)"
+          },
+          {
+            "name": "index_quiz_tag_cross_ref_tagId",
+            "unique": false,
+            "columnNames": [
+              "tagId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quiz_tag_cross_ref_tagId` ON `${TABLE_NAME}` (`tagId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "quizzes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "quizId"
+            ],
+            "referencedColumns": [
+              "quizId"
+            ]
+          },
+          {
+            "table": "tags",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "tagId"
+            ],
+            "referencedColumns": [
+              "tagId"
+            ]
+          }
+        ]
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3e0a378a650c5fa9696b8400315da88a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2448ff1d66b5cffdd3196284b4825471')"
     ]
   }
 }
