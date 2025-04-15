@@ -240,7 +240,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun BottomNavigationBar(navController: androidx.navigation.NavHostController) {
+    private fun BottomNavigationBar(navController: NavHostController) {
         val navItems = listOf(
             NavItem(
                 title = "Home",

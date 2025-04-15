@@ -1,12 +1,12 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
+// Import R explicitly
 import android.Manifest
 import android.app.Activity
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -44,7 +44,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +52,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-// Import R explicitly
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.tag.Tag
 import kotlinx.coroutines.CoroutineScope
@@ -74,14 +72,18 @@ fun QuizSettingTopAppBar(
                 Icon(
                     Icons.Default.Restore,
                     contentDescription = stringResource(R.string.reset_settings),
-                    tint = if (canReset) LocalContentColor.current else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    tint = if (canReset) LocalContentColor.current else MaterialTheme.colorScheme.onSurface.copy(
+                        alpha = 0.38f
+                    )
                 )
             }
             IconButton(onClick = onSaveClick, enabled = canSave) {
                 Icon(
                     Icons.Default.Check,
                     contentDescription = stringResource(R.string.save_settings),
-                    tint = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    tint = if (canSave) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(
+                        alpha = 0.38f
+                    )
                 )
             }
         }
@@ -95,14 +97,10 @@ fun ReminderSettingsSection(
     currentInterval: Long?,
     onIntervalSelected: (Long?) -> Unit,
     enabled: Boolean,
-    // Add parameters back
     snackbarHostState: SnackbarHostState,
     scope: CoroutineScope
 ) {
     val context = LocalContext.current
-    // Remove local declarations
-    // val snackbarHostState = remember { SnackbarHostState() }
-    // val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(false) }
     var showRationaleDialog by remember { mutableStateOf(false) }
 
@@ -142,6 +140,7 @@ fun ReminderSettingsSection(
                     // We call onIntervalSelected in the onClick lambda now
                     // onIntervalSelected(currentInterval)
                 }
+
                 ActivityCompat.shouldShowRequestPermissionRationale(
                     activity, // Use the found activity
                     Manifest.permission.POST_NOTIFICATIONS
@@ -149,6 +148,7 @@ fun ReminderSettingsSection(
                     // Show rationale dialog before requesting again
                     showRationaleDialog = true
                 }
+
                 else -> {
                     // Directly request the permission
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -158,7 +158,7 @@ fun ReminderSettingsSection(
             // Handle case where Activity context couldn't be found (e.g., preview)
             // Optionally show a different snackbar or log an error
             scope.launch {
-                 snackbarHostState.showSnackbar("Could not find Activity to request permission.")
+                snackbarHostState.showSnackbar("Could not find Activity to request permission.")
             }
         }
     }
@@ -215,7 +215,9 @@ fun ReminderSettingsSection(
                 readOnly = true,
                 label = { Text(stringResource(R.string.reminder_frequency_label)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
                 enabled = enabled,
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
             )
@@ -288,10 +290,18 @@ fun TagsSettingsSection(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(stringResource(R.string.selected_tags_label), style = MaterialTheme.typography.titleSmall)
-        FlowRow(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Text(
+            stringResource(R.string.selected_tags_label),
+            style = MaterialTheme.typography.titleSmall
+        )
+        FlowRow(modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)) {
             if (selectedTags.isEmpty()) {
-                 Text(stringResource(R.string.no_tags_selected), style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    stringResource(R.string.no_tags_selected),
+                    style = MaterialTheme.typography.bodyMedium
+                )
             } else {
                 selectedTags.sortedBy { it.name }.forEach { tag ->
                     InputChip(
@@ -301,7 +311,10 @@ fun TagsSettingsSection(
                         trailingIcon = {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = stringResource(R.string.deselect_tag_desc, tag.name),
+                                contentDescription = stringResource(
+                                    R.string.deselect_tag_desc,
+                                    tag.name
+                                ),
                                 modifier = Modifier.size(InputChipDefaults.IconSize)
                             )
                         },
@@ -314,22 +327,30 @@ fun TagsSettingsSection(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(stringResource(R.string.available_tags_label), style = MaterialTheme.typography.titleSmall)
-         FlowRow(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Text(
+            stringResource(R.string.available_tags_label),
+            style = MaterialTheme.typography.titleSmall
+        )
+        FlowRow(modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)) {
             val availableTags = allTags.filter { it !in selectedTags }.sortedBy { it.name }
-             if (availableTags.isEmpty()) {
-                 Text(stringResource(R.string.no_available_tags), style = MaterialTheme.typography.bodyMedium)
-             } else {
-                 availableTags.forEach { tag ->
-                     FilterChip(
-                         selected = false,
-                         onClick = { if (enabled) onTagSelected(tag) },
-                         label = { Text(tag.name) },
-                         modifier = Modifier.padding(end = 4.dp, bottom = 4.dp),
-                         enabled = enabled
-                     )
-                 }
-             }
+            if (availableTags.isEmpty()) {
+                Text(
+                    stringResource(R.string.no_available_tags),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            } else {
+                availableTags.forEach { tag ->
+                    FilterChip(
+                        selected = false,
+                        onClick = { if (enabled) onTagSelected(tag) },
+                        label = { Text(tag.name) },
+                        modifier = Modifier.padding(end = 4.dp, bottom = 4.dp),
+                        enabled = enabled
+                    )
+                }
+            }
         }
     }
 }

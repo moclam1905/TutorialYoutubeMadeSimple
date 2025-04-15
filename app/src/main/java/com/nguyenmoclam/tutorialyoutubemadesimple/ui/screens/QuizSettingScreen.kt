@@ -1,6 +1,5 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
-// Import moved components
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
@@ -84,17 +83,21 @@ fun QuizSettingScreen(
             )
         }
     ) { paddingValues ->
-        if (uiState.isLoading && uiState.quiz == null) { // Show loading only initially
+        if (uiState.isLoading && uiState.quiz == null) {
             LoadingState(progress = 0f, message = stringResource(R.string.loading_settings))
         } else if (uiState.quiz == null && !uiState.isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(uiState.errorMessage ?: stringResource(R.string.quiz_not_found_error))
             }
         } else {
             QuizSettingContent(
                 modifier = Modifier.padding(paddingValues),
                 uiState = uiState,
-                // Add snackbarHostState and scope back to call site
                 snackbarHostState = snackbarHostState,
                 scope = scope,
                 onTitleChange = viewModel::onTitleChange,
@@ -118,8 +121,6 @@ fun QuizSettingScreen(
     }
 }
 
-// QuizSettingTopAppBar moved to ui/components/QuizSettingComponents.kt
-
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun QuizSettingContent(
@@ -131,7 +132,6 @@ fun QuizSettingContent(
     onTagSelected: (Tag) -> Unit,
     onTagDeselected: (Tag) -> Unit,
     onCreateAndSelectTag: (String) -> Unit,
-    // Add snackbarHostState and scope back to definition
     snackbarHostState: SnackbarHostState,
     scope: CoroutineScope
 ) {
@@ -161,19 +161,16 @@ fun QuizSettingContent(
 
         Divider()
 
-        // ReminderSettingsSection moved to ui/components/QuizSettingComponents.kt
         ReminderSettingsSection(
             currentInterval = uiState.quiz?.reminderInterval,
             onIntervalSelected = onReminderIntervalChange,
             enabled = uiState.quiz != null,
-            // Pass snackbarHostState and scope down
             snackbarHostState = snackbarHostState,
             scope = scope
         )
 
         Divider()
 
-        // TagsSettingsSection moved to ui/components/QuizSettingComponents.kt
         TagsSettingsSection(
             allTags = uiState.allTags,
             selectedTags = uiState.selectedTags,

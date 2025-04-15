@@ -13,6 +13,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.tag.GetTagsForQ
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.tag.UpdateTagsForQuizUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.ReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -100,7 +101,12 @@ class QuizSettingViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "Error loading data") }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Error loading data"
+                    )
+                }
             }
         }
     }
@@ -125,7 +131,8 @@ class QuizSettingViewModel @Inject constructor(
         _uiState.update { state ->
             state.quiz?.let {
                 // Ensure null or positive value
-                val validInterval = if (intervalMillis != null && intervalMillis <= 0) null else intervalMillis
+                val validInterval =
+                    if (intervalMillis != null && intervalMillis <= 0) null else intervalMillis
                 state.copy(quiz = it.copy(reminderInterval = validInterval))
             } ?: state
         }
@@ -154,8 +161,10 @@ class QuizSettingViewModel @Inject constructor(
                 // Add to allTags if it's truly new (optional, depends on UI needs)
                 // Select the new/existing tag
                 _uiState.update { state ->
-                    val updatedAllTags = if (state.allTags.none { it.id == newTag.id }) state.allTags + newTag else state.allTags
-                    val updatedSelectedTags = if (state.selectedTags.none { it.id == newTag.id }) state.selectedTags + newTag else state.selectedTags
+                    val updatedAllTags =
+                        if (state.allTags.none { it.id == newTag.id }) state.allTags + newTag else state.allTags
+                    val updatedSelectedTags =
+                        if (state.selectedTags.none { it.id == newTag.id }) state.selectedTags + newTag else state.selectedTags
                     state.copy(
                         allTags = updatedAllTags.distinctBy { it.id }.sortedBy { it.name },
                         selectedTags = updatedSelectedTags.distinctBy { it.id }
@@ -192,7 +201,11 @@ class QuizSettingViewModel @Inject constructor(
                 // Schedule or cancel reminder based on the new interval
                 val reminderInterval = currentQuiz.reminderInterval
                 if (reminderInterval != null && reminderInterval > 0) {
-                    reminderScheduler.scheduleReminder(currentQuiz.id, currentQuiz.title, reminderInterval)
+                    reminderScheduler.scheduleReminder(
+                        currentQuiz.id,
+                        currentQuiz.title,
+                        reminderInterval
+                    )
                 } else {
                     reminderScheduler.cancelReminder(currentQuiz.id)
                 }
@@ -208,11 +221,16 @@ class QuizSettingViewModel @Inject constructor(
                     )
                 }
                 // Reset save success flag after a short delay (optional)
-                kotlinx.coroutines.delay(1500)
+                delay(1500)
                 _uiState.update { it.copy(saveSuccess = false) }
 
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "Error saving settings") }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Error saving settings"
+                    )
+                }
             }
         }
     }
@@ -233,7 +251,7 @@ class QuizSettingViewModel @Inject constructor(
             // Allow back navigation immediately
             // Navigation logic should be handled by the UI observing a different state/event
             // For now, just clear the flag if it was somehow set
-             _uiState.update { it.copy(showExitConfirmation = false) }
+            _uiState.update { it.copy(showExitConfirmation = false) }
         }
     }
 
@@ -246,7 +264,7 @@ class QuizSettingViewModel @Inject constructor(
         _uiState.update { it.copy(showExitConfirmation = false) }
     }
 
-     fun clearErrorMessage() {
+    fun clearErrorMessage() {
         _uiState.update { it.copy(errorMessage = null) }
     }
 }
