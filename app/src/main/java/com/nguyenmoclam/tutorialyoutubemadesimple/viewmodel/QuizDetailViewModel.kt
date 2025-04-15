@@ -25,6 +25,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.summary.GetQuiz
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.GetTranscriptUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.state.QuizStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -45,7 +46,8 @@ class QuizDetailViewModel @Inject constructor(
     private val saveMindMapUseCase: SaveMindMapUseCase,
     private val getMindMapUseCase: GetMindMapUseCase,
     private val llmProcessor: LLMProcessor,
-    private val offlineSyncManager: OfflineSyncManager
+    private val offlineSyncManager: OfflineSyncManager,
+    private val quizStateManager: QuizStateManager
 ) : ViewModel() {
 
     enum class ProcessingMindMapStep(val messageRes: Int) {
@@ -58,11 +60,11 @@ class QuizDetailViewModel @Inject constructor(
         SAVE_TO_DATABASE_START(R.string.saving_database),
         SAVE_TO_DATABASE_COMPLETE(R.string.saving_database),
         NONE(0);
-    
+
         fun getMessage(context: Context): String {
             return if (messageRes != 0) context.getString(messageRes) else ""
         }
-    
+
         fun getProgressPercentage(): Float {
             return when (this) {
                 NONE -> 0f
@@ -189,19 +191,20 @@ class QuizDetailViewModel @Inject constructor(
                     progressEntity?.completionTime != null && progressEntity.completionTime > 0
 
                 // Get start time and completion time from progress entity
-                val startTime = if (quizCompleted && progressEntity != null) { // Add null check
+                val startTime = if (quizCompleted) {
                     // If completed, calculate start time from completion time and last updated
                     progressEntity.lastUpdated.minus(progressEntity.completionTime)
                 } else {
                     state.startTime
                 }
 
-                val completionTime = if (quizCompleted && progressEntity != null) { // Add null check
-                    // If completed, use the stored completion time
-                    progressEntity.completionTime
-                } else {
-                    state.completionTime
-                }
+                val completionTime =
+                    if (quizCompleted) {
+                        // If completed, use the stored completion time
+                        progressEntity.completionTime
+                    } else {
+                        state.completionTime
+                    }
 
                 val mindMapCode = getMindMapUseCase(quizId)?.mermaidCode ?: ""
 
@@ -276,6 +279,7 @@ class QuizDetailViewModel @Inject constructor(
                     0L
                 }
                 saveQuizProgressUseCase(quizId, questionIndex, updatedAnswers, elapsedTime)
+                quizStateManager.markForRefresh() // Mark for refresh after saving progress
             }
         }
     }
@@ -324,6 +328,7 @@ class QuizDetailViewModel @Inject constructor(
                     0L
                 }
                 saveQuizProgressUseCase(quizId, questionIndex, updatedAnswers, elapsedTime)
+                quizStateManager.markForRefresh() // Mark for refresh after saving progress (due to skip)
             }
         }
     }
@@ -371,6 +376,7 @@ class QuizDetailViewModel @Inject constructor(
         state.quiz?.id?.let { quizId ->
             viewModelScope.launch {
                 deleteQuizProgressUseCase(quizId)
+                quizStateManager.markForRefresh() // Mark for refresh after deleting progress
             }
         }
     }
@@ -522,6 +528,7 @@ class QuizDetailViewModel @Inject constructor(
                         state.answeredQuestions,
                         elapsedTime
                     )
+                    quizStateManager.markForRefresh() // Mark for refresh after saving final progress
                 }
             }
         }
@@ -582,17 +589,21 @@ class QuizDetailViewModel @Inject constructor(
                 }
 
                 // Update state to show transcript fetch complete
-                state = state.copy(currentMindMapStep = ProcessingMindMapStep.FETCH_TRANSCRIPT_COMPLETE)
+                state =
+                    state.copy(currentMindMapStep = ProcessingMindMapStep.FETCH_TRANSCRIPT_COMPLETE)
 
                 // Update state to show we're starting to extract key points
-                state = state.copy(currentMindMapStep = ProcessingMindMapStep.EXTRACT_KEY_POINTS_START)
+                state =
+                    state.copy(currentMindMapStep = ProcessingMindMapStep.EXTRACT_KEY_POINTS_START)
 
                 // Call use case to generate mind map
-                state = state.copy(currentMindMapStep = ProcessingMindMapStep.EXTRACT_KEY_POINTS_COMPLETE)
+                state =
+                    state.copy(currentMindMapStep = ProcessingMindMapStep.EXTRACT_KEY_POINTS_COMPLETE)
 
                 // Update state to show we're starting mind map generation
-                state = state.copy(currentMindMapStep = ProcessingMindMapStep.GENERATE_MIND_MAP_START)
-                
+                state =
+                    state.copy(currentMindMapStep = ProcessingMindMapStep.GENERATE_MIND_MAP_START)
+
                 val result = generateMindMapUseCase(
                     transcript.content,
                     transcript.language,
@@ -600,7 +611,8 @@ class QuizDetailViewModel @Inject constructor(
                 )
 
                 // Update state to show mind map generation is complete
-                state = state.copy(currentMindMapStep = ProcessingMindMapStep.GENERATE_MIND_MAP_COMPLETE)
+                state =
+                    state.copy(currentMindMapStep = ProcessingMindMapStep.GENERATE_MIND_MAP_COMPLETE)
 
                 if (result.error != null) {
                     // Handle LLM generation error
@@ -611,7 +623,8 @@ class QuizDetailViewModel @Inject constructor(
                     )
                 } else {
                     // Update state to show we're starting to save to database
-                    state = state.copy(currentMindMapStep = ProcessingMindMapStep.SAVE_TO_DATABASE_START)
+                    state =
+                        state.copy(currentMindMapStep = ProcessingMindMapStep.SAVE_TO_DATABASE_START)
 
                     // Get extracted key points from use case
                     val keyPoints = generateMindMapUseCase.getLastExtractedKeyPoints()
@@ -622,9 +635,11 @@ class QuizDetailViewModel @Inject constructor(
                         mermaidCode = result.mermaidCode
                     )
                     saveMindMapUseCase(mindMap, quizId)
+                    quizStateManager.markForRefresh() // Mark for refresh after saving mind map
 
                     // Update state to show database save is complete
-                    state = state.copy(currentMindMapStep = ProcessingMindMapStep.SAVE_TO_DATABASE_COMPLETE)
+                    state =
+                        state.copy(currentMindMapStep = ProcessingMindMapStep.SAVE_TO_DATABASE_COMPLETE)
 
                     // Update final state
                     state = state.copy(
@@ -671,8 +686,10 @@ class QuizDetailViewModel @Inject constructor(
                 val updatedMindMap = existingMindMap.copy(mermaidCode = newCode)
 
                 saveMindMapUseCase(updatedMindMap, quizId)
+                quizStateManager.markForRefresh() // Mark for refresh after updating mind map
             } catch (e: Exception) {
             }
         }
     }
 }
+
