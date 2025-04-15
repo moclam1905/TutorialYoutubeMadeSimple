@@ -67,29 +67,35 @@ class QuizSettingViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                // Load quiz details
-                val quiz = getQuizByIdUseCase(quizId)
-                if (quiz == null) {
+                // 1. Load quiz details and update state initially
+                val initialQuizData = getQuizByIdUseCase(quizId)
+                if (initialQuizData == null) {
                     _uiState.update { it.copy(isLoading = false, errorMessage = "Quiz not found") }
                     return@launch
                 }
+                _uiState.update {
+                    it.copy(
+                        // Keep isLoading true until tags are also loaded
+                        quiz = initialQuizData,
+                        initialQuiz = initialQuizData
+                    )
+                }
 
-                // Load tags in parallel
+                // 2. Load tags in a separate collector
                 val allTagsFlow = getAllTagsUseCase()
                 val selectedTagsFlow = getTagsForQuizUseCase(quizId)
 
-                // Combine flows - wait for both to emit first value
+                // Combine and collect tags, only updating tag-related state
                 combine(allTagsFlow, selectedTagsFlow) { all, selected ->
                     Pair(all, selected)
-                }.collectLatest { (all, selected) -> // Use collectLatest to handle rapid updates if needed
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            quiz = quiz,
-                            initialQuiz = quiz, // Store initial state
+                }.collectLatest { (all, selected) ->
+                    // Only update tag fields and isLoading flag here
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            isLoading = false, // Loading is complete now
                             allTags = all,
                             selectedTags = selected,
-                            initialSelectedTags = selected // Store initial state
+                            initialSelectedTags = selected // Update initial tags as well
                         )
                     }
                 }
@@ -195,6 +201,7 @@ class QuizSettingViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        quiz = currentQuiz, // Update the current quiz state as well
                         initialQuiz = currentQuiz,
                         initialSelectedTags = currentState.selectedTags,
                         saveSuccess = true // Indicate success briefly
