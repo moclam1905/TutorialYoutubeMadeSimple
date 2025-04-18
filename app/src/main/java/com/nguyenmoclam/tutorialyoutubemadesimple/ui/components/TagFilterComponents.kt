@@ -57,7 +57,6 @@ fun TagFilterButton(
             if (selectedTagIds.isNotEmpty()) {
                 Box(
                     modifier = Modifier
-                        .padding(4.dp)
                         .height(8.dp)
                         .width(8.dp)
                         .background(MaterialTheme.colorScheme.primary, CircleShape)
@@ -66,14 +65,17 @@ fun TagFilterButton(
         },
         modifier = modifier
     ) {
-        IconButton(onClick = onFilterClick) {
+        // IconButton itself doesn't have a background, but ensure its container (BadgedBox) doesn't add one
+        // We might need to adjust padding or size if alignment is off after removing SearchBar background
+        IconButton(onClick = onFilterClick, modifier = Modifier.size(40.dp)) { // Adjust size if needed for alignment
             Icon(
                 imageVector = Icons.Outlined.FilterAlt,
                 contentDescription = stringResource(R.string.filter_by_tags),
+                // Keep the tint logic, but ensure the 'inactive' state matches the SearchBar icon
                 tint = if (selectedTagIds.isNotEmpty()) {
                     MaterialTheme.colorScheme.primary
                 } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant // Use a less prominent color when inactive
+                    MaterialTheme.colorScheme.onSurfaceVariant // Match SearchBar icon tint
                 }
             )
         }

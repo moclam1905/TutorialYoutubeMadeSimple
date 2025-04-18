@@ -27,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -65,6 +66,7 @@ fun ScreenTitle(titleRes: Int) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBar(
     searchQuery: String,
@@ -76,15 +78,26 @@ fun SearchBar(
         value = searchQuery,
         onValueChange = onQueryChange,
         modifier = modifier,
-        placeholder = { Text(stringResource(placeholderRes)) },
+        placeholder = {
+            Text(
+                stringResource(placeholderRes),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }, // Adjust placeholder color if needed
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
-                contentDescription = stringResource(R.string.search_challenges)
+                contentDescription = stringResource(R.string.search_challenges),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
         shape = RoundedCornerShape(8.dp),
-        singleLine = true
+        singleLine = true,
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            containerColor = Color.Transparent, // Make background transparent
+            focusedBorderColor = Color.Transparent, // Remove border when focused
+            unfocusedBorderColor = Color.Transparent // Remove border when unfocused
+        )
     )
 }
 
