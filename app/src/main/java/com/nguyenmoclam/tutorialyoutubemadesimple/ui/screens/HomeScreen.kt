@@ -104,8 +104,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(top = 8.dp)
-                .navigationBarsPadding()
-                .padding(bottom = 16.dp) // Consider removing if bottom nav padding is handled by Scaffold
+                .padding(bottom = 16.dp)
         ) {
 
             ScreenTitle(titleRes = R.string.explore_challenges)
