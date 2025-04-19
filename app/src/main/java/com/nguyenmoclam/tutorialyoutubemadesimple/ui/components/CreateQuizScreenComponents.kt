@@ -528,76 +528,89 @@ fun StepIndicator(currentStep: Int, totalSteps: Int) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Custom step indicator with circles and connecting lines
+        // Row for Circles and Dividers
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp), // Adjusted padding
+            horizontalArrangement = Arrangement.SpaceBetween, // Distribute items
+            verticalAlignment = Alignment.CenterVertically // Center vertically
         ) {
-            // Create step circles with connecting lines
             for (i in 1..totalSteps) {
                 val isActive = i <= currentStep
                 val isCurrentStep = i == currentStep
 
-                // Step indicator column
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    // Step circle
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isActive) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            )
-                            .border(
-                                width = if (isCurrentStep) 2.dp else 0.dp,
-                                color = MaterialTheme.colorScheme.primary,
-                                shape = CircleShape
-                            )
-                    ) {
-                        Text(
-                            text = "$i",
-                            color = if (isActive) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                // Step circle (No weight needed with SpaceBetween)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isActive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant
                         )
-                    }
-
-                    // Step label
-                    Spacer(modifier = Modifier.height(4.dp))
+                        .border(
+                            width = if (isCurrentStep) 2.dp else 0.dp,
+                            color = if (isCurrentStep) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
+                                alpha = 0.0f
+                            ), // Transparent border if not current
+                            shape = CircleShape
+                        )
+                ) {
                     Text(
-                        text = when (i) {
-                            1 -> stringResource(R.string.enter_video)
-                            2 -> stringResource(R.string.configure)
-                            3 -> stringResource(R.string.output)
-                            else -> ""
-                        },
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center,
-                        color = if (isActive) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        fontWeight = if (isCurrentStep) FontWeight.Bold else FontWeight.Normal,
-                        modifier = Modifier.padding(top = 2.dp)
+                        text = "$i",
+                        color = if (isActive) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
                 }
 
-                // Add connecting line between circles (except after the last one)
+                // Connecting line (Use weight to fill space)
                 if (i < totalSteps) {
                     Divider(
                         modifier = Modifier
-                            .weight(0.7f)
+                            .weight(1f) // Weight fills the space
                             .height(2.dp),
                         color = if (i < currentStep) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.surfaceVariant
                     )
+                }
+            }
+        }
+
+        // Row for Labels (Separate Row below)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp) // Match horizontal padding
+                .padding(top = 4.dp), // Space below circles
+            horizontalArrangement = Arrangement.SpaceBetween // Match arrangement
+        ) {
+            for (i in 1..totalSteps) {
+                val isActive = i <= currentStep
+                val isCurrentStep = i == currentStep
+                // Step label (Aligned under circle using weight)
+                Text(
+                    text = when (i) {
+                        1 -> stringResource(R.string.enter_video)
+                        2 -> stringResource(R.string.configure)
+                        3 -> stringResource(R.string.output)
+                        else -> ""
+                    },
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    color = if (isActive) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontWeight = if (isCurrentStep) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier
+                        .weight(1f) // Weight aligns proportionally with Box above
+                        .padding(top = 2.dp)
+                )
+                // Add Spacer to align with Divider space
+                if (i < totalSteps) {
+                    Spacer(Modifier.weight(1f)) // Spacer takes up the divider's weighted space
                 }
             }
         }
