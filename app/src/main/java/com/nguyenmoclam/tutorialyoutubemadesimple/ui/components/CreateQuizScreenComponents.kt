@@ -40,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color // Add Color import
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -268,20 +269,15 @@ fun Step2Content(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Level options in a styled row
+                    // Level options in a styled row (Segmented Button Style)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
+                            .clip(RoundedCornerShape(12.dp)) // Apply clipping to the Row
+                            .background(MaterialTheme.colorScheme.surfaceContainer) // Use theme-aware container background
                             .selectableGroup()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                            .padding(4.dp), // Padding around the buttons inside the container
+                        horizontalArrangement = Arrangement.spacedBy(4.dp) // Space between buttons
                     ) {
                         // Low level option
                         LevelRadioOption(
@@ -289,7 +285,7 @@ fun Step2Content(
                             onClick = { onQuestionLevelChange("low") },
                             title = stringResource(R.string.low),
                             subtitle = stringResource(R.string.five_questions),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f) // Keep weight for equal distribution
                         )
 
                         // Medium level option
@@ -298,7 +294,7 @@ fun Step2Content(
                             onClick = { onQuestionLevelChange("medium") },
                             title = stringResource(R.string.medium),
                             subtitle = stringResource(R.string.ten_questions),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f) // Keep weight for equal distribution
                         )
 
                         // High level option
@@ -307,7 +303,7 @@ fun Step2Content(
                             onClick = { onQuestionLevelChange("high") },
                             title = stringResource(R.string.high),
                             subtitle = stringResource(R.string.fifteen_questions),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f) // Keep weight for equal distribution
                         )
                     }
                 }
@@ -404,7 +400,7 @@ private fun RadioOptionItem(
 }
 
 /**
- * Reusable level radio option for difficulty selection
+ * Reusable level radio option for difficulty selection (Segmented Button Style)
  */
 @Composable
 private fun LevelRadioOption(
@@ -414,33 +410,46 @@ private fun LevelRadioOption(
     subtitle: String,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    // Determine background color based on selection state
+    val backgroundColor = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer // Highlight color when selected
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.0f) // Transparent when not selected (container bg shows through)
+    }
+    // Determine text color based on selection state for contrast
+    val textColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant // Revert to theme-aware color for unselected text
+    }
+
+    Box( // Use Box for easier background and clipping control
         modifier = modifier
+            .clip(RoundedCornerShape(8.dp)) // Rounded corners for the button itself
+            .background(backgroundColor)
             .selectable(
                 selected = selected,
                 onClick = onClick
             )
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+            .padding(vertical = 8.dp, horizontal = 12.dp), // Adjust padding for content
+        contentAlignment = Alignment.Center // Center content within the Box
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = null
-        )
         Column(
-            modifier = Modifier.padding(start = 4.dp)
+            horizontalAlignment = Alignment.CenterHorizontally // Center text horizontally
         ) {
             Text(
                 text = title,
-                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                fontSize = 14.sp
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, // Bold when selected
+                fontSize = 14.sp,
+                color = textColor // Use dynamic text color
             )
+            Spacer(modifier = Modifier.height(2.dp)) // Small space between title and subtitle
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                fontSize = 12.sp
+                color = textColor.copy(alpha = if (selected) 1.0f else 0.7f), // Adjust alpha for subtitle, keep it slightly dimmer if not selected
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center // Center align the subtitle text
             )
         }
     }
