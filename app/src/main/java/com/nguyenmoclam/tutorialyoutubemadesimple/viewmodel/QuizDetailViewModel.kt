@@ -193,7 +193,7 @@ class QuizDetailViewModel @Inject constructor(
                 // Get start time and completion time from progress entity
                 val startTime = if (quizCompleted) {
                     // If completed, calculate start time from completion time and last updated
-                    progressEntity.lastUpdated.minus(progressEntity.completionTime)
+                    progressEntity?.lastUpdated?.minus(progressEntity.completionTime) ?: state.startTime
                 } else {
                     state.startTime
                 }
@@ -201,7 +201,7 @@ class QuizDetailViewModel @Inject constructor(
                 val completionTime =
                     if (quizCompleted) {
                         // If completed, use the stored completion time
-                        progressEntity.completionTime
+                        progressEntity?.completionTime ?: 0L
                     } else {
                         state.completionTime
                     }
@@ -301,6 +301,9 @@ class QuizDetailViewModel @Inject constructor(
             }
         }
 
+        // Check if this is the last question in the quiz
+        val isLastQuestion = questionIndex >= state.questions.size - 1
+
         // Use CheckQuizCompletionUseCase to determine if quiz is completed
         val completionResult = checkQuizCompletionUseCase(
             questions = state.questions,
@@ -311,22 +314,32 @@ class QuizDetailViewModel @Inject constructor(
             startTime = state.startTime
         )
 
+        // If it's the last question, force completion check to be more aggressive
+        val shouldForceComplete = isLastQuestion &&
+                (completionResult.isCompleted ||
+                        updatedAnswers.size + updatedSkippedQuestions.size >= state.questions.size)
+
         state = state.copy(
             skippedQuestions = updatedSkippedQuestions,
+            answeredQuestions = updatedAnswers,
             currentQuestionIndex = questionIndex,
-            quizCompleted = completionResult.isCompleted,
-            completionTime = if (completionResult.completionTime > 0) completionResult.completionTime else state.completionTime
+            quizCompleted = completionResult.isCompleted || shouldForceComplete,
+            completionTime = if ((completionResult.completionTime > 0) || shouldForceComplete)
+                System.currentTimeMillis()
+            else
+                state.completionTime
         )
 
         // Save progress to database if we have a valid quiz ID
         state.quiz?.id?.let { quizId ->
             viewModelScope.launch {
                 // Calculate the elapsed time (duration) if quiz is completed
-                val elapsedTime = if (state.quizCompleted && state.startTime > 0) {
-                    System.currentTimeMillis() - state.startTime
-                } else {
-                    0L
-                }
+                val elapsedTime =
+                    if ((state.quizCompleted || shouldForceComplete) && state.startTime > 0) {
+                        System.currentTimeMillis() - state.startTime
+                    } else {
+                        0L
+                    }
                 saveQuizProgressUseCase(quizId, questionIndex, updatedAnswers, elapsedTime)
                 quizStateManager.markForRefresh() // Mark for refresh after saving progress (due to skip)
             }

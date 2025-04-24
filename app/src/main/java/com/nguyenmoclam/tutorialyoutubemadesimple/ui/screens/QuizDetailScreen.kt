@@ -520,9 +520,11 @@ fun QuizDetailScreenContent(
                                         },
                                         onSkipQuestion = {
                                             quizDetailViewModel.skipQuestion(currentQuestionIndex)
-                                            // ViewModel state change triggers LaunchedEffect to update currentQuestionIndex
-                                            onSelectedAnswerChange("")
-                                            onShowFeedbackChange(false)
+                                            // If this was the last question, immediately check completion
+                                            if (currentQuestionIndex >= quizQuestions.size - 1) {
+                                                quizDetailViewModel.checkQuizCompletion()
+                                            }
+                                            // Let LaunchedEffect handle the rest of navigation after state update
                                         },
                                         onNextQuestion = {
                                             if (currentQuestionIndex < quizQuestions.size - 1) {
@@ -673,14 +675,41 @@ fun QuizDetailScreen(
         ) {
             if (quizQuestions.isNotEmpty() && quizDetailViewModel.state.quizStarted) {
                 answeredQuestions = quizDetailViewModel.state.answeredQuestions
+                
+                // Check if we just skipped a question
+                val justSkipped = quizDetailViewModel.state.skippedQuestions.contains(currentQuestionIndex)
+                
+                // Check for quiz completion if we're on the last question and it was skipped
+                // This needs to happen BEFORE we calculate nextIndexToShow
+                if (justSkipped && currentQuestionIndex >= quizQuestions.size - 1) {
+                    quizDetailViewModel.checkQuizCompletion()
+                }
+                
+                // If the quiz is now completed due to skipping the last question, don't proceed with navigation
+                if (quizDetailViewModel.state.quizCompleted) {
+                    return@LaunchedEffect  // Exit the effect early
+                }
+                
                 val lastAnsweredIndex =
                     quizDetailViewModel.getLastAnsweredQuestionIndex() // Get latest index from VM
                 val nextIndexToShow =
-                    if (lastAnsweredIndex >= 0 && lastAnsweredIndex < quizQuestions.size) lastAnsweredIndex else quizDetailViewModel.state.currentQuestionIndex
+                    if (justSkipped && currentQuestionIndex < quizQuestions.size - 1) {
+                        // If we just skipped and not on the last question, advance to the next question
+                        currentQuestionIndex + 1
+                    } else if (lastAnsweredIndex >= 0 && lastAnsweredIndex < quizQuestions.size) {
+                        lastAnsweredIndex 
+                    } else {
+                        quizDetailViewModel.state.currentQuestionIndex
+                    }
 
                 // Only update local state if it differs from ViewModel's intended index
                 if (currentQuestionIndex != nextIndexToShow) {
                     currentQuestionIndex = nextIndexToShow
+                    // Reset input fields when transitioning to a new question after skip
+                    if (justSkipped) {
+                        selectedAnswer = ""
+                        showFeedback = false
+                    }
                 }
 
                 // Restore feedback state for the current question if it was answered
@@ -698,8 +727,8 @@ fun QuizDetailScreen(
                         is TrueFalseQuestion -> (answerForCurrent == "True" && currentQ.isTrue) || (answerForCurrent == "False" && !currentQ.isTrue)
                         else -> false
                     }
-                } else {
-                    // Reset if moving to an unanswered question
+                } else if (!justSkipped) {
+                    // Reset if moving to an unanswered question (but not right after a skip since we already reset above)
                     selectedAnswer = ""
                     showFeedback = false
                     isCorrect = false

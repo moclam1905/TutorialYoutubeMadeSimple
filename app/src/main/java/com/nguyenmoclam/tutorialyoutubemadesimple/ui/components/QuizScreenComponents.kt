@@ -487,7 +487,7 @@ fun QuizNavigationButtons(
                 Button(
                     onClick = onSkipQuestion,
                     modifier = Modifier.weight(1f),
-                    enabled = !isLastQuestion // Disable skip on the last question? Or allow? Let's allow.
+                    enabled = true // Always enable Skip button, even on last question
                 ) {
                     Text(stringResource(R.string.skip_question_button))
                 }
