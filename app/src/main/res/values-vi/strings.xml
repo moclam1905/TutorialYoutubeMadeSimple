@@ -348,4 +348,7 @@
     <string name="permission_rationale_confirm">Cấp quyền</string>
     <string name="permission_denied_snackbar">Quyền thông báo đã bị từ chối. Không thể đặt lời nhắc.</string>
 
+    <string name="quiz_your_answer">Câu trả lời của bạn</string>
+    <string name="quiz_correct_answer">Đáp án đúng</string>
+
 </resources>

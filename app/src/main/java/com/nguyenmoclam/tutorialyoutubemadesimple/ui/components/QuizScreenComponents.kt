@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.QuestionStatus
 
 // Existing components from the file
 /**
@@ -116,6 +117,8 @@ fun QuizResultsScreen(
     correctQuestionIndices: List<Int>,
     incorrectQuestionIndices: List<Int>,
     skippedQuestionIndices: List<Int>,
+    userAnswers: Map<Int, String>,
+    correctAnswersMap: Map<Int, String>,
     onRetryQuiz: () -> Unit
 ) {
     Column(
@@ -148,21 +151,26 @@ fun QuizResultsScreen(
         QuestionStatusList(
             title = stringResource(R.string.quiz_correct_questions),
             questionIndices = correctQuestionIndices,
-            quizQuestions = quizQuestions
+            quizQuestions = quizQuestions,
+            status = QuestionStatus.CORRECT
         )
 
         // Incorrect answers section
         QuestionStatusList(
             title = stringResource(R.string.quiz_incorrect_questions),
             questionIndices = incorrectQuestionIndices,
-            quizQuestions = quizQuestions
+            quizQuestions = quizQuestions,
+            status = QuestionStatus.INCORRECT,
+            userAnswers = userAnswers,
+            correctAnswers = correctAnswersMap
         )
 
         // Skipped questions section
         QuestionStatusList(
             title = stringResource(R.string.quiz_skipped_questions),
             questionIndices = skippedQuestionIndices,
-            quizQuestions = quizQuestions
+            quizQuestions = quizQuestions,
+            status = QuestionStatus.SKIPPED
         )
 
         Spacer(modifier = Modifier.height(24.dp))

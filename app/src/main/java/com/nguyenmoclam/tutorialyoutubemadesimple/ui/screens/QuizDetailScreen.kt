@@ -449,15 +449,22 @@ fun QuizDetailScreenContent(
                             when {
                                 // Quiz Completed: Show Results
                                 quizDetailViewModel.state.quizCompleted -> {
+                                    // Fetch the answer maps from the ViewModel
+                                    val userAnswersMap = quizDetailViewModel.getUserAnswersMap()
+                                    val correctAnswersMap = quizDetailViewModel.getCorrectAnswersMap()
+
                                     QuizResultsScreen(
                                         quizQuestions = quizQuestions,
                                         correctAnswers = quizDetailViewModel.getCorrectAnswersCount(),
                                         incorrectAnswers = quizDetailViewModel.getIncorrectAnswersCount(),
-                                        skippedQuestions = quizDetailViewModel.getSkippedQuestionsCount(), // Use calculated skipped count
+                                        skippedQuestions = quizDetailViewModel.getSkippedQuestionsCount(),
                                         completionTimeSeconds = quizDetailViewModel.getQuizCompletionTimeInSeconds(),
                                         correctQuestionIndices = quizDetailViewModel.getCorrectlyAnsweredQuestions(),
                                         incorrectQuestionIndices = quizDetailViewModel.getIncorrectlyAnsweredQuestions(),
-                                        skippedQuestionIndices = quizDetailViewModel.getSkippedQuestions(), // Use calculated skipped indices
+                                        skippedQuestionIndices = quizDetailViewModel.getSkippedQuestions(),
+                                        // Pass the fetched maps
+                                        userAnswers = userAnswersMap,
+                                        correctAnswersMap = correctAnswersMap,
                                         onRetryQuiz = { quizDetailViewModel.resetQuiz() }
                                     )
                                 }
@@ -660,6 +667,7 @@ fun QuizDetailScreen(
         LaunchedEffect(
             quizQuestions,
             quizDetailViewModel.state.answeredQuestions,
+            quizDetailViewModel.state.skippedQuestions,
             quizDetailViewModel.state.currentQuestionIndex,
             quizDetailViewModel.state.quizStarted
         ) {

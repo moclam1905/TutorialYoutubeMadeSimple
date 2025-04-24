@@ -691,5 +691,34 @@ class QuizDetailViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Returns the map of user's answers.
+     * Key: Original question index, Value: User's answer string.
+     */
+    fun getUserAnswersMap(): Map<Int, String> = state.answeredQuestions
+
+    /**
+     * Constructs and returns a map of correct answers.
+     * Key: Original question index, Value: Correct answer string.
+     */
+    fun getCorrectAnswersMap(): Map<Int, String> {
+        val map = mutableMapOf<Int, String>()
+        state.questions.forEachIndexed { index, question ->
+            when (question) {
+                is MultipleChoiceQuestion -> {
+                    // Join keys if multiple correct answers exist, separated by comma and space
+                    // Assuming keys are single letters like A, B, C...
+                    map[index] = question.correctAnswers.joinToString(", ")
+                }
+                is TrueFalseQuestion -> {
+                    // Convert boolean to "True" or "False" string
+                    map[index] = question.isTrue.toString().replaceFirstChar { it.titlecase() }
+                }
+                // Add cases for other question types if necessary
+            }
+        }
+        return map
+    }
 }
 

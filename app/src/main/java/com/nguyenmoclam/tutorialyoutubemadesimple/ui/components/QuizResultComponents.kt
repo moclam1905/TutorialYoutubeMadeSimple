@@ -1,21 +1,29 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -24,6 +32,11 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import java.util.concurrent.TimeUnit
+
+// Define the QuestionStatus enum
+enum class QuestionStatus {
+    CORRECT, INCORRECT, SKIPPED
+}
 
 /**
  * Card displaying quiz results summary
@@ -36,9 +49,10 @@ fun QuizResultsSummaryCard(
     skippedQuestions: Int,
     completionTimeSeconds: Int
 ) {
-    Card(
+    ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -49,46 +63,84 @@ fun QuizResultsSummaryCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
                         text = stringResource(R.string.quiz_results_correct),
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Text(
-                        text = "$correctAnswers",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = stringResource(R.string.quiz_results_correct),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text(
+                            text = "$correctAnswers",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
                         text = stringResource(R.string.quiz_results_incorrect),
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Text(
-                        text = "$incorrectAnswers",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                         Icon(
+                            imageVector = Icons.Filled.Cancel,
+                            contentDescription = stringResource(R.string.quiz_results_incorrect),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text(
+                            text = "$incorrectAnswers",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
 
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
                         text = stringResource(R.string.quiz_results_skipped),
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Text(
-                        text = "$skippedQuestions",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                     Row(verticalAlignment = Alignment.CenterVertically) {
+                         Icon(
+                            imageVector = Icons.Filled.SkipNext,
+                            contentDescription = stringResource(R.string.quiz_results_skipped),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text(
+                            text = "$skippedQuestions",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Format completion time
             val hours = TimeUnit.SECONDS.toHours(completionTimeSeconds.toLong())
             val minutes = TimeUnit.SECONDS.toMinutes(completionTimeSeconds.toLong()) % 60
             val seconds = completionTimeSeconds % 60
@@ -107,50 +159,79 @@ fun QuizResultsSummaryCard(
 }
 
 /**
- * Component displaying a list of questions with their status (correct, incorrect, or skipped)
+ * Component displaying a list of questions based on their status.
+ * It now receives status explicitly and answers maps.
+ * Assumes parent handles scrolling.
  */
 @Composable
 fun QuestionStatusList(
     title: String,
     questionIndices: List<Int>,
-    quizQuestions: List<Any>
+    quizQuestions: List<Any>,
+    status: QuestionStatus,
+    userAnswers: Map<Int, String> = emptyMap(),
+    correctAnswers: Map<Int, String> = emptyMap()
 ) {
     if (questionIndices.isNotEmpty()) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp, top = 16.dp),
             textAlign = TextAlign.Start
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        val statusColor = when (status) {
+            QuestionStatus.CORRECT -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            QuestionStatus.INCORRECT -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            QuestionStatus.SKIPPED -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+        }
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            items(questionIndices) { index ->
-                val question = quizQuestions[index]
+            questionIndices.forEach { originalIndex ->
+                val question = quizQuestions[originalIndex]
                 val questionText = when (question) {
                     is MultipleChoiceQuestion -> question.question
                     is TrueFalseQuestion -> question.statement
-                    else -> stringResource(R.string.question_number, index + 1)
+                    else -> stringResource(R.string.question_number, originalIndex + 1)
                 }
 
-                Text(
-                    text = "${index + 1}. $questionText",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = statusColor)
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        Text(
+                            text = "${originalIndex + 1}. $questionText",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
 
-                if (index < questionIndices.lastIndex) {
-                    Divider()
+                        if (status == QuestionStatus.INCORRECT) {
+                            val userAnswerText = userAnswers[originalIndex] ?: "N/A"
+                            val correctAnswerText = correctAnswers[originalIndex] ?: "N/A"
+
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${stringResource(id = R.string.quiz_your_answer)}: $userAnswerText",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                             Text(
+                                text = "${stringResource(id = R.string.quiz_correct_answer)}: $correctAnswerText",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
