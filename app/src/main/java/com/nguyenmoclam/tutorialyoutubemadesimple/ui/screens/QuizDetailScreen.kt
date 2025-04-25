@@ -92,6 +92,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.outlined.AccountTree
+import androidx.compose.material.icons.outlined.Quiz
+import androidx.compose.material.icons.outlined.Summarize
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 
 // CompositionLocal for providing NavController and QuizDetailViewModel to child composables
 val LocalNavController =
@@ -434,12 +441,12 @@ fun QuizDetailScreenContent(
                         if (summaryContent.isNotEmpty()) {
                             SummaryContent(summaryContent, quizIdLong)
                         } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(stringResource(R.string.no_summary_available))
-                            }
+                            // Sử dụng EmptyStateComponent cho Summary
+                            EmptyStateComponent(
+                                icon = Icons.Outlined.Summarize,
+                                title = stringResource(R.string.no_summary_available),
+                                description = stringResource(R.string.no_summary_description)
+                            )
                         }
                     }
 
@@ -540,12 +547,12 @@ fun QuizDetailScreenContent(
                                 }
                             }
                         } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(stringResource(R.string.no_questions_available))
-                            }
+                            // Sử dụng EmptyStateComponent cho Questions
+                            EmptyStateComponent(
+                                icon = Icons.Outlined.Quiz,
+                                title = stringResource(R.string.no_questions_available),
+                                description = stringResource(R.string.no_questions_description)
+                            )
                         }
                     }
 
@@ -567,14 +574,17 @@ fun QuizDetailScreenContent(
                                 }
                             )
                         } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Button(onClick = { quizDetailViewModel.generateMindMap() }) {
-                                    Text(stringResource(R.string.generate_mindmap))
+                            // Sử dụng EmptyStateComponent cho Mind Map
+                            EmptyStateComponent(
+                                icon = Icons.Outlined.AccountTree,
+                                title = stringResource(R.string.mindmap_tab),
+                                description = stringResource(R.string.mindmap_generation_description),
+                                actionContent = {
+                                    Button(onClick = { quizDetailViewModel.generateMindMap() }) {
+                                        Text(stringResource(R.string.generate_mindmap))
+                                    }
                                 }
-                            }
+                            )
                         }
                     }
                 }
@@ -797,3 +807,49 @@ fun QuizDetailScreen(
         )
     }
 }
+
+// --- Definition for EmptyStateComponent ---
+@Composable
+fun EmptyStateComponent(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    title: String,
+    description: String? = null,
+    actionContent: (@Composable () -> Unit)? = null
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null, // Decorative icon
+            modifier = Modifier.size(72.dp), // Icon lớn hơn
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        if (description != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (actionContent != null) {
+            Spacer(modifier = Modifier.height(32.dp))
+            actionContent()
+        }
+    }
+}
+// --- End of EmptyStateComponent Definition ---

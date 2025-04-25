@@ -350,6 +350,9 @@
     <string name="quiz_your_answer">Your Answer</string>
     <string name="quiz_correct_answer">Correct Answer</string>
     <string name="cd_open_link">Open link</string>
+    <string name="no_summary_description">There is no summary available for this video. Try generating one first.</string>
+    <string name="no_questions_description">No questions have been created yet. Please generate or add questions manually.</string>
+    <string name="mindmap_generation_description">Visualize the key ideas of your video content with an automatically generated mind map.</string>
 
 
 </resources>
