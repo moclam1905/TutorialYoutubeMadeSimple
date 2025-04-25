@@ -350,5 +350,6 @@
 
     <string name="quiz_your_answer">Câu trả lời của bạn</string>
     <string name="quiz_correct_answer">Đáp án đúng</string>
+    <string name="cd_open_link">Mở liên kết</string>
 
 </resources>

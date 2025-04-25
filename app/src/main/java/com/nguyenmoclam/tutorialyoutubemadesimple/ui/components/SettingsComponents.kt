@@ -3,6 +3,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -39,6 +41,16 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsState
 import kotlin.math.log10
 import kotlin.math.pow
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ContactSupport
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ClearAll
+import androidx.compose.material.icons.filled.CleaningServices
 
 /**
  * Theme settings component that allows selecting between light, dark, and system theme modes
@@ -330,7 +342,8 @@ fun DataManagementSettings(
                 .padding(vertical = 8.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.storage_usage), fontWeight = FontWeight.Medium)
@@ -344,39 +357,45 @@ fun DataManagementSettings(
 
         // Data management actions
         Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onClearQuizHistoryClick)
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.clear_quiz_history))
-            }
+            SettingsItem(
+                title = stringResource(R.string.clear_quiz_history),
+                onClick = onClearQuizHistoryClick,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            )
 
             Divider()
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onResetLearningProgressClick)
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.reset_learning_progress))
-            }
+            SettingsItem(
+                title = stringResource(R.string.reset_learning_progress),
+                onClick = onResetLearningProgressClick,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.ClearAll,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            )
 
             Divider()
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onClearCacheClick)
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.clear_cache))
-            }
+            SettingsItem(
+                title = stringResource(R.string.clear_cache),
+                onClick = onClearCacheClick,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.CleaningServices,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            )
         }
     }
 }
@@ -500,8 +519,29 @@ fun NetworkSettings(
             onValueChange = { onConnectionTimeoutChanged(it.toInt()) },
             valueRange = 120f..240f,
             steps = 24,
-            colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            )
         )
+        
+        // Min/max labels
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "120s",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "240s",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -630,51 +670,59 @@ fun AppInfoSettings(
 
         // Links
         Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onGitHubClick)
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.github_repository))
-            }
-
+            SettingsItem(
+                title = stringResource(R.string.github_repository),
+                onClick = onGitHubClick,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Code,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+            
             Divider()
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onPrivacyPolicyClick)
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.privacy_policy))
-            }
-
+            
+            SettingsItem(
+                title = stringResource(R.string.privacy_policy),
+                onClick = onPrivacyPolicyClick,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Security,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+            
             Divider()
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onContactClick)
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.contact_information))
-            }
-
+            
+            SettingsItem(
+                title = stringResource(R.string.contact_information),
+                onClick = onContactClick,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.ContactSupport,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+            
             Divider()
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onLicenseInfoClick)
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.license_information))
-            }
+            
+            SettingsItem(
+                title = stringResource(R.string.license_information),
+                onClick = onLicenseInfoClick,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Description,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
         }
     }
 }
@@ -694,4 +742,56 @@ private fun formatBytes(bytes: Long): String {
         bytes / 1024.0.pow(digitGroups.toDouble()),
         units[digitGroups]
     )
+}
+
+/**
+ * Reusable settings item with consistent styling for clickable settings
+ */
+@Composable
+fun SettingsItem(
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    showArrow: Boolean = true
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Leading icon if provided
+        leadingIcon?.let {
+            Box(modifier = Modifier.padding(end = 16.dp)) {
+                leadingIcon()
+            }
+        }
+        
+        // Text column (title and optional subtitle)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            subtitle?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        // Arrow icon if showArrow is true
+        if (showArrow) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }

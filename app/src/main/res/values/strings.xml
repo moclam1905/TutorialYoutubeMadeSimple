@@ -349,5 +349,7 @@
 
     <string name="quiz_your_answer">Your Answer</string>
     <string name="quiz_correct_answer">Correct Answer</string>
+    <string name="cd_open_link">Open link</string>
+
 
 </resources>
