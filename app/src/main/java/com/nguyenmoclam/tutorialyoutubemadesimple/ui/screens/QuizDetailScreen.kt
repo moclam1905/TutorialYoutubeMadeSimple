@@ -99,6 +99,7 @@ import androidx.compose.material.icons.outlined.Quiz
 import androidx.compose.material.icons.outlined.Summarize
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.EmptyStateComponent
 
 // CompositionLocal for providing NavController and QuizDetailViewModel to child composables
 val LocalNavController =
@@ -808,48 +809,3 @@ fun QuizDetailScreen(
     }
 }
 
-// --- Definition for EmptyStateComponent ---
-@Composable
-fun EmptyStateComponent(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    title: String,
-    description: String? = null,
-    actionContent: (@Composable () -> Unit)? = null
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null, // Decorative icon
-            modifier = Modifier.size(72.dp), // Icon lớn hơn
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        if (description != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        if (actionContent != null) {
-            Spacer(modifier = Modifier.height(32.dp))
-            actionContent()
-        }
-    }
-}
-// --- End of EmptyStateComponent Definition ---
