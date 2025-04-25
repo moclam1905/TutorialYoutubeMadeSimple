@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -60,6 +62,7 @@ fun HomeTopAppBar() {
 fun ScreenTitle(titleRes: Int) {
     Text(
         text = stringResource(titleRes),
+        fontSize = 18.sp,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = 16.dp)
@@ -93,11 +96,6 @@ fun SearchBar(
         },
         shape = RoundedCornerShape(8.dp),
         singleLine = true,
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            containerColor = Color.Transparent, // Make background transparent
-            focusedBorderColor = Color.Transparent, // Remove border when focused
-            unfocusedBorderColor = Color.Transparent // Remove border when unfocused
-        )
     )
 }
 
@@ -124,10 +122,11 @@ fun FilterTabs(
         indicator = {}
     ) {
         tabs.forEachIndexed { index, (titleRes, titleKey) ->
-            FilterTab(
-                title = stringResource(titleRes),
+            FilterChip(
                 selected = selectedTabIndex == index,
-                onClick = { onTabSelected(index, titleKey) }
+                onClick = { onTabSelected(index, titleKey) },
+                label = { Text(stringResource(titleRes)) },
+                modifier = Modifier.padding(horizontal = 4.dp)
             )
         }
     }
@@ -158,39 +157,13 @@ fun SubFilterChips(
         indicator = {}
     ) {
         subFilters.forEachIndexed { index, (titleRes, titleKey) ->
-            FilterTab(
-                title = stringResource(titleRes),
+            FilterChip(
                 selected = selectedSubFilterIndex == index,
-                onClick = { onSubFilterSelected(index, titleKey) }
+                onClick = { onSubFilterSelected(index, titleKey) },
+                label = { Text(stringResource(titleRes)) },
+                modifier = Modifier.padding(horizontal = 4.dp)
             )
         }
-    }
-}
-
-
-@Composable
-fun FilterTab(
-    title: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val backgroundColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val textColor =
-        if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(backgroundColor)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = title,
-            color = textColor,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-        )
     }
 }
 

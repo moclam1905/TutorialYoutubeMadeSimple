@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,12 +23,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -55,12 +60,7 @@ fun TagFilterButton(
     BadgedBox(
         badge = {
             if (selectedTagIds.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .height(8.dp)
-                        .width(8.dp)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape)
-                )
+                Badge(modifier = Modifier.offset(x = (-4).dp, y = 4.dp))
             }
         },
         modifier = modifier
@@ -154,16 +154,28 @@ fun TagFilterSheetContent(
 
         // Tag List
         if (filteredTags.isEmpty()) {
-            Text(
-                text = if (searchQuery.isBlank()) stringResource(R.string.no_tags_available)
-                else stringResource(R.string.tag_filter_no_results),
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 24.dp),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = if (searchQuery.isBlank()) stringResource(R.string.no_tags_available)
+                    else stringResource(R.string.tag_filter_no_results),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         } else {
             LazyColumn(
                 modifier = Modifier.weight(
@@ -172,15 +184,21 @@ fun TagFilterSheetContent(
                 )
             ) { // Allow list to scroll, but don't take all space initially
                 items(items = filteredTags, key = { it.tag.id }) { tagWithCount ->
-                    TagListItem(
-                        tagWithCount = tagWithCount,
-                        isSelected = selectedTagIds.contains(tagWithCount.tag.id),
-                        onTagClick = { onTagSelected(tagWithCount.tag.id) }
+                    val isSelected = selectedTagIds.contains(tagWithCount.tag.id)
+                    ListItem(
+                        headlineContent = { Text(tagWithCount.tag.name) },
+                        supportingContent = { Text("(${tagWithCount.quizCount})") },
+                        leadingContent = {
+                            Checkbox(
+                                checked = isSelected,
+                                onCheckedChange = { onTagSelected(tagWithCount.tag.id) }
+                            )
+                        },
+                        modifier = Modifier.clickable { onTagSelected(tagWithCount.tag.id) }
                     )
                 }
             }
         }
-
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -197,49 +215,5 @@ fun TagFilterSheetContent(
                 Text(stringResource(R.string.clear_tag_filters))
             }
         }
-    }
-}
-
-/**
- * Composable for displaying a single tag item in the list.
- */
-@Composable
-fun TagListItem(
-    tagWithCount: TagWithCount,
-    isSelected: Boolean,
-    onTagClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onTagClick)
-            .padding(vertical = 12.dp, horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Checkbox or Check Icon
-        Icon(
-            imageVector = Icons.Default.Check,
-            contentDescription = null,
-            tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-            modifier = Modifier.size(24.dp)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // Tag Name (takes available space)
-        Text(
-            text = tagWithCount.tag.name,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f) // Occupy remaining space
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Quiz Count (aligned to the right)
-        Text(
-            text = "(${tagWithCount.quizCount})",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
