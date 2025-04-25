@@ -174,11 +174,11 @@
     <string name="auto_generate">Tự động Tạo</string>
     <string name="question_level">Mức độ Câu hỏi:</string>
     <string name="low">Thấp</string>
-    <string name="five_questions">5-10 câu</string>
+    <string name="five_questions">5–10 câu</string>
     <string name="medium">Trung bình</string>
-    <string name="ten_questions">11-20 câu</string>
+    <string name="ten_questions">11–20 câu</string>
     <string name="high">Cao</string>
-    <string name="fifteen_questions">21-30 câu</string>
+    <string name="fifteen_questions">21–30 câu</string>
     <string name="manual">Thủ công</string>
     <string name="number_of_questions_range">Số lượng câu hỏi (1–20)</string>
     <string name="step_1_enter_video">Bước 1: Nhập Video YouTube</string>

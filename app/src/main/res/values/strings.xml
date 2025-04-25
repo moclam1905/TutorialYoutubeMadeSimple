@@ -174,11 +174,11 @@
     <string name="auto_generate">Auto Generate</string>
     <string name="question_level">Question Level:</string>
     <string name="low">Low</string>
-    <string name="five_questions">5–10 questions</string>
+    <string name="five_questions">5–10 Qs</string>
     <string name="medium">Medium</string>
-    <string name="ten_questions">11–20 questions</string>
+    <string name="ten_questions">11–20 Qs</string>
     <string name="high">High</string>
-    <string name="fifteen_questions">21–30 questions</string>
+    <string name="fifteen_questions">21–30 Qs</string>
     <string name="manual">Manual</string>
     <string name="number_of_questions_range">Number of questions (1–20)</string>
     <string name="step_1_enter_video">Step 1: Enter YouTube Video</string>
