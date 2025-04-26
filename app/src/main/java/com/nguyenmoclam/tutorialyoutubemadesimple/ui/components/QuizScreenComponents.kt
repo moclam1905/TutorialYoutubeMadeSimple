@@ -1,11 +1,17 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,26 +21,36 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Quiz
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -44,10 +60,6 @@ import androidx.compose.ui.unit.dp
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.QuestionStatus
-import androidx.compose.material.icons.outlined.Quiz
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material3.FilledTonalButton
 
 /**
  * Screen shown when a quiz is ready to start but hasn't been started yet
@@ -217,15 +229,22 @@ fun QuizResultsScreen(
  */
 @Composable
 fun QuestionHeader(currentQuestionIndex: Int, totalQuestions: Int) {
-    Text(
-        text = stringResource(
-            R.string.question_index,
-            currentQuestionIndex + 1,
-            totalQuestions
-        ),
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.primary
-    )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(
+                R.string.question_index,
+                currentQuestionIndex + 1,
+                totalQuestions
+            ),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        LinearProgressIndicator(
+            progress = { (currentQuestionIndex + 1) / totalQuestions.toFloat() },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }
 
 /**
@@ -238,88 +257,110 @@ fun MultipleChoiceOptionItem(
     optionValue: String,
     isSelected: Boolean,
     showFeedback: Boolean,
-    isCorrect: Boolean, // Is this specific option the correct one?
-    isAnsweredCorrectly: Boolean, // Was the selected answer correct?
+    isCorrect: Boolean,
+    isAnsweredCorrectly: Boolean,
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = when {
-        !showFeedback -> if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-        isSelected && isAnsweredCorrectly -> Color(0xFFDCEDC8) // Light Green for correct selection
-        isSelected && !isAnsweredCorrectly -> Color(0xFFFFCDD2) // Light Red for incorrect selection
-        isCorrect -> Color(0xFFDCEDC8).copy(alpha = 0.5f) // Dim Green for correct answer not selected
-        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f) // Dim default for others
-    }
-    val elevation = if (isSelected && !showFeedback) 4.dp else 1.dp
+    val interactionSource = remember { MutableInteractionSource() }
+    val cornerRadius = 12.dp
 
-    Card(
+    val targetBorderColor = when {
+        showFeedback && isCorrect -> MaterialTheme.colorScheme.primary
+        showFeedback && isSelected && !isAnsweredCorrectly -> MaterialTheme.colorScheme.error
+        isSelected && !showFeedback -> MaterialTheme.colorScheme.primary
+        else -> Color.Transparent
+    }
+    val animatedBorderColor by animateColorAsState(
+        targetValue = targetBorderColor,
+        animationSpec = tween(durationMillis = 300),
+        label = "option_border_color"
+    )
+
+    val targetBackgroundColor = when {
+        showFeedback && isCorrect -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        showFeedback && isSelected && !isAnsweredCorrectly -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        isSelected && !showFeedback -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val animatedBackgroundColor by animateColorAsState(
+        targetValue = targetBackgroundColor,
+        animationSpec = tween(durationMillis = 300),
+        label = "option_background_color"
+    )
+
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable(enabled = enabled, onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+            .clickable(
+                enabled = enabled,
+                onClick = onClick,
+                interactionSource = interactionSource,
+                indication = rememberRipple()
+            ),
+        shape = RoundedCornerShape(cornerRadius),
+        colors = CardDefaults.outlinedCardColors(containerColor = animatedBackgroundColor),
+        border = BorderStroke(2.dp, animatedBorderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected && !showFeedback) 3.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = optionKey,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(4.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = optionKey,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.labelMedium
                     )
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            val textColor =
-                if (showFeedback && ((isSelected && isAnsweredCorrectly) || isCorrect || isSelected)) {
-                    Color.Black // Use black text on green or red background for better contrast
-                } else {
-                    LocalContentColor.current // Use default text color otherwise
                 }
-            Text(
-                text = optionValue,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge,
-                color = textColor
-            )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = optionValue,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            }
 
-            // Feedback Icons / Radio Button
-            if (showFeedback) {
-                if (isCorrect) { // Show check if this is a correct answer
+            AnimatedVisibility(visible = isSelected || (showFeedback && isCorrect)) {
+                val icon = when {
+                    showFeedback && isCorrect -> Icons.Filled.CheckCircle
+                    showFeedback && isSelected -> Icons.Filled.Cancel
+                    isSelected -> Icons.Filled.RadioButtonChecked
+                    else -> null
+                }
+                val tint = when {
+                    showFeedback && isCorrect -> MaterialTheme.colorScheme.primary
+                    showFeedback && isSelected -> MaterialTheme.colorScheme.error
+                    isSelected -> MaterialTheme.colorScheme.primary
+                    else -> LocalContentColor.current
+                }
+                if (icon != null) {
                     Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(R.string.correct_answer),
-                        tint = Color.Green.copy(alpha = 0.8f) // Slightly darker green
-                    )
-                } else if (isSelected) { // Show close if this was selected but incorrect
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.incorrect_answer),
-                        tint = Color.Red.copy(alpha = 0.8f) // Slightly darker red
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = tint,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-                // No icon otherwise
-            } else {
-                // Show RadioButton only when feedback is not shown
-                RadioButton(
-                    selected = isSelected,
-                    onClick = null,
-                    enabled = false
-                ) // Disable direct click on radio
             }
         }
     }
 }
-
 
 /**
  * Displays the body content for a Multiple Choice Question.
@@ -360,68 +401,91 @@ fun MultipleChoiceQuestionBody(
 @Composable
 fun TrueFalseOptionItem(
     text: String,
-    value: String, // "True" or "False"
+    value: String,
     isSelected: Boolean,
     showFeedback: Boolean,
-    isCorrectOption: Boolean, // Is this option (True/False) the correct answer?
-    isAnsweredCorrectly: Boolean, // Was the selected answer correct?
+    isCorrectOption: Boolean,
+    isAnsweredCorrectly: Boolean,
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = when {
-        !showFeedback -> if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-        isSelected && isAnsweredCorrectly -> Color(0xFFDCEDC8) // Light Green
-        isSelected && !isAnsweredCorrectly -> Color(0xFFFFCDD2) // Light Red
-        isCorrectOption -> Color(0xFFDCEDC8).copy(alpha = 0.5f) // Dim Green
-        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f) // Dim default
-    }
-    val elevation = if (isSelected && !showFeedback) 4.dp else 1.dp
+    val interactionSource = remember { MutableInteractionSource() }
+    val cornerRadius = 12.dp
 
-    Card(
+    val targetBorderColor = when {
+        showFeedback && isCorrectOption -> MaterialTheme.colorScheme.primary
+        showFeedback && isSelected && !isCorrectOption -> MaterialTheme.colorScheme.error
+        isSelected && !showFeedback -> MaterialTheme.colorScheme.primary
+        else -> Color.Transparent
+    }
+    val animatedBorderColor by animateColorAsState(
+        targetValue = targetBorderColor,
+        animationSpec = tween(durationMillis = 300),
+        label = "tf_option_border_color"
+    )
+
+    val targetBackgroundColor = when {
+        showFeedback && isCorrectOption -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        showFeedback && isSelected && !isCorrectOption -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        isSelected && !showFeedback -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val animatedBackgroundColor by animateColorAsState(
+        targetValue = targetBackgroundColor,
+        animationSpec = tween(durationMillis = 300),
+        label = "tf_option_background_color"
+    )
+
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable(enabled = enabled, onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+            .clickable(
+                enabled = enabled,
+                onClick = onClick,
+                interactionSource = interactionSource,
+                indication = rememberRipple()
+            ),
+        shape = RoundedCornerShape(cornerRadius),
+        colors = CardDefaults.outlinedCardColors(containerColor = animatedBackgroundColor),
+        border = BorderStroke(2.dp, animatedBorderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected && !showFeedback) 3.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            val textColor =
-                if (showFeedback && ((isSelected && isAnsweredCorrectly) || isCorrectOption || isSelected)) {
-                    Color.Black // Use black text on green or red background
-                } else {
-                    LocalContentColor.current // Use default text color
-                }
             Text(
                 text = text,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge,
-                color = textColor
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f).padding(end = 8.dp)
             )
 
-            if (showFeedback) {
-                if (isCorrectOption) {
+            AnimatedVisibility(visible = isSelected || (showFeedback && isCorrectOption)) {
+                val icon = when {
+                    showFeedback && isCorrectOption -> Icons.Filled.CheckCircle
+                    showFeedback && isSelected -> Icons.Filled.Cancel
+                    isSelected -> Icons.Filled.RadioButtonChecked
+                    else -> null
+                }
+                val tint = when {
+                    showFeedback && isCorrectOption -> MaterialTheme.colorScheme.primary
+                    showFeedback && isSelected -> MaterialTheme.colorScheme.error
+                    isSelected -> MaterialTheme.colorScheme.primary
+                    else -> LocalContentColor.current
+                }
+                if (icon != null) {
                     Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(R.string.correct_answer),
-                        tint = Color.Green.copy(alpha = 0.8f)
-                    )
-                } else if (isSelected) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.incorrect_answer),
-                        tint = Color.Red.copy(alpha = 0.8f)
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = tint,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-            } else {
-                RadioButton(selected = isSelected, onClick = null, enabled = false)
             }
         }
     }
@@ -433,7 +497,7 @@ fun TrueFalseOptionItem(
 @Composable
 fun TrueFalseQuestionBody(
     question: TrueFalseQuestion,
-    selectedAnswer: String, // "True" or "False"
+    selectedAnswer: String,
     showFeedback: Boolean,
     isCorrect: Boolean,
     onAnswerSelected: (String) -> Unit
@@ -445,7 +509,6 @@ fun TrueFalseQuestionBody(
     )
     Spacer(modifier = Modifier.height(24.dp))
 
-    // True Option
     TrueFalseOptionItem(
         text = stringResource(R.string.true_txt),
         value = "True",
@@ -457,7 +520,6 @@ fun TrueFalseQuestionBody(
         onClick = { onAnswerSelected("True") }
     )
 
-    // False Option
     TrueFalseOptionItem(
         text = stringResource(R.string.false_txt),
         value = "False",
@@ -483,15 +545,13 @@ fun QuizNavigationButtons(
     onNextQuestion: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (showFeedback) {
-            // Show "Next Question" or potentially "Finish Quiz" if it's the last question
             Button(
                 onClick = onNextQuestion,
                 modifier = Modifier.fillMaxWidth(),
-                // enabled = !isLastQuestion // Enable even on last question to trigger completion check
             ) {
                 Text(
                     if (isLastQuestion) stringResource(R.string.finish_quiz_button) else stringResource(
@@ -502,25 +562,19 @@ fun QuizNavigationButtons(
                 Icon(Icons.Default.ArrowForward, contentDescription = stringResource(R.string.next))
             }
         } else {
-            // Show "Skip" and "Submit"
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            OutlinedButton(
+                onClick = onSkipQuestion,
+                modifier = Modifier.weight(1f),
+                enabled = true
             ) {
-                Button(
-                    onClick = onSkipQuestion,
-                    modifier = Modifier.weight(1f),
-                    enabled = true // Always enable Skip button, even on last question
-                ) {
-                    Text(stringResource(R.string.skip_question_button))
-                }
-                Button(
-                    onClick = onSubmitAnswer,
-                    modifier = Modifier.weight(1f),
-                    enabled = selectedAnswerNotEmpty
-                ) {
-                    Text(stringResource(R.string.submit_answer_button))
-                }
+                Text(stringResource(R.string.skip_question_button))
+            }
+            Button(
+                onClick = onSubmitAnswer,
+                modifier = Modifier.weight(1f),
+                enabled = selectedAnswerNotEmpty
+            ) {
+                Text(stringResource(R.string.submit_answer_button))
             }
         }
     }
@@ -545,10 +599,10 @@ fun QuizContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()) // Enable scrolling for long questions/options
+            .verticalScroll(rememberScrollState())
     ) {
         QuestionHeader(currentQuestionIndex, quizQuestions.size)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         val currentQuestion = quizQuestions[currentQuestionIndex]
         when (currentQuestion) {
@@ -567,10 +621,9 @@ fun QuizContent(
                 isCorrect = isCorrect,
                 onAnswerSelected = onAnswerSelected
             )
-            // Add cases for other question types if necessary
         }
 
-        Spacer(modifier = Modifier.height(32.dp)) // Space before buttons
+        Spacer(modifier = Modifier.height(32.dp))
 
         QuizNavigationButtons(
             showFeedback = showFeedback,
@@ -581,7 +634,7 @@ fun QuizContent(
             onNextQuestion = onNextQuestion
         )
 
-        Spacer(modifier = Modifier.height(16.dp)) // Padding at the bottom
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -603,8 +656,8 @@ fun EmptyStateComponent(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null, // Decorative icon
-            modifier = Modifier.size(72.dp), // Icon lớn hơn
+            contentDescription = null,
+            modifier = Modifier.size(72.dp),
             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
         )
         Spacer(modifier = Modifier.height(24.dp))
