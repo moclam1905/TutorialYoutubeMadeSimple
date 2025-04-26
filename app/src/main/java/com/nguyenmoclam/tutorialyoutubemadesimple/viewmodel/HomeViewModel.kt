@@ -325,7 +325,9 @@ class HomeViewModel @Inject constructor(
                     showDeleteConfirmDialog = null
                 )
             }
-            quizStateManager.markForRefresh()
+            
+            // Immediately refresh the quiz list after deletion
+            applyFiltersAndSearch()
         }
     }
 

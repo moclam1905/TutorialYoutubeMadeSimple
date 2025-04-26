@@ -22,3 +22,16 @@ app/.idea/
 .cxx
 local.properties
 .kotlin/errors
+
+# Private individual user cursor rules
+.cursor/rules/_*.mdc
+
+# Ignore Cursor directory (rules, cache, logs, etc.)
+.cursor/
+.cursorignore
+.cursorindexingignore
+/memory_bank
+/custom_modes
+xnotes
+docs
+

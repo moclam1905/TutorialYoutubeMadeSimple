@@ -33,6 +33,11 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.TranscriptViewModel
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.utils.YouTubePlayerTracker
 import kotlinx.coroutines.delay
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 
 /**
  * Screen for displaying a video player with transcript and chapter navigation,
@@ -170,20 +175,39 @@ fun VideoPlayerWithTranscriptScreen(
             )
 
             // --- Search Bar ---
-            if (isSearchVisible) {
-                SearchBarComponent(
-                    searchQuery = searchQuery,
-                    onQueryChange = { viewModel.updateSearchQuery(it) },
-                    onClearQuery = { viewModel.clearSearchQuery() },
-                    onSearchAction = { focusManager.clearFocus() },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                if (searchQuery.isNotEmpty() && filteredSegments.isNotEmpty()) {
-                    Text(
-                        text = stringResource(R.string.results_found, filteredSegments.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+            // Use AnimatedVisibility for smoother appearance/disappearance
+            AnimatedVisibility(
+                visible = isSearchVisible,
+                enter = slideInVertically { fullHeight -> -fullHeight / 10 } + fadeIn(),
+                exit = slideOutVertically { fullHeight -> -fullHeight / 10 } + fadeOut()
+            ) {
+                Column {
+                    SearchBarComponent(
+                        searchQuery = searchQuery,
+                        onQueryChange = { viewModel.updateSearchQuery(it) },
+                        onClearQuery = { viewModel.clearSearchQuery() },
+                        onSearchAction = { focusManager.clearFocus() },
+                        modifier = Modifier.fillMaxWidth()
                     )
+                    // Show result count only when search bar is visible and query is not empty
+                    if (searchQuery.isNotEmpty()) {
+                        val resultText = if (filteredSegments.isNotEmpty()) {
+                            stringResource(R.string.results_found, filteredSegments.size)
+                        } else {
+                            // Optionally, show a different message or nothing when no results
+                            // stringResource(R.string.no_results_brief)
+                            "" // Show nothing if no results while searching
+                        }
+                        if (resultText.isNotEmpty()) {
+                            Text(
+                                text = resultText,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .padding(bottom = 4.dp) // Add some bottom padding
+                            )
+                        }
+                    }
                 }
             }
 

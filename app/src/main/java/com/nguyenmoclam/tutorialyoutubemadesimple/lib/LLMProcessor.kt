@@ -178,7 +178,7 @@ class LLMProcessor @Inject constructor(
             Message(role = "user", content = prompt)
         )
         val request = OpenRouterRequest(
-            model = "google/gemini-2.0-flash-thinking-exp-1219:free",
+            model = "deepseek/deepseek-chat-v3-0324:free",
             messages = messages
         )
         val authHeader = "Bearer $OPENROUTER_API_KEY"

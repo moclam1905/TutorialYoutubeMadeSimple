@@ -13,10 +13,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.waterfall
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -104,44 +102,40 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(top = 8.dp)
-                .navigationBarsPadding()
-                .padding(bottom = 16.dp) // Consider removing if bottom nav padding is handled by Scaffold
+                .padding(bottom = 16.dp)
         ) {
 
             ScreenTitle(titleRes = R.string.explore_challenges)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Search and Tag Filter Row
+            // Search and Tag Filter Row with Rounded Background
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp), // Add horizontal padding to the Row
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Search Bar takes most of the space
+                // Search Bar - takes most space, no background
                 SearchBar(
                     searchQuery = state.searchQuery,
                     onQueryChange = viewModel::updateSearchQuery,
                     placeholderRes = R.string.search_challenges,
-                    modifier = Modifier.weight(1f) // Re-apply weight modifier
+                    modifier = Modifier.weight(1f)
                 )
 
-                Spacer(modifier = Modifier.width(8.dp)) // Add space between search and button
-
-                // Tag Filter Button
+                // Tag Filter Button - no background
                 TagFilterButton(
                     selectedTagIds = state.selectedTagIds,
                     onFilterClick = {
                         scope.launch {
-                            // Ensure sheet state is managed correctly even if already visible
                             if (modalSheetState.isVisible) {
-                                modalSheetState.hide() // Hide first if somehow stuck open
+                                modalSheetState.hide()
                             }
-                            viewModel.toggleTagSheet() // Update VM state *before* showing
+                            viewModel.toggleTagSheet()
                         }
-                    }
-                    // No modifier needed here unless specific alignment/padding required
+                    },
+                    modifier = Modifier.padding(start = 4.dp)
                 )
             }
 

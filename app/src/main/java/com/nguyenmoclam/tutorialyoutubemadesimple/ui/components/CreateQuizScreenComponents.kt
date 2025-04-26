@@ -1,12 +1,16 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,17 +26,26 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Quiz
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -40,6 +53,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -53,6 +67,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 /**
  * Content for Step 1: YouTube URL input and language selection.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Step1Content(
     youtubeUrlValue: TextFieldValue,
@@ -89,29 +104,26 @@ fun Step1Content(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Language selection
-            Text(stringResource(R.string.select_language), fontWeight = FontWeight.Medium)
-
-            Box {
+            // Language selection using ExposedDropdownMenuBox
+            ExposedDropdownMenuBox(
+                expanded = showLanguageDropdown,
+                onExpandedChange = { onShowLanguageDropdownChange(!showLanguageDropdown) },
+                modifier = Modifier.fillMaxWidth() // Ensure it takes full width
+            ) {
                 OutlinedTextField(
                     value = selectedLanguage,
-                    onValueChange = {},
+                    onValueChange = {}, // No change needed here
                     readOnly = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = {
-                        IconButton(onClick = { onShowLanguageDropdownChange(!showLanguageDropdown) }) {
-                            Icon(
-                                Icons.Filled.KeyboardArrowDown,
-                                contentDescription = "Select language"
-                            )
-                        }
-                    }
+                    label = { Text(stringResource(R.string.select_language)) }, // Use label here
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showLanguageDropdown) },
+                    modifier = Modifier
+                        .menuAnchor() // Important: Anchor for the menu
+                        .fillMaxWidth()
                 )
-
-                DropdownMenu(
+                ExposedDropdownMenu(
                     expanded = showLanguageDropdown,
-                    onDismissRequest = { onShowLanguageDropdownChange(false) },
-                    modifier = Modifier.fillMaxWidth(0.9f)
+                    onDismissRequest = { onShowLanguageDropdownChange(false) }
+                    // Modifier.fillMaxWidth() might not be needed here, test it
                 ) {
                     languages.forEach { language ->
                         DropdownMenuItem(
@@ -140,6 +152,7 @@ fun Step1Content(
 /**
  * Content for Step 2: Quiz configuration (question type and count).
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Step2Content(
     questionType: String,
@@ -159,61 +172,30 @@ fun Step2Content(
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            // Question type selection
-            Text(
-                stringResource(R.string.question_type),
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.primary
+            // Question type selection using SegmentedButton
+            val questionTypes = listOf(
+                stringResource(R.string.multiple_choice) to "multiple-choice",
+                stringResource(R.string.true_false) to "true-false"
             )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Question type options in a styled surface
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp)),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectableGroup()
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    // Multiple choice option
-                    RadioOptionItem(
-                        selected = questionType == "multiple-choice",
-                        onClick = { onQuestionTypeChange("multiple-choice") },
-                        label = stringResource(R.string.multiple_choice),
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    // Divider between options
-                    Box(modifier = Modifier.padding(horizontal = 8.dp)) {
-                        Divider(
-                            modifier = Modifier
-                                .height(36.dp)
-                                .width(1.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                questionTypes.forEachIndexed { index, item ->
+                    SegmentedButton(
+                        selected = questionType == item.second,
+                        onClick = { onQuestionTypeChange(item.second) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = questionTypes.size
                         )
+                        // icon = { } // Optional icon
+                    ) {
+                        Text(item.first)
                     }
-
-                    // True/False option
-                    RadioOptionItem(
-                        selected = questionType == "true-false",
-                        onClick = { onQuestionTypeChange("true-false") },
-                        label = stringResource(R.string.true_false),
-                        modifier = Modifier.weight(1f)
-                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Question count mode selection
+            // Question count mode selection Title
             Text(
                 stringResource(R.string.number_of_questions),
                 fontWeight = FontWeight.Medium,
@@ -223,225 +205,138 @@ fun Step2Content(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Auto mode option with enhanced styling
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp)),
-                color = if (questionCountMode == "auto")
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            // --- Auto Mode Selection ---
+            Card( // Using Card for better visual grouping and click area
+                onClick = { onQuestionCountModeChange("auto") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                border = if (questionCountMode == "auto") BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                colors = CardDefaults.cardColors(
+                    containerColor = if (questionCountMode == "auto") MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .selectable(
-                            selected = questionCountMode == "auto",
-                            onClick = { onQuestionCountModeChange("auto") }
-                        )
-                        .padding(12.dp),
+                        // .selectable is handled by Card onClick
+                        .padding(horizontal = 16.dp, vertical = 12.dp), // Adjusted padding
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
                         selected = questionCountMode == "auto",
-                        onClick = null
+                        onClick = null // Controlled by Card's onClick
                     )
                     Text(
                         text = stringResource(R.string.auto_generate),
-                        modifier = Modifier.padding(start = 8.dp),
+                        modifier = Modifier.padding(start = 12.dp), // Increased spacing
+                        style = MaterialTheme.typography.bodyLarge, // Consistent typography
                         fontWeight = if (questionCountMode == "auto") FontWeight.Medium else FontWeight.Normal
                     )
                 }
             }
 
-            // Level selection (only visible in auto mode)
-            if (questionCountMode == "auto") {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Column(modifier = Modifier.padding(start = 32.dp)) {
+            // Level selection (Animated Visibility)
+            AnimatedVisibility(visible = questionCountMode == "auto") {
+                Column(modifier = Modifier.padding(start = 16.dp, top = 12.dp)) { // Adjusted padding
                     Text(
                         stringResource(R.string.question_level),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                        style = MaterialTheme.typography.titleSmall, // Use title small for subtitle
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(start = 16.dp) // Indent title slightly
                     )
-
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Level options in a styled row
-                    Row(
+                    // Level options using SegmentedButton
+                    val levels = listOf(
+                        Triple(stringResource(R.string.low), stringResource(R.string.five_questions), "low"),
+                        Triple(stringResource(R.string.medium), stringResource(R.string.ten_questions), "medium"),
+                        Triple(stringResource(R.string.high), stringResource(R.string.fifteen_questions), "high")
+                    )
+                    SingleChoiceSegmentedButtonRow(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .selectableGroup()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                            .padding(horizontal = 16.dp) // Padding for the row itself
                     ) {
-                        // Low level option
-                        LevelRadioOption(
-                            selected = questionLevel == "low",
-                            onClick = { onQuestionLevelChange("low") },
-                            title = stringResource(R.string.low),
-                            subtitle = stringResource(R.string.five_questions),
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        // Medium level option
-                        LevelRadioOption(
-                            selected = questionLevel == "medium",
-                            onClick = { onQuestionLevelChange("medium") },
-                            title = stringResource(R.string.medium),
-                            subtitle = stringResource(R.string.ten_questions),
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        // High level option
-                        LevelRadioOption(
-                            selected = questionLevel == "high",
-                            onClick = { onQuestionLevelChange("high") },
-                            title = stringResource(R.string.high),
-                            subtitle = stringResource(R.string.fifteen_questions),
-                            modifier = Modifier.weight(1f)
-                        )
+                        levels.forEachIndexed { index, item ->
+                            SegmentedButton(
+                                selected = questionLevel == item.third,
+                                onClick = { onQuestionLevelChange(item.third) },
+                                shape = SegmentedButtonDefaults.itemShape(
+                                    index = index,
+                                    count = levels.size
+                                ),
+                                modifier = Modifier.height(64.dp)
+                            ) {
+                                // Column for Title and Subtitle within the button
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier
+                                        .padding(vertical = 4.dp)
+                                        .fillMaxHeight()
+                                ) {
+                                    Text(item.first, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                                    Text(item.second, style = MaterialTheme.typography.bodySmall, fontSize = 11.sp)
+                                }
+                            }
+                        }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Manual mode option with enhanced styling
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp)),
-                color = if (questionCountMode == "manual")
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            // --- Manual Mode Selection ---
+            Card( // Using Card for better visual grouping and click area
+                onClick = { onQuestionCountModeChange("manual") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                border = if (questionCountMode == "manual") BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                colors = CardDefaults.cardColors(
+                    containerColor = if (questionCountMode == "manual") MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
+                Column { // Use Column to stack RadioButton Row and TextField
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            // .selectable handled by Card onClick
+                            .padding(horizontal = 16.dp, vertical = 12.dp), // Adjusted padding
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
                             selected = questionCountMode == "manual",
-                            onClick = { onQuestionCountModeChange("manual") }
+                            onClick = null // Controlled by Card's onClick
                         )
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = questionCountMode == "manual",
-                        onClick = null
-                    )
-                    Text(
-                        text = "Manual",
-                        modifier = Modifier.padding(start = 8.dp),
-                        fontWeight = if (questionCountMode == "manual") FontWeight.Medium else FontWeight.Normal
-                    )
+                        Text(
+                            text = stringResource(R.string.manual), // Use string resource
+                            modifier = Modifier.padding(start = 12.dp), // Increased spacing
+                            style = MaterialTheme.typography.bodyLarge, // Consistent typography
+                            fontWeight = if (questionCountMode == "manual") FontWeight.Medium else FontWeight.Normal
+                        )
+                    }
+
+                    // Manual count input (Animated Visibility)
+                    AnimatedVisibility(visible = questionCountMode == "manual") {
+                        OutlinedTextField(
+                            value = manualQuestionCount,
+                            onValueChange = { value ->
+                                // Only allow numeric input and limit length (e.g., max 2 digits for 1-20)
+                                if (value.isEmpty() || (value.all { it.isDigit() } && value.length <= 2)) {
+                                    onManualQuestionCountChange(value)
+                                }
+                            },
+                            label = { Text(stringResource(R.string.number_of_questions_range)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp), // Padding within the Card
+                            shape = RoundedCornerShape(8.dp),
+                            isError = questionCountMode == "manual" && (manualQuestionCount.toIntOrNull() ?: 0) !in 1..20 && manualQuestionCount.isNotEmpty() // Basic validation feedback
+                        )
+                    }
                 }
             }
-
-            // Manual count input (only visible in manual mode)
-            if (questionCountMode == "manual") {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = manualQuestionCount,
-                    onValueChange = { value ->
-                        // Only allow numeric input
-                        if (value.isEmpty() || value.all { it.isDigit() }) {
-                            onManualQuestionCountChange(value)
-                        }
-                    },
-                    label = { Text(stringResource(R.string.number_of_questions_range)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 32.dp),
-                    shape = RoundedCornerShape(8.dp)
-                )
-            }
-        }
-    }
-}
-
-/**
- * Reusable radio option item for question type selection
- */
-@Composable
-private fun RadioOptionItem(
-    selected: Boolean,
-    onClick: () -> Unit,
-    label: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .selectable(
-                selected = selected,
-                onClick = onClick
-            )
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        RadioButton(
-            selected = selected,
-            onClick = null
-        )
-        Text(
-            text = label,
-            modifier = Modifier.padding(start = 8.dp),
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
-        )
-    }
-}
-
-/**
- * Reusable level radio option for difficulty selection
- */
-@Composable
-private fun LevelRadioOption(
-    selected: Boolean,
-    onClick: () -> Unit,
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .selectable(
-                selected = selected,
-                onClick = onClick
-            )
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        RadioButton(
-            selected = selected,
-            onClick = null
-        )
-        Column(
-            modifier = Modifier.padding(start = 4.dp)
-        ) {
-            Text(
-                text = title,
-                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                fontSize = 14.sp
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                fontSize = 12.sp
-            )
         }
     }
 }
@@ -464,43 +359,35 @@ fun Step3Content(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.select_output_content), fontWeight = FontWeight.Medium)
+            Text(stringResource(R.string.select_output_content), style = MaterialTheme.typography.titleMedium) // Use title style
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp)) // Reduced spacer
 
-            // Summary toggle
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(stringResource(R.string.generate_summary))
-                Switch(
-                    checked = generateSummary,
-                    onCheckedChange = onGenerateSummaryChange,
-                    enabled = !isLoading
-                )
-            }
-
-            // Questions toggle
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(stringResource(R.string.generate_questions))
-                Switch(
-                    checked = generateQuestions,
-                    onCheckedChange = onGenerateQuestionsChange,
-                    enabled = !isLoading
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            // Use ListItem for options
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.generate_summary)) },
+                leadingContent = { Icon(Icons.Outlined.Description, contentDescription = null) }, // Optional Icon
+                trailingContent = {
+                    Switch(
+                        checked = generateSummary,
+                        onCheckedChange = onGenerateSummaryChange,
+                        enabled = !isLoading
+                    )
+                }
+                // No modifier needed usually unless specific padding/background
+            )
+            Divider(modifier = Modifier.padding(horizontal = 16.dp)) // Add divider between items
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.generate_questions)) },
+                leadingContent = { Icon(Icons.Outlined.Quiz, contentDescription = null) }, // Optional Icon
+                trailingContent = {
+                    Switch(
+                        checked = generateQuestions,
+                        onCheckedChange = onGenerateQuestionsChange,
+                        enabled = !isLoading
+                    )
+                }
+            )
         }
     }
 }
@@ -528,76 +415,89 @@ fun StepIndicator(currentStep: Int, totalSteps: Int) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Custom step indicator with circles and connecting lines
+        // Row for Circles and Dividers
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp), // Adjusted padding
+            horizontalArrangement = Arrangement.SpaceBetween, // Distribute items
+            verticalAlignment = Alignment.CenterVertically // Center vertically
         ) {
-            // Create step circles with connecting lines
             for (i in 1..totalSteps) {
                 val isActive = i <= currentStep
                 val isCurrentStep = i == currentStep
 
-                // Step indicator column
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    // Step circle
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isActive) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            )
-                            .border(
-                                width = if (isCurrentStep) 2.dp else 0.dp,
-                                color = MaterialTheme.colorScheme.primary,
-                                shape = CircleShape
-                            )
-                    ) {
-                        Text(
-                            text = "$i",
-                            color = if (isActive) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                // Step circle (No weight needed with SpaceBetween)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isActive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant
                         )
-                    }
-
-                    // Step label
-                    Spacer(modifier = Modifier.height(4.dp))
+                        .border(
+                            width = if (isCurrentStep) 2.dp else 0.dp,
+                            color = if (isCurrentStep) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(
+                                alpha = 0.0f
+                            ), // Transparent border if not current
+                            shape = CircleShape
+                        )
+                ) {
                     Text(
-                        text = when (i) {
-                            1 -> stringResource(R.string.enter_video)
-                            2 -> stringResource(R.string.configure)
-                            3 -> stringResource(R.string.output)
-                            else -> ""
-                        },
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center,
-                        color = if (isActive) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        fontWeight = if (isCurrentStep) FontWeight.Bold else FontWeight.Normal,
-                        modifier = Modifier.padding(top = 2.dp)
+                        text = "$i",
+                        color = if (isActive) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
                 }
 
-                // Add connecting line between circles (except after the last one)
+                // Connecting line (Use weight to fill space)
                 if (i < totalSteps) {
                     Divider(
                         modifier = Modifier
-                            .weight(0.7f)
+                            .weight(1f) // Weight fills the space
                             .height(2.dp),
                         color = if (i < currentStep) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.surfaceVariant
                     )
+                }
+            }
+        }
+
+        // Row for Labels (Separate Row below)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp) // Match horizontal padding
+                .padding(top = 4.dp), // Space below circles
+            horizontalArrangement = Arrangement.SpaceBetween // Match arrangement
+        ) {
+            for (i in 1..totalSteps) {
+                val isActive = i <= currentStep
+                val isCurrentStep = i == currentStep
+                // Step label (Aligned under circle using weight)
+                Text(
+                    text = when (i) {
+                        1 -> stringResource(R.string.enter_video)
+                        2 -> stringResource(R.string.configure)
+                        3 -> stringResource(R.string.output)
+                        else -> ""
+                    },
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    color = if (isActive) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontWeight = if (isCurrentStep) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier
+                        .weight(1f) // Weight aligns proportionally with Box above
+                        .padding(top = 2.dp)
+                )
+                // Add Spacer to align with Divider space
+                if (i < totalSteps) {
+                    Spacer(Modifier.weight(1f)) // Spacer takes up the divider's weighted space
                 }
             }
         }

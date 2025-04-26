@@ -174,11 +174,11 @@
     <string name="auto_generate">Tự động Tạo</string>
     <string name="question_level">Mức độ Câu hỏi:</string>
     <string name="low">Thấp</string>
-    <string name="five_questions">5–10 câu hỏi</string>
+    <string name="five_questions">5–10 câu</string>
     <string name="medium">Trung bình</string>
-    <string name="ten_questions">11–20 câu hỏi</string>
+    <string name="ten_questions">11–20 câu</string>
     <string name="high">Cao</string>
-    <string name="fifteen_questions">21–30 câu hỏi</string>
+    <string name="fifteen_questions">21–30 câu</string>
     <string name="manual">Thủ công</string>
     <string name="number_of_questions_range">Số lượng câu hỏi (1–20)</string>
     <string name="step_1_enter_video">Bước 1: Nhập Video YouTube</string>
@@ -347,5 +347,14 @@
     <string name="permission_rationale_message">Để đặt lời nhắc cho bài kiểm tra này, ứng dụng cần quyền gửi thông báo. Vui lòng cấp quyền này.</string>
     <string name="permission_rationale_confirm">Cấp quyền</string>
     <string name="permission_denied_snackbar">Quyền thông báo đã bị từ chối. Không thể đặt lời nhắc.</string>
+
+    <string name="quiz_your_answer">Câu trả lời của bạn</string>
+    <string name="quiz_correct_answer">Đáp án đúng</string>
+    <string name="cd_open_link">Mở liên kết</string>
+    <string name="no_summary_description">Không có tóm tắt nào cho video này. Vui lòng thử tạo tóm tắt trước.</string>
+    <string name="no_questions_description">Chưa có câu hỏi nào được tạo. Vui lòng tạo hoặc thêm câu hỏi thủ công.</string>
+    <string name="mindmap_generation_description">Hình dung các ý chính của nội dung video bằng bản đồ tư duy được tạo tự động.</string>
+    <string name="clear_tag_filters_short">Xóa</string>
+    <string name="tag_selected_desc">Đã chọn thẻ</string>
 
 </resources>

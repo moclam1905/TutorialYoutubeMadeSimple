@@ -193,7 +193,7 @@ class QuizDetailViewModel @Inject constructor(
                 // Get start time and completion time from progress entity
                 val startTime = if (quizCompleted) {
                     // If completed, calculate start time from completion time and last updated
-                    progressEntity.lastUpdated.minus(progressEntity.completionTime)
+                    progressEntity?.lastUpdated?.minus(progressEntity.completionTime) ?: state.startTime
                 } else {
                     state.startTime
                 }
@@ -201,7 +201,7 @@ class QuizDetailViewModel @Inject constructor(
                 val completionTime =
                     if (quizCompleted) {
                         // If completed, use the stored completion time
-                        progressEntity.completionTime
+                        progressEntity?.completionTime ?: 0L
                     } else {
                         state.completionTime
                     }
@@ -301,6 +301,9 @@ class QuizDetailViewModel @Inject constructor(
             }
         }
 
+        // Check if this is the last question in the quiz
+        val isLastQuestion = questionIndex >= state.questions.size - 1
+
         // Use CheckQuizCompletionUseCase to determine if quiz is completed
         val completionResult = checkQuizCompletionUseCase(
             questions = state.questions,
@@ -311,22 +314,32 @@ class QuizDetailViewModel @Inject constructor(
             startTime = state.startTime
         )
 
+        // If it's the last question, force completion check to be more aggressive
+        val shouldForceComplete = isLastQuestion &&
+                (completionResult.isCompleted ||
+                        updatedAnswers.size + updatedSkippedQuestions.size >= state.questions.size)
+
         state = state.copy(
             skippedQuestions = updatedSkippedQuestions,
+            answeredQuestions = updatedAnswers,
             currentQuestionIndex = questionIndex,
-            quizCompleted = completionResult.isCompleted,
-            completionTime = if (completionResult.completionTime > 0) completionResult.completionTime else state.completionTime
+            quizCompleted = completionResult.isCompleted || shouldForceComplete,
+            completionTime = if ((completionResult.completionTime > 0) || shouldForceComplete)
+                System.currentTimeMillis()
+            else
+                state.completionTime
         )
 
         // Save progress to database if we have a valid quiz ID
         state.quiz?.id?.let { quizId ->
             viewModelScope.launch {
                 // Calculate the elapsed time (duration) if quiz is completed
-                val elapsedTime = if (state.quizCompleted && state.startTime > 0) {
-                    System.currentTimeMillis() - state.startTime
-                } else {
-                    0L
-                }
+                val elapsedTime =
+                    if ((state.quizCompleted || shouldForceComplete) && state.startTime > 0) {
+                        System.currentTimeMillis() - state.startTime
+                    } else {
+                        0L
+                    }
                 saveQuizProgressUseCase(quizId, questionIndex, updatedAnswers, elapsedTime)
                 quizStateManager.markForRefresh() // Mark for refresh after saving progress (due to skip)
             }
@@ -690,6 +703,35 @@ class QuizDetailViewModel @Inject constructor(
             } catch (e: Exception) {
             }
         }
+    }
+
+    /**
+     * Returns the map of user's answers.
+     * Key: Original question index, Value: User's answer string.
+     */
+    fun getUserAnswersMap(): Map<Int, String> = state.answeredQuestions
+
+    /**
+     * Constructs and returns a map of correct answers.
+     * Key: Original question index, Value: Correct answer string.
+     */
+    fun getCorrectAnswersMap(): Map<Int, String> {
+        val map = mutableMapOf<Int, String>()
+        state.questions.forEachIndexed { index, question ->
+            when (question) {
+                is MultipleChoiceQuestion -> {
+                    // Join keys if multiple correct answers exist, separated by comma and space
+                    // Assuming keys are single letters like A, B, C...
+                    map[index] = question.correctAnswers.joinToString(", ")
+                }
+                is TrueFalseQuestion -> {
+                    // Convert boolean to "True" or "False" string
+                    map[index] = question.isTrue.toString().replaceFirstChar { it.titlecase() }
+                }
+                // Add cases for other question types if necessary
+            }
+        }
+        return map
     }
 }
 

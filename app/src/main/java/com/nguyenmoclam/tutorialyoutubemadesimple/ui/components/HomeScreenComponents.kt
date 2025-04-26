@@ -2,8 +2,6 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,13 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -29,11 +27,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,13 +42,17 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.QuizStats
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopAppBar() {
+fun HomeTopAppBar(
+    scrollBehavior: TopAppBarScrollBehavior? = null
+) {
     TopAppBar(
         title = { Text(stringResource(R.string.learning_hub)) },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        )
+            containerColor = MaterialTheme.colorScheme.surface,
+            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            titleContentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        scrollBehavior = scrollBehavior
     )
 }
 
@@ -59,12 +60,14 @@ fun HomeTopAppBar() {
 fun ScreenTitle(titleRes: Int) {
     Text(
         text = stringResource(titleRes),
+        fontSize = 18.sp,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = 16.dp)
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBar(
     searchQuery: String,
@@ -76,15 +79,21 @@ fun SearchBar(
         value = searchQuery,
         onValueChange = onQueryChange,
         modifier = modifier,
-        placeholder = { Text(stringResource(placeholderRes)) },
+        placeholder = {
+            Text(
+                stringResource(placeholderRes),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }, // Adjust placeholder color if needed
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
-                contentDescription = stringResource(R.string.search_challenges)
+                contentDescription = stringResource(R.string.search_challenges),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
         shape = RoundedCornerShape(8.dp),
-        singleLine = true
+        singleLine = true,
     )
 }
 
@@ -111,10 +120,11 @@ fun FilterTabs(
         indicator = {}
     ) {
         tabs.forEachIndexed { index, (titleRes, titleKey) ->
-            FilterTab(
-                title = stringResource(titleRes),
+            FilterChip(
                 selected = selectedTabIndex == index,
-                onClick = { onTabSelected(index, titleKey) }
+                onClick = { onTabSelected(index, titleKey) },
+                label = { Text(stringResource(titleRes)) },
+                modifier = Modifier.padding(horizontal = 4.dp)
             )
         }
     }
@@ -145,39 +155,13 @@ fun SubFilterChips(
         indicator = {}
     ) {
         subFilters.forEachIndexed { index, (titleRes, titleKey) ->
-            FilterTab(
-                title = stringResource(titleRes),
+            FilterChip(
                 selected = selectedSubFilterIndex == index,
-                onClick = { onSubFilterSelected(index, titleKey) }
+                onClick = { onSubFilterSelected(index, titleKey) },
+                label = { Text(stringResource(titleRes)) },
+                modifier = Modifier.padding(horizontal = 4.dp)
             )
         }
-    }
-}
-
-
-@Composable
-fun FilterTab(
-    title: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val backgroundColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val textColor =
-        if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(backgroundColor)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = title,
-            color = textColor,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-        )
     }
 }
 

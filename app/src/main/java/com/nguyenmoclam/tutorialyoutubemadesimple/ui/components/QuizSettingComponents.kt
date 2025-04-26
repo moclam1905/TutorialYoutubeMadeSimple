@@ -10,19 +10,17 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -40,12 +38,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -63,7 +62,8 @@ fun QuizSettingTopAppBar(
     onSaveClick: () -> Unit,
     onResetClick: () -> Unit,
     canSave: Boolean,
-    canReset: Boolean
+    canReset: Boolean,
+    scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
     TopAppBar(
         title = { Text(stringResource(R.string.quiz_settings_title)) },
@@ -86,7 +86,13 @@ fun QuizSettingTopAppBar(
                     )
                 )
             }
-        }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            titleContentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        scrollBehavior = scrollBehavior
     )
 }
 
@@ -257,6 +263,7 @@ fun TagsSettingsSection(
     enabled: Boolean
 ) {
     var newTagText by remember { mutableStateOf("") }
+    val canAddTag = newTagText.isNotBlank() && enabled
 
     Column {
         Text(
@@ -265,28 +272,30 @@ fun TagsSettingsSection(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = newTagText,
-                onValueChange = { newTagText = it },
-                label = { Text(stringResource(R.string.add_new_tag_label)) },
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                enabled = enabled
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(
-                onClick = {
-                    if (newTagText.isNotBlank()) {
-                        onCreateAndSelectTag(newTagText.trim())
-                        newTagText = ""
-                    }
-                },
-                enabled = enabled && newTagText.isNotBlank()
-            ) {
-                Text(stringResource(R.string.add_tag_button))
+        OutlinedTextField(
+            value = newTagText,
+            onValueChange = { newTagText = it },
+            label = { Text(stringResource(R.string.add_new_tag_label)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            enabled = enabled,
+            trailingIcon = {
+                IconButton(
+                    onClick = {
+                        if (canAddTag) {
+                            onCreateAndSelectTag(newTagText.trim())
+                            newTagText = ""
+                        }
+                    },
+                    enabled = canAddTag
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(R.string.add_tag_button)
+                    )
+                }
             }
-        }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 

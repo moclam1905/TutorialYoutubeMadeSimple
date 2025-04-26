@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.LanguageSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 
 /**
  * SettingScreen composable that displays all app settings organized by category.
@@ -63,6 +65,7 @@ fun SettingScreen(
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
     // Set up the Google Sign-In activity result launcher
     val signInLauncher = rememberLauncherForActivityResult(
@@ -73,13 +76,16 @@ fun SettingScreen(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                scrollBehavior = scrollBehavior
             )
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -90,7 +96,6 @@ fun SettingScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
-                .padding(top = 8.dp)
                 .navigationBarsPadding()
                 .padding(bottom = 16.dp)
         ) {
@@ -103,22 +108,6 @@ fun SettingScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-//            // Quiz Configuration Section
-//            SettingsSection(
-//                title = "Quiz Configuration",
-//                icon = Icons.Default.Quiz
-//            ) {
-//                QuizConfigSettings(
-//                    state = state,
-//                    onQuestionOrderChanged = viewModel::setQuestionOrder,
-//                    onMaxRetryCountChanged = viewModel::setMaxRetryCount,
-//                    onShowAnswerAfterWrongChanged = viewModel::setShowAnswerAfterWrong,
-//                    onAutoNextQuestionChanged = viewModel::setAutoNextQuestion
-//                )
-//            }
-//
-//            Spacer(modifier = Modifier.height(16.dp))
 
             // Google Account Section
             SettingsSection(
@@ -328,14 +317,22 @@ fun SettingScreen(
 @Composable
 fun SettingsSection(
     title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     content: @Composable () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 1.dp,
+            pressedElevation = 0.dp,
+            focusedElevation = 4.dp
+        ),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Section header
@@ -345,7 +342,7 @@ fun SettingsSection(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = title,
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -355,8 +352,6 @@ fun SettingsSection(
                     fontWeight = FontWeight.Bold
                 )
             }
-
-            Divider()
 
             Spacer(modifier = Modifier.height(16.dp))
 

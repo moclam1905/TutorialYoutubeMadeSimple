@@ -2,6 +2,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -10,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,14 +22,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -62,7 +68,7 @@ fun LearningChallengeItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp) // Reduced horizontal padding for consistency
+            .padding(horizontal = 16.dp) // CHANGED padding to 16.dp
             .clickable { onQuizClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp),
@@ -190,12 +196,28 @@ fun QuizItemInfoRow(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Add Icon for question count
+        Icon(
+            imageVector = Icons.Default.HelpOutline,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = stringResource(R.string.total_questions, questionCount),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.weight(1f)) // Push update info to the end
+        // Add Icon for update date
+        Icon(
+            imageVector = Icons.Default.CalendarToday,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = stringResource(R.string.last_update, daysSinceLastUpdate),
             style = MaterialTheme.typography.bodySmall,
@@ -206,18 +228,16 @@ fun QuizItemInfoRow(
 
 @Composable
 fun ViewStatsButton(onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.secondary // Use secondary color for variety
-        )
-    ) {
-        Text(
-            text = stringResource(R.string.view_stats),
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSecondary // Ensure text is readable
-        )
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { // Wrap in Row to align end
+        FilledTonalButton( // CHANGED to FilledTonalButton
+            onClick = onClick,
+            colors = ButtonDefaults.filledTonalButtonColors() // Use default tonal colors
+        ) {
+            Text(
+                text = stringResource(R.string.view_stats),
+                fontWeight = FontWeight.Medium,
+            )
+        }
     }
 }
 
@@ -239,6 +259,7 @@ fun QuizItemStatsSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .animateContentSize() // ADDED animateContentSize
                 .padding(top = 16.dp)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceVariant,
@@ -258,14 +279,16 @@ fun QuizItemStatsSection(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (quizStats != null) {
-                QuizStatRow(
-                    labelRes = R.string.average_score,
-                    value = String.format("%.1f%%", quizStats.completionScore * 100)
+                // Use ListItem instead of QuizStatRow
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.average_score)) },
+                    trailingContent = { Text(String.format("%.1f%%", quizStats.completionScore * 100), fontWeight = FontWeight.Bold) },
+                    modifier = Modifier.padding(vertical = (-4).dp) // Adjust padding if needed
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                QuizStatRow(
-                    labelRes = R.string.average_completion_time,
-                    value = stringResource(R.string.time_elapsed_seconds, quizStats.timeElapsedSeconds)
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.average_completion_time)) },
+                    trailingContent = { Text(stringResource(R.string.time_elapsed_seconds, quizStats.timeElapsedSeconds), fontWeight = FontWeight.Bold) },
+                    modifier = Modifier.padding(vertical = (-4).dp) // Adjust padding if needed
                 )
             } else {
                 Text(
@@ -277,26 +300,5 @@ fun QuizItemStatsSection(
                 )
             }
         }
-    }
-}
-
-@Composable
-fun QuizStatRow(labelRes: Int, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = stringResource(labelRes),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.onSurfaceVariant // Use theme color
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant // Use theme color
-        )
     }
 }
