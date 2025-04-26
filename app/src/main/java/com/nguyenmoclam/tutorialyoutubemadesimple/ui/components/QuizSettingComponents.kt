@@ -38,6 +38,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +62,8 @@ fun QuizSettingTopAppBar(
     onSaveClick: () -> Unit,
     onResetClick: () -> Unit,
     canSave: Boolean,
-    canReset: Boolean
+    canReset: Boolean,
+    scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
     TopAppBar(
         title = { Text(stringResource(R.string.quiz_settings_title)) },
@@ -83,7 +86,13 @@ fun QuizSettingTopAppBar(
                     )
                 )
             }
-        }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            titleContentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        scrollBehavior = scrollBehavior
     )
 }
 

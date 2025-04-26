@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +53,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.LanguageSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 
 /**
  * SettingScreen composable that displays all app settings organized by category.
@@ -63,6 +65,7 @@ fun SettingScreen(
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
     // Set up the Google Sign-In activity result launcher
     val signInLauncher = rememberLauncherForActivityResult(
@@ -73,13 +76,16 @@ fun SettingScreen(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                scrollBehavior = scrollBehavior
             )
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -90,7 +96,6 @@ fun SettingScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
-                .padding(top = 8.dp)
                 .navigationBarsPadding()
                 .padding(bottom = 16.dp)
         ) {
