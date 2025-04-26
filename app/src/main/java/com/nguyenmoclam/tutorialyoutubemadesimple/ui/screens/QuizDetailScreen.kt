@@ -100,6 +100,15 @@ import androidx.compose.material.icons.outlined.Summarize
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.EmptyStateComponent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Settings
 
 // CompositionLocal for providing NavController and QuizDetailViewModel to child composables
 val LocalNavController =
@@ -180,41 +189,49 @@ fun QuizDetailDrawerContent(
     scope: CoroutineScope
 ) {
     var materialsExpanded by remember { mutableStateOf(true) }
-    val statusBarPadding = WindowInsets.statusBars.asPaddingValues() // Get status bar padding
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
 
-    // Apply top padding from status bar insets to the root Column
+    // Use ModalDrawerSheet or a Column with elevation/background for better Material 3 feel
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .padding(top = statusBarPadding.calculateTopPadding()) // Apply top padding
+            .padding(top = statusBarPadding.calculateTopPadding())
+            // Optional: Add background color matching drawer background
+             .background(MaterialTheme.colorScheme.surface) // Or surfaceVariant
     ) {
-        // Drawer Header
+        // --- Improved Header ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 28.dp, vertical = 20.dp), // Increased padding
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Default.QuestionAnswer,
+                imageVector = Icons.Default.QuestionAnswer, // Keep filled for logo
                 contentDescription = stringResource(R.string.app_logo),
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(36.dp) // Slightly larger icon
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                text = stringResource(R.string.quiz),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary
+                text = stringResource(R.string.quiz), // Or App Name
+                style = MaterialTheme.typography.titleLarge, // Larger title
+                color = MaterialTheme.colorScheme.onSurface // Use onSurface color
             )
         }
-        Divider()
+        // Consider removing Divider or using a lighter one if needed
+        // Divider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(modifier = Modifier.height(12.dp)) // Use Spacer instead of Divider
 
-        // Navigation Items
+        // --- Navigation Items ---
+        // Use padding on each item for consistent spacing
+        val itemModifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
+            modifier = itemModifier,
+            icon = { Icon(Icons.Outlined.Dashboard, contentDescription = null) }, // Outlined icon
             label = { Text(stringResource(R.string.dashboard_tab)) },
-            selected = false,
+            selected = false, // Dashboard is never selected in this screen's context
             onClick = {
                 scope.launch {
                     if (quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted && selectedContentIndex == 1) {
@@ -229,87 +246,91 @@ fun QuizDetailDrawerContent(
                         }
                     }
                 }
-            }
+             },
+            shape = MaterialTheme.shapes.medium // Rounded shape
         )
 
-        // Materials Section (Expandable)
+        // --- Materials Section (Expandable with Animation) ---
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.MenuBook, contentDescription = null) },
+            modifier = itemModifier,
+            // Use filled icon if the section is expanded, otherwise outlined
+            icon = { Icon(if (materialsExpanded) Icons.Default.MenuBook else Icons.Outlined.MenuBook, contentDescription = null) },
             label = { Text(stringResource(R.string.materials_tab)) },
-            badge = {
+            badge = { // Animated badge icon
                 Icon(
                     if (materialsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = if (materialsExpanded) stringResource(R.string.collapse) else stringResource(
                         R.string.expand
                     )
+                    // Consider adding animation to the badge rotation if desired
                 )
             },
-            // Materials header should not be selectable itself
-            selected = false,
-            onClick = { materialsExpanded = !materialsExpanded }
+            selected = false, // Header is not selectable
+            onClick = { materialsExpanded = !materialsExpanded },
+            shape = MaterialTheme.shapes.medium // Rounded shape
         )
 
-        if (materialsExpanded) {
-            // Apply standard horizontal padding for drawer content to the Column
-            Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                // Summary Item
+        // Animated Visibility for expandable content
+        AnimatedVisibility(
+            visible = materialsExpanded,
+            enter = fadeIn() + slideInVertically(),
+            exit = fadeOut() + slideOutVertically()
+        ) {
+            // Indent content visually using padding within this Column
+            Column(modifier = Modifier.padding(start = 28.dp)) { // Indentation for sub-items
+                val subItemModifier = Modifier.padding(horizontal = 0.dp, vertical = 4.dp) // Adjust padding inside
+
+                 // Summary Item
                 NavigationDrawerItem(
-                    // Reduce internal padding if needed, though shape change might be enough
-                    modifier = Modifier.fillMaxWidth(), // Ensure item tries to fill width
-                    icon = { Icon(Icons.Default.Summarize, contentDescription = null) },
+                    modifier = subItemModifier.fillMaxWidth(),
+                    icon = { Icon(if (selectedContentIndex == 0) Icons.Default.Summarize else Icons.Outlined.Summarize, contentDescription = null) },
                     label = { Text(stringResource(R.string.summary_tab)) },
                     selected = selectedContentIndex == 0,
-                    colors = NavigationDrawerItemDefaults.colors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), // Subtle highlight background
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                        selectedIconColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = RectangleShape, // Use RectangleShape for full width highlight
                     onClick = {
-                        scope.launch { slidingNavState.closeMenu() }
-                        onContentIndexChange(0)
-                    }
+                         scope.launch { slidingNavState.closeMenu() } // Close drawer on click
+                         onContentIndexChange(0)
+                    },
+                    shape = MaterialTheme.shapes.medium // Rounded shape for sub-items too
+                    // Colors are often handled well by default in M3, but you can customize:
+                    // colors = NavigationDrawerItemDefaults.colors(
+                    //     selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    //     unselectedContainerColor = Color.Transparent, // Keep unselected transparent
+                    //     selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    //     selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    // )
                 )
                 // Questions Item
-                NavigationDrawerItem(
-                    modifier = Modifier.fillMaxWidth(), // Ensure item tries to fill width
-                    icon = { Icon(Icons.Default.Quiz, contentDescription = null) },
+                 NavigationDrawerItem(
+                    modifier = subItemModifier.fillMaxWidth(),
+                    icon = { Icon(if (selectedContentIndex == 1) Icons.Default.Quiz else Icons.Outlined.Quiz, contentDescription = null) },
                     label = { Text(stringResource(R.string.questions_tab)) },
                     selected = selectedContentIndex == 1,
-                    colors = NavigationDrawerItemDefaults.colors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                        selectedIconColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = RectangleShape, // Use RectangleShape for full width highlight
                     onClick = {
                         scope.launch { slidingNavState.closeMenu() }
                         onContentIndexChange(1)
-                    }
+                     },
+                    shape = MaterialTheme.shapes.medium
                 )
                 // Mind Map Item
-                NavigationDrawerItem(
-                    modifier = Modifier.fillMaxWidth(), // Ensure item tries to fill width
-                    icon = { Icon(Icons.Default.AccountTree, contentDescription = null) },
+                 NavigationDrawerItem(
+                    modifier = subItemModifier.fillMaxWidth(),
+                    icon = { Icon(if (selectedContentIndex == 2) Icons.Default.AccountTree else Icons.Outlined.AccountTree, contentDescription = null) },
                     label = { Text(stringResource(R.string.mindmap_tab)) },
                     selected = selectedContentIndex == 2,
-                    colors = NavigationDrawerItemDefaults.colors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                        selectedIconColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = RectangleShape, // Use RectangleShape for full width highlight
                     onClick = {
                         scope.launch { slidingNavState.closeMenu() }
                         onContentIndexChange(2)
-                    }
-                )
+                     },
+                     shape = MaterialTheme.shapes.medium
+                 )
+                 Spacer(modifier = Modifier.height(8.dp)) // Spacing after sub-items
             }
         }
 
-        // Settings Item
+        // --- Settings Item ---
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+            modifier = itemModifier,
+            icon = { Icon(Icons.Outlined.Settings, contentDescription = null) }, // Outlined
             label = { Text(stringResource(R.string.settings_tab)) },
             selected = false,
             onClick = {
@@ -323,8 +344,12 @@ fun QuizDetailDrawerContent(
                         // Handle error: Quiz ID not available (optional: show snackbar)
                     }
                 }
-            }
+            },
+            shape = MaterialTheme.shapes.medium // Rounded shape
         )
+
+        // Optional: Add Spacer at the bottom if needed
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
