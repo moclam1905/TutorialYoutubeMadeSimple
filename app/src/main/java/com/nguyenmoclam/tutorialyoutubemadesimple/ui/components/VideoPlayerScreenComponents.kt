@@ -41,6 +41,18 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ChapterNavigation as ChapterNavigationChips
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.filled.SentimentVeryDissatisfied
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 
 @Composable
 fun VideoPlayerComponent(
@@ -53,7 +65,8 @@ fun VideoPlayerComponent(
     Box(
         modifier = modifier
             .height(240.dp) // Maintain original height
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant), // Add background color
         contentAlignment = Alignment.Center
     ) {
         if (videoId == null) {
@@ -115,12 +128,14 @@ fun ChapterNavigationSection(
             }
         }
 
-        // Navigation Bar with Previous/Next buttons
+        // Integrated Navigation Bar with Previous/Next buttons
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 8.dp) // Padding for buttons
+            modifier = Modifier
+                .fillMaxWidth() // Use fillMaxWidth here
+                .padding(horizontal = 8.dp, vertical = 4.dp) // Adjust padding
         ) {
-            IconButton(onClick = onPreviousChapter) {
+            IconButton(onClick = onPreviousChapter, modifier = Modifier.size(40.dp)) { // Slightly smaller touch target if needed
                 Icon(
                     imageVector = Icons.Default.NavigateBefore,
                     contentDescription = stringResource(R.string.previous_chapter),
@@ -133,10 +148,10 @@ fun ChapterNavigationSection(
                 totalDurationMillis = totalDurationMillis,
                 onChapterClick = onChapterClick,
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp) // Space between buttons and bar
+                    .weight(1f) // Takes the available space between buttons
+                    .padding(horizontal = 8.dp) // Keep padding around the bar
             )
-            IconButton(onClick = onNextChapter) {
+            IconButton(onClick = onNextChapter, modifier = Modifier.size(40.dp)) { // Slightly smaller touch target if needed
                 Icon(
                     imageVector = Icons.Default.NavigateNext,
                     contentDescription = stringResource(R.string.next_chapter),
@@ -157,7 +172,6 @@ fun ChapterNavigationSection(
     }
 }
 
-
 @Composable
 fun TabAndSearchComponent(
     selectedTabIndex: Int,
@@ -167,12 +181,16 @@ fun TabAndSearchComponent(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         TabRow(
             selectedTabIndex = selectedTabIndex,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
         ) {
             Tab(
                 selected = selectedTabIndex == 0,
@@ -185,12 +203,14 @@ fun TabAndSearchComponent(
                 text = { Text(stringResource(R.string.chapters)) }
             )
         }
-        IconButton(onClick = onToggleSearch) {
+        IconButton(
+            onClick = onToggleSearch
+        ) {
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = stringResource(R.string.toggle_search),
                 tint = if (isSearchVisible) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant // Use a less prominent color when inactive
+                else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -208,6 +228,7 @@ fun SearchBarComponent(
         value = searchQuery,
         onValueChange = onQueryChange,
         modifier = modifier
+            .fillMaxWidth() // Ensure it fills width for consistent padding application
             .padding(horizontal = 16.dp, vertical = 8.dp),
         placeholder = { Text(stringResource(R.string.search_in_transcript)) },
         leadingIcon = {
@@ -241,56 +262,87 @@ fun ContentArea(
     onChapterClick: (TranscriptSegment) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.padding(horizontal = 16.dp)) { // Apply horizontal padding once here
-        when {
-            // Search active and has results
-            searchQuery.isNotEmpty() && filteredSegments.isNotEmpty() -> {
-                TranscriptList( // Assumes TranscriptList is in components package
-                    segments = filteredSegments,
-                    currentTimeMillis = currentTimeMillis,
-                    onSegmentClick = onSegmentClick, // Search results use segment click logic
-                    modifier = Modifier.fillMaxSize() // Fill the Box
+    Box(modifier = modifier.padding(top = 8.dp)) { // Add some top padding if needed, keep horizontal padding within AnimatedContent
+        AnimatedContent(
+            targetState = Triple(selectedTabIndex, searchQuery.isNotEmpty(), filteredSegments.isEmpty()),
+            transitionSpec = {
+                // Define transitions: Fade in/out, maybe slight slide
+                if (initialState.first != targetState.first) {
+                    // Tab change transition
+                    slideInVertically { height -> height } + fadeIn() togetherWith
+                            slideOutVertically { height -> -height } + fadeOut()
+                } else {
+                    // Search state change transition (usually faster)
+                    fadeIn(animationSpec = androidx.compose.animation.core.tween(200)) togetherWith
+                            fadeOut(animationSpec = androidx.compose.animation.core.tween(200))
+                }.using(
+                    // Ensure size changes smoothly
+                    SizeTransform(clip = false)
                 )
-            }
-            // Search active but no results
-            searchQuery.isNotEmpty() && filteredSegments.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(), // Fill the Box
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.no_results_found, searchQuery),
-                        style = MaterialTheme.typography.bodyLarge
+            },
+            label = "ContentAreaAnimation" // Add label for debugging
+        ) { targetState ->
+            val (currentTab, isSearching, isFilterEmpty) = targetState
+            val currentModifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp) // Apply horizontal padding inside AnimatedContent
+
+            when {
+                // Search active and has results
+                isSearching && !isFilterEmpty -> {
+                    TranscriptList(
+                        segments = filteredSegments,
+                        currentTimeMillis = currentTimeMillis,
+                        onSegmentClick = onSegmentClick,
+                        modifier = currentModifier
                     )
                 }
-            }
-            // No search, show content based on tab
-            else -> {
-                when (selectedTabIndex) {
-                    0 -> { // Transcript Tab
-                        TranscriptList( // Assumes TranscriptList is in components package
-                            // Filter out chapter markers from the main transcript view
-                            segments = allSegments.filter { !it.isChapterStart },
-                            currentTimeMillis = currentTimeMillis,
-                            onSegmentClick = onSegmentClick,
-                            modifier = Modifier.fillMaxSize() // Fill the Box
-                        )
+                // Search active but no results
+                isSearching && isFilterEmpty -> {
+                    Box(
+                        modifier = currentModifier,
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) { // Center content vertically
+                            Icon(
+                                imageVector = Icons.Default.SentimentVeryDissatisfied,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp).padding(bottom = 8.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = stringResource(R.string.no_results_found, searchQuery),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant // Softer color
+                            )
+                        }
                     }
-
-                    1 -> { // Chapters Tab
-                        TranscriptList( // Assumes TranscriptList is in components package
-                            segments = chapters,
-                            currentTimeMillis = currentTimeMillis,
-                            onSegmentClick = onChapterClick, // Chapters use chapter click logic
-                            modifier = Modifier.fillMaxSize() // Fill the Box
-                        )
+                }
+                // No search, show content based on tab
+                else -> {
+                    when (currentTab) {
+                        0 -> { // Transcript Tab
+                            TranscriptList(
+                                segments = allSegments.filter { !it.isChapterStart },
+                                currentTimeMillis = currentTimeMillis,
+                                onSegmentClick = onSegmentClick,
+                                modifier = currentModifier
+                            )
+                        }
+                        1 -> { // Chapters Tab
+                            TranscriptList(
+                                segments = chapters,
+                                currentTimeMillis = currentTimeMillis,
+                                onSegmentClick = onChapterClick,
+                                modifier = currentModifier
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
-
 
 // --- Utility Function ---
 

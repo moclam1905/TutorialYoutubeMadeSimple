@@ -117,10 +117,8 @@ val LocalQuizDetailViewModel =
  * and offline (OfflineSummaryWebView) modes. Includes a FAB to navigate to the video player.
  */
 @Composable
-fun SummaryContent(summaryHtml: String, quizId: Long) {
+fun SummaryContent(summaryHtml: String) {
     val networkUtils = LocalNetworkUtils.current
-    val navController = LocalNavController.current
-    val quizDetailViewModel = LocalQuizDetailViewModel.current
     val context = LocalContext.current
     val offlineDataManager = remember { OfflineDataManager(context) }
 
@@ -143,25 +141,6 @@ fun SummaryContent(summaryHtml: String, quizId: Long) {
                 htmlContent = summaryHtml,
                 offlineDataManager = offlineDataManager
             )
-        }
-
-        // FAB to Watch Video
-        quizDetailViewModel.state.quiz?.let { quiz ->
-            FloatingActionButton(
-                onClick = {
-                    val encodedUrl =
-                        URLEncoder.encode(quiz.videoUrl, StandardCharsets.UTF_8.toString())
-                    navController.navigate(AppScreens.VideoPlayer.route + "/${quiz.id}/$encodedUrl")
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(
-                    Icons.Default.ArrowForward,
-                    contentDescription = stringResource(R.string.watch_video)
-                )
-            }
         }
 
         // Offline Indicator
@@ -423,199 +402,222 @@ fun QuizDetailScreenContent(
     val context = LocalContext.current
     val navController = LocalNavController.current // Get NavController from CompositionLocal
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues) // Apply padding from Scaffold
-    ) {
-        when {
-            // Loading State
-            quizViewModel.state.isLoading || quizDetailViewModel.state.isLoading -> {
-                val progress = when {
-                    quizIdLong <= 0 && selectedContentIndex != 2 -> quizViewModel.state.currentStep.getProgressPercentage() // Creation flow
-                    selectedContentIndex == 2 -> quizDetailViewModel.state.currentMindMapStep.getProgressPercentage() // Mind map generation
-                    else -> if (quizDetailViewModel.state.isLoading) 50f else 0f // Detail loading
-                }
-                val message = when {
-                    quizIdLong <= 0 && selectedContentIndex != 2 -> quizViewModel.state.currentStep.getMessage(
-                        context
-                    )
-
-                    selectedContentIndex == 2 -> quizDetailViewModel.state.currentMindMapStep.getMessage(
-                        context
-                    )
-
-                    else -> stringResource(R.string.loading_quiz_details)
-                }
-                LoadingState(progress = progress, message = message)
-            }
-
-            // Error State
-            quizViewModel.state.errorMessage != null || quizDetailViewModel.state.errorMessage != null -> {
-                // Use the component from CommonComponents.kt
-                ErrorStateComponent(
-                    errorMessage = quizViewModel.state.errorMessage
-                        ?: quizDetailViewModel.state.errorMessage
-                        ?: stringResource(R.string.unknown_error)
-                )
-            }
-
-            // Content State
-            else -> {
-                when (selectedContentIndex) {
-                    // Summary Tab
-                    0 -> {
-                        val summaryContent =
-                            if (quizIdLong > 0) quizDetailViewModel.state.summary else quizViewModel.state.quizSummary
-                        if (summaryContent.isNotEmpty()) {
-                            SummaryContent(summaryContent, quizIdLong)
-                        } else {
-                            // Sử dụng EmptyStateComponent cho Summary
-                            EmptyStateComponent(
-                                icon = Icons.Outlined.Summarize,
-                                title = stringResource(R.string.no_summary_available),
-                                description = stringResource(R.string.no_summary_description)
-                            )
-                        }
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .padding(paddingValues)) { // Wrapped in Box to allow FAB positioning
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when {
+                // Loading State
+                quizViewModel.state.isLoading || quizDetailViewModel.state.isLoading -> {
+                    val progress = when {
+                        quizIdLong <= 0 && selectedContentIndex != 2 -> quizViewModel.state.currentStep.getProgressPercentage() // Creation flow
+                        selectedContentIndex == 2 -> quizDetailViewModel.state.currentMindMapStep.getProgressPercentage() // Mind map generation
+                        else -> if (quizDetailViewModel.state.isLoading) 50f else 0f // Detail loading
                     }
+                    val message = when {
+                        quizIdLong <= 0 && selectedContentIndex != 2 -> quizViewModel.state.currentStep.getMessage(
+                            context
+                        )
 
-                    // Questions Tab
-                    1 -> {
-                        if (quizQuestions.isNotEmpty()) {
-                            when {
-                                // Quiz Completed: Show Results
-                                quizDetailViewModel.state.quizCompleted -> {
-                                    // Fetch the answer maps from the ViewModel
-                                    val userAnswersMap = quizDetailViewModel.getUserAnswersMap()
-                                    val correctAnswersMap = quizDetailViewModel.getCorrectAnswersMap()
+                        selectedContentIndex == 2 -> quizDetailViewModel.state.currentMindMapStep.getMessage(
+                            context
+                        )
 
-                                    QuizResultsScreen(
-                                        quizQuestions = quizQuestions,
-                                        correctAnswers = quizDetailViewModel.getCorrectAnswersCount(),
-                                        incorrectAnswers = quizDetailViewModel.getIncorrectAnswersCount(),
-                                        skippedQuestions = quizDetailViewModel.getSkippedQuestionsCount(),
-                                        completionTimeSeconds = quizDetailViewModel.getQuizCompletionTimeInSeconds(),
-                                        correctQuestionIndices = quizDetailViewModel.getCorrectlyAnsweredQuestions(),
-                                        incorrectQuestionIndices = quizDetailViewModel.getIncorrectlyAnsweredQuestions(),
-                                        skippedQuestionIndices = quizDetailViewModel.getSkippedQuestions(),
-                                        // Pass the fetched maps
-                                        userAnswers = userAnswersMap,
-                                        correctAnswersMap = correctAnswersMap,
-                                        onRetryQuiz = { quizDetailViewModel.resetQuiz() }
-                                    )
-                                }
-                                // Quiz Not Started: Show Start Screen
-                                !quizDetailViewModel.state.quizStarted -> {
-                                    StartQuizScreen(
-                                        questionCount = quizQuestions.size,
-                                        onStartQuiz = {
-                                            quizDetailViewModel.startQuiz()
-                                            onSelectedAnswerChange("")
-                                            onShowFeedbackChange(false)
-                                            onCurrentQuestionIndexChange(0) // Start from first question
-                                        }
-                                    )
-                                }
-                                // Quiz In Progress: Show Quiz Content
-                                else -> {
-                                    // Exit Confirmation Dialog
-                                    if (quizDetailViewModel.state.showExitConfirmation) {
-                                        ExitConfirmationDialog(
-                                            onConfirm = {
-                                                quizDetailViewModel.confirmExit()
-                                                navController.popBackStack() // Use NavController from CompositionLocal
-                                            },
-                                            onDismiss = { quizDetailViewModel.hideExitConfirmation() }
+                        else -> stringResource(R.string.loading_quiz_details)
+                    }
+                    LoadingState(progress = progress, message = message)
+                }
+
+                // Error State
+                quizViewModel.state.errorMessage != null || quizDetailViewModel.state.errorMessage != null -> {
+                    // Use the component from CommonComponents.kt
+                    ErrorStateComponent(
+                        errorMessage = quizViewModel.state.errorMessage
+                            ?: quizDetailViewModel.state.errorMessage
+                            ?: stringResource(R.string.unknown_error)
+                    )
+                }
+
+                // Content State
+                else -> {
+                    when (selectedContentIndex) {
+                        // Summary Tab
+                        0 -> {
+                            val summaryContent =
+                                if (quizIdLong > 0) quizDetailViewModel.state.summary else quizViewModel.state.quizSummary
+                            if (summaryContent.isNotEmpty()) {
+                                SummaryContent(summaryContent)
+                            } else {
+                                // Sử dụng EmptyStateComponent cho Summary
+                                EmptyStateComponent(
+                                    icon = Icons.Outlined.Summarize,
+                                    title = stringResource(R.string.no_summary_available),
+                                    description = stringResource(R.string.no_summary_description)
+                                )
+                            }
+                        }
+
+                        // Questions Tab
+                        1 -> {
+                            if (quizQuestions.isNotEmpty()) {
+                                when {
+                                    // Quiz Completed: Show Results
+                                    quizDetailViewModel.state.quizCompleted -> {
+                                        // Fetch the answer maps from the ViewModel
+                                        val userAnswersMap = quizDetailViewModel.getUserAnswersMap()
+                                        val correctAnswersMap = quizDetailViewModel.getCorrectAnswersMap()
+
+                                        QuizResultsScreen(
+                                            quizQuestions = quizQuestions,
+                                            correctAnswers = quizDetailViewModel.getCorrectAnswersCount(),
+                                            incorrectAnswers = quizDetailViewModel.getIncorrectAnswersCount(),
+                                            skippedQuestions = quizDetailViewModel.getSkippedQuestionsCount(),
+                                            completionTimeSeconds = quizDetailViewModel.getQuizCompletionTimeInSeconds(),
+                                            correctQuestionIndices = quizDetailViewModel.getCorrectlyAnsweredQuestions(),
+                                            incorrectQuestionIndices = quizDetailViewModel.getIncorrectlyAnsweredQuestions(),
+                                            skippedQuestionIndices = quizDetailViewModel.getSkippedQuestions(),
+                                            // Pass the fetched maps
+                                            userAnswers = userAnswersMap,
+                                            correctAnswersMap = correctAnswersMap,
+                                            onRetryQuiz = { quizDetailViewModel.resetQuiz() }
                                         )
                                     }
-
-                                    QuizContent(
-                                        quizQuestions = quizQuestions,
-                                        currentQuestionIndex = currentQuestionIndex,
-                                        selectedAnswer = selectedAnswer,
-                                        onAnswerSelected = onSelectedAnswerChange,
-                                        showFeedback = showFeedback,
-                                        isCorrect = isCorrect,
-                                        onSubmitAnswer = {
-                                            val currentQ = quizQuestions[currentQuestionIndex]
-                                            val correct = when (currentQ) {
-                                                is MultipleChoiceQuestion -> currentQ.correctAnswers.contains(
-                                                    selectedAnswer
-                                                )
-
-                                                is TrueFalseQuestion -> (selectedAnswer == "True" && currentQ.isTrue) || (selectedAnswer == "False" && !currentQ.isTrue)
-                                                else -> false
-                                            }
-                                            onIsCorrectChange(correct)
-                                            onShowFeedbackChange(true)
-                                            quizDetailViewModel.saveQuizProgress(
-                                                currentQuestionIndex,
-                                                selectedAnswer
-                                            )
-                                            // answeredQuestions state is updated via LaunchedEffect observing ViewModel
-                                        },
-                                        onSkipQuestion = {
-                                            quizDetailViewModel.skipQuestion(currentQuestionIndex)
-                                            // If this was the last question, immediately check completion
-                                            if (currentQuestionIndex >= quizQuestions.size - 1) {
-                                                quizDetailViewModel.checkQuizCompletion()
-                                            }
-                                            // Let LaunchedEffect handle the rest of navigation after state update
-                                        },
-                                        onNextQuestion = {
-                                            if (currentQuestionIndex < quizQuestions.size - 1) {
-                                                onCurrentQuestionIndexChange(currentQuestionIndex + 1)
+                                    // Quiz Not Started: Show Start Screen
+                                    !quizDetailViewModel.state.quizStarted -> {
+                                        StartQuizScreen(
+                                            questionCount = quizQuestions.size,
+                                            onStartQuiz = {
+                                                quizDetailViewModel.startQuiz()
                                                 onSelectedAnswerChange("")
                                                 onShowFeedbackChange(false)
-                                            } else {
-                                                // Last question answered/skipped, trigger completion check
-                                                quizDetailViewModel.checkQuizCompletion()
+                                                onCurrentQuestionIndexChange(0) // Start from first question
                                             }
+                                        )
+                                    }
+                                    // Quiz In Progress: Show Quiz Content
+                                    else -> {
+                                        // Exit Confirmation Dialog
+                                        if (quizDetailViewModel.state.showExitConfirmation) {
+                                            ExitConfirmationDialog(
+                                                onConfirm = {
+                                                    quizDetailViewModel.confirmExit()
+                                                    navController.popBackStack() // Use NavController from CompositionLocal
+                                                },
+                                                onDismiss = { quizDetailViewModel.hideExitConfirmation() }
+                                            )
                                         }
-                                    )
-                                }
-                            }
-                        } else {
-                            // Sử dụng EmptyStateComponent cho Questions
-                            EmptyStateComponent(
-                                icon = Icons.Outlined.Quiz,
-                                title = stringResource(R.string.no_questions_available),
-                                description = stringResource(R.string.no_questions_description)
-                            )
-                        }
-                    }
 
-                    // Mind Map Tab
-                    2 -> {
-                        if (quizDetailViewModel.state.mindMapCode.isNotEmpty()) {
-                            MindMapContent(
-                                code = quizDetailViewModel.state.mindMapCode,
-                                onFixCodeRequested = { originalCode, errorMsg ->
-                                    val llmProcessor = quizDetailViewModel.getLLMProcessor()
-                                    val language = quizDetailViewModel.getLanguage()
-                                    val fixedCode = llmProcessor.fixMindMapCode(
-                                        originalCode,
-                                        errorMsg,
-                                        language
-                                    )
-                                    quizDetailViewModel.updateMindMapCode(fixedCode)
-                                    fixedCode // Return the fixed code
-                                }
-                            )
-                        } else {
-                            // Sử dụng EmptyStateComponent cho Mind Map
-                            EmptyStateComponent(
-                                icon = Icons.Outlined.AccountTree,
-                                title = stringResource(R.string.mindmap_tab),
-                                description = stringResource(R.string.mindmap_generation_description),
-                                actionContent = {
-                                    Button(onClick = { quizDetailViewModel.generateMindMap() }) {
-                                        Text(stringResource(R.string.generate_mindmap))
+                                        QuizContent(
+                                            quizQuestions = quizQuestions,
+                                            currentQuestionIndex = currentQuestionIndex,
+                                            selectedAnswer = selectedAnswer,
+                                            onAnswerSelected = onSelectedAnswerChange,
+                                            showFeedback = showFeedback,
+                                            isCorrect = isCorrect,
+                                            onSubmitAnswer = {
+                                                val currentQ = quizQuestions[currentQuestionIndex]
+                                                val correct = when (currentQ) {
+                                                    is MultipleChoiceQuestion -> currentQ.correctAnswers.contains(
+                                                        selectedAnswer
+                                                    )
+
+                                                    is TrueFalseQuestion -> (selectedAnswer == "True" && currentQ.isTrue) || (selectedAnswer == "False" && !currentQ.isTrue)
+                                                    else -> false
+                                                }
+                                                onIsCorrectChange(correct)
+                                                onShowFeedbackChange(true)
+                                                quizDetailViewModel.saveQuizProgress(
+                                                    currentQuestionIndex,
+                                                    selectedAnswer
+                                                )
+                                                // answeredQuestions state is updated via LaunchedEffect observing ViewModel
+                                            },
+                                            onSkipQuestion = {
+                                                quizDetailViewModel.skipQuestion(currentQuestionIndex)
+                                                // If this was the last question, immediately check completion
+                                                if (currentQuestionIndex >= quizQuestions.size - 1) {
+                                                    quizDetailViewModel.checkQuizCompletion()
+                                                }
+                                                // Let LaunchedEffect handle the rest of navigation after state update
+                                            },
+                                            onNextQuestion = {
+                                                if (currentQuestionIndex < quizQuestions.size - 1) {
+                                                    onCurrentQuestionIndexChange(currentQuestionIndex + 1)
+                                                    onSelectedAnswerChange("")
+                                                    onShowFeedbackChange(false)
+                                                } else {
+                                                    // Last question answered/skipped, trigger completion check
+                                                    quizDetailViewModel.checkQuizCompletion()
+                                                }
+                                            }
+                                        )
                                     }
                                 }
-                            )
+                            } else {
+                                // Sử dụng EmptyStateComponent cho Questions
+                                EmptyStateComponent(
+                                    icon = Icons.Outlined.Quiz,
+                                    title = stringResource(R.string.no_questions_available),
+                                    description = stringResource(R.string.no_questions_description)
+                                )
+                            }
+                        }
+
+                        // Mind Map Tab
+                        2 -> {
+                            if (quizDetailViewModel.state.mindMapCode.isNotEmpty()) {
+                                MindMapContent(
+                                    code = quizDetailViewModel.state.mindMapCode,
+                                    onFixCodeRequested = { originalCode, errorMsg ->
+                                        val llmProcessor = quizDetailViewModel.getLLMProcessor()
+                                        val language = quizDetailViewModel.getLanguage()
+                                        val fixedCode = llmProcessor.fixMindMapCode(
+                                            originalCode,
+                                            errorMsg,
+                                            language
+                                        )
+                                        quizDetailViewModel.updateMindMapCode(fixedCode)
+                                        fixedCode // Return the fixed code
+                                    }
+                                )
+                            } else {
+                                // Sử dụng EmptyStateComponent cho Mind Map
+                                EmptyStateComponent(
+                                    icon = Icons.Outlined.AccountTree,
+                                    title = stringResource(R.string.mindmap_tab),
+                                    description = stringResource(R.string.mindmap_generation_description),
+                                    actionContent = {
+                                        Button(onClick = { quizDetailViewModel.generateMindMap() }) {
+                                            Text(stringResource(R.string.generate_mindmap))
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
+                }
+            }
+        }
+        
+        // Show FAB only when Summary tab is selected, regardless of content
+        if (selectedContentIndex == 0 && quizDetailViewModel.state.quiz != null) {
+            quizDetailViewModel.state.quiz?.let { quiz ->
+                FloatingActionButton(
+                    onClick = {
+                        val encodedUrl =
+                            URLEncoder.encode(quiz.videoUrl, StandardCharsets.UTF_8.toString())
+                        navController.navigate(AppScreens.VideoPlayer.route + "/${quiz.id}/$encodedUrl")
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ArrowForward,
+                        contentDescription = stringResource(R.string.watch_video)
+                    )
                 }
             }
         }
