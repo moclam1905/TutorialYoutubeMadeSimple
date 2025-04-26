@@ -353,6 +353,8 @@
     <string name="no_summary_description">There is no summary available for this video. Try generating one first.</string>
     <string name="no_questions_description">No questions have been created yet. Please generate or add questions manually.</string>
     <string name="mindmap_generation_description">Visualize the key ideas of your video content with an automatically generated mind map.</string>
+    <string name="clear_tag_filters_short">Clear</string>
+    <string name="tag_selected_desc">Tag selected</string>
 
 
 </resources>

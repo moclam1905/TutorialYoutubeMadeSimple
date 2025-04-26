@@ -354,5 +354,7 @@
     <string name="no_summary_description">Không có tóm tắt nào cho video này. Vui lòng thử tạo tóm tắt trước.</string>
     <string name="no_questions_description">Chưa có câu hỏi nào được tạo. Vui lòng tạo hoặc thêm câu hỏi thủ công.</string>
     <string name="mindmap_generation_description">Hình dung các ý chính của nội dung video bằng bản đồ tư duy được tạo tự động.</string>
+    <string name="clear_tag_filters_short">Xóa</string>
+    <string name="tag_selected_desc">Đã chọn thẻ</string>
 
 </resources>

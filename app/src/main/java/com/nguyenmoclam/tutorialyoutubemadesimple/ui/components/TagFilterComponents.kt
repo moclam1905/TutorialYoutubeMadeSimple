@@ -1,10 +1,8 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,33 +12,32 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.FilterAlt
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Badge
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -85,7 +82,7 @@ fun TagFilterButton(
 /**
  * A composable function representing the content of the Tag Filter Bottom Sheet.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TagFilterSheetContent(
     allTagsWithCount: List<TagWithCount>,
@@ -108,11 +105,12 @@ fun TagFilterSheetContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp) // Adjust bottom padding
             .navigationBarsPadding() // Add padding for navigation bar
             .imePadding() // Add padding for keyboard
+            .verticalScroll(rememberScrollState()) // Make the whole column scrollable if content overflows
     ) {
-        // Header Row
+        // Header Row with Title, Clear Button, and Close Button
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -122,12 +120,21 @@ fun TagFilterSheetContent(
                 text = stringResource(R.string.tag_filter_dialog_title),
                 style = MaterialTheme.typography.titleLarge
             )
+            TextButton(onClick = onClearFilters) {
+                Icon(
+                    Icons.Filled.RestartAlt, // Use a different icon
+                    contentDescription = stringResource(R.string.clear_tag_filters),
+                    modifier = Modifier.size(ButtonDefaults.IconSize) // Standard size
+                )
+                Spacer(Modifier.size(ButtonDefaults.IconSpacing)) // Standard spacing
+                Text(stringResource(R.string.clear_tag_filters_short)) // Use a shorter text if needed
+            }
             IconButton(onClick = onDismiss) {
                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close_menu))
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.weight(1f)) // Pushes buttons to the end
 
         // Search Bar
         OutlinedTextField(
@@ -152,7 +159,7 @@ fun TagFilterSheetContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Tag List
+        // Tag List using FlowRow and FilterChip
         if (filteredTags.isEmpty()) {
             Column(
                 modifier = Modifier
@@ -177,43 +184,36 @@ fun TagFilterSheetContent(
                 )
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.weight(
-                    1f,
-                    fill = false
-                )
-            ) { // Allow list to scroll, but don't take all space initially
-                items(items = filteredTags, key = { it.tag.id }) { tagWithCount ->
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp), // Spacing between chips horizontally
+                // verticalArrangement = Arrangement.spacedBy(4.dp) // Optional: Spacing vertically if chips wrap
+            ) {
+                filteredTags.forEach { tagWithCount ->
                     val isSelected = selectedTagIds.contains(tagWithCount.tag.id)
-                    ListItem(
-                        headlineContent = { Text(tagWithCount.tag.name) },
-                        supportingContent = { Text("(${tagWithCount.quizCount})") },
-                        leadingContent = {
-                            Checkbox(
-                                checked = isSelected,
-                                onCheckedChange = { onTagSelected(tagWithCount.tag.id) }
-                            )
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onTagSelected(tagWithCount.tag.id) },
+                        label = {
+                            Text("${tagWithCount.tag.name} (${tagWithCount.quizCount})")
                         },
-                        modifier = Modifier.clickable { onTagSelected(tagWithCount.tag.id) }
+                        leadingIcon = if (isSelected) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Filled.Done,
+                                    contentDescription = stringResource(R.string.tag_selected_desc),
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
+                        } else {
+                            null
+                        }
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Clear Filters Button (only show if filters are active)
-        if (selectedTagIds.isNotEmpty()) {
-            Button(
-                onClick = {
-                    onClearFilters()
-                    // Optionally dismiss after clearing, or keep it open
-                    // onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.clear_tag_filters))
-            }
-        }
+        // Add some space at the bottom if needed, especially because of imePadding
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
