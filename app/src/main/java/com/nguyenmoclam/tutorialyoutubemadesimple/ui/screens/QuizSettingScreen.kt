@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -139,45 +139,53 @@ fun QuizSettingContent(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        OutlinedTextField(
-            value = uiState.quiz?.title ?: "",
-            onValueChange = onTitleChange,
-            label = { Text(stringResource(R.string.quiz_title_label)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            enabled = uiState.quiz != null
-        )
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = uiState.quiz?.title ?: "",
+                    onValueChange = onTitleChange,
+                    label = { Text(stringResource(R.string.quiz_title_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    enabled = uiState.quiz != null
+                )
 
-        ExpandableOutlinedTextField(
-            value = uiState.quiz?.description ?: "",
-            onValueChange = onDescriptionChange,
-            label = { Text(stringResource(R.string.quiz_description_label)) },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = uiState.quiz != null
-        )
+                ExpandableOutlinedTextField(
+                    value = uiState.quiz?.description ?: "",
+                    onValueChange = onDescriptionChange,
+                    label = { Text(stringResource(R.string.quiz_description_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = uiState.quiz != null
+                )
+            }
+        }
 
-        Divider()
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                ReminderSettingsSection(
+                    currentInterval = uiState.quiz?.reminderInterval,
+                    onIntervalSelected = onReminderIntervalChange,
+                    enabled = uiState.quiz != null,
+                    snackbarHostState = snackbarHostState,
+                    scope = scope
+                )
+            }
+        }
 
-        ReminderSettingsSection(
-            currentInterval = uiState.quiz?.reminderInterval,
-            onIntervalSelected = onReminderIntervalChange,
-            enabled = uiState.quiz != null,
-            snackbarHostState = snackbarHostState,
-            scope = scope
-        )
-
-        Divider()
-
-        TagsSettingsSection(
-            allTags = uiState.allTags,
-            selectedTags = uiState.selectedTags,
-            onTagSelected = onTagSelected,
-            onTagDeselected = onTagDeselected,
-            onCreateAndSelectTag = onCreateAndSelectTag,
-            enabled = uiState.quiz != null
-        )
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                TagsSettingsSection(
+                    allTags = uiState.allTags,
+                    selectedTags = uiState.selectedTags,
+                    onTagSelected = onTagSelected,
+                    onTagDeselected = onTagDeselected,
+                    onCreateAndSelectTag = onCreateAndSelectTag,
+                    enabled = uiState.quiz != null
+                )
+            }
+        }
     }
 }
