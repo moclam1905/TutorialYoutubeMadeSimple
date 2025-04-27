@@ -1,5 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.utils
 
+import com.nguyenmoclam.tutorialyoutubemadesimple.BuildConfig
 import javax.inject.Inject
 import javax.inject.Singleton
 

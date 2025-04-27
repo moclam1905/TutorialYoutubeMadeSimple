@@ -136,9 +136,9 @@
     <string name="api_key_validation_success">API key is valid</string>
     <string name="api_key_validation_error">API key is invalid or expired</string>
     <string name="api_key_format_error">API key format is incorrect</string>
-    <string name="api_key_validating">Validating API key...</string>
+    <string name="api_key_validating">Validating API key…</string>
     <string name="available_credits">Available Credits</string>
-    <string name="loading_credits">Loading credits...</string>
+    <string name="loading_credits">Loading credits…</string>
     <string name="credits_not_available">Not available</string>
     <string name="select_ai_model">Select AI Model</string>
     <string name="model_search_hint">Search models</string>
@@ -373,7 +373,7 @@
     <string name="tag_selected_desc">Tag selected</string>
     <string name="model_not_selected">No model selected</string>
     <string name="selected_model_label">Selected Model</string>
-    <string name="search_models">Search models...</string>
+    <string name="search_models">Search models…</string>
     <string name="input_modalities">Input Modalities</string>
     <string name="context_length">Context Length</string>
     <string name="pricing_tiers">Pricing Tiers</string>
@@ -384,7 +384,7 @@
     <string name="sort_context_high_low">Context: High to Low</string>
     <string name="show_filters">Show Filters</string>
     <string name="hide_filters">Hide Filters</string>
-    <string name="loading_models">Loading models...</string>
+    <string name="loading_models">Loading models…</string>
     <string name="no_models_found">No models found</string>
     <string name="refresh_models">Refresh Models</string>
     <string name="load_more_models">Load More Models</string>
@@ -437,7 +437,7 @@
     <string name="last_7_days">Last 7 Days</string>
     <string name="last_30_days">Last 30 Days</string>
     <string name="all_time">All Time</string>
-    <string name="loading_usage_data">Loading usage data...</string>
+    <string name="loading_usage_data">Loading usage data…</string>
     <string name="total_tokens">Total Tokens</string>
     <string name="prompt_tokens">Prompt Tokens</string>
     <string name="completion_tokens">Completion Tokens</string>

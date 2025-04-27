@@ -381,7 +381,7 @@ class LLMProcessor @Inject constructor(
                             retryCount++ // Increment only if we are actually retrying
                             // Log the retry attempt count correctly
                             val retryError = LLMError.TemporaryError(
-                                "Temporary error: ${lastError?.message}. Retrying ($retryCount/$maxRetries)"
+                                "Temporary error: ${lastError.message}. Retrying ($retryCount/$maxRetries)"
                             )
                             errorCallback?.invoke(retryError)
                             
@@ -393,7 +393,7 @@ class LLMProcessor @Inject constructor(
                             if (errorType == ErrorType.PERMANENT) {
                                 // Log permanent error if it hasn't been thrown yet
                                 val permanentError = LLMError.PermanentError(
-                                    "Permanent error: ${lastError?.message}. API call failed."
+                                    "Permanent error: ${lastError.message}. API call failed."
                                 )
                                 errorCallback?.invoke(permanentError)
                                 throw lastError // Throw the original error for permanent issues

@@ -28,6 +28,7 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
+@Suppress("TooManyFunctions")
 abstract class RepositoryModule {
 
     /**
@@ -103,45 +104,44 @@ abstract class RepositoryModule {
         ): NetworkStateListener {
             return NetworkStateListener(context, offlineSyncManager)
         }
-    }
 
-    /**
-     * Provides the OpenRouterService instance.
-     */
-    @Provides
-    @Singleton
-    fun provideOpenRouterService(
-        openRouterApi: OpenRouterApi,
-        networkUtils: NetworkUtils,
-        securePreferences: SecurePreferences,
-        apiKeyValidator: ApiKeyValidator
-    ): OpenRouterService {
-        return OpenRouterService(openRouterApi, networkUtils, securePreferences, apiKeyValidator)
-    }
+        /**
+         * Provides the OpenRouterService instance.
+         */
+        @Provides
+        @Singleton
+        fun provideOpenRouterService(
+            openRouterApi: OpenRouterApi,
+            networkUtils: NetworkUtils,
+            securePreferences: SecurePreferences
+        ): OpenRouterService {
+            return OpenRouterService(openRouterApi, networkUtils, securePreferences)
+        }
 
-    /**
-     * Provides the OpenRouterRepository instance.
-     */
-    @Provides
-    @Singleton
-    fun provideOpenRouterRepository(
-        openRouterService: OpenRouterService,
-        securePreferences: SecurePreferences,
-        apiKeyValidator: ApiKeyValidator,
-        modelDataManager: ModelDataManager
-    ): OpenRouterRepository {
-        return OpenRouterRepository(openRouterService, securePreferences, apiKeyValidator, modelDataManager)
-    }
+        /**
+         * Provides the OpenRouterRepository instance.
+         */
+        @Provides
+        @Singleton
+        fun provideOpenRouterRepository(
+            openRouterService: OpenRouterService,
+            securePreferences: SecurePreferences,
+            apiKeyValidator: ApiKeyValidator,
+            modelDataManager: ModelDataManager
+        ): OpenRouterRepository {
+            return OpenRouterRepository(openRouterService, securePreferences, apiKeyValidator, modelDataManager)
+        }
 
-    /**
-     * Provides the ApiKeyValidator instance.
-     */
-    @Provides
-    @Singleton
-    fun provideApiKeyValidator(
-        openRouterApi: OpenRouterApi,
-        networkUtils: NetworkUtils
-    ): ApiKeyValidator {
-        return ApiKeyValidator(openRouterApi, networkUtils)
+        /**
+         * Provides the ApiKeyValidator instance.
+         */
+        @Provides
+        @Singleton
+        fun provideApiKeyValidator(
+            openRouterApi: OpenRouterApi,
+            networkUtils: NetworkUtils
+        ): ApiKeyValidator {
+            return ApiKeyValidator(openRouterApi, networkUtils)
+        }
     }
 }

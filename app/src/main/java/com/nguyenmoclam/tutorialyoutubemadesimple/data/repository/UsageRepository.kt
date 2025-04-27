@@ -3,6 +3,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.data.repository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TokenUsageDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TokenUsageEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.CreditStatus
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.TokenUsage
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.TokenUsageSummary
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.service.OpenRouterService
@@ -96,7 +97,7 @@ class UsageRepository @Inject constructor(
                 val usageByModel = modelEntities.associate { entity ->
                     entity.modelId to TokenUsageSummary.ModelUsage(
                         modelId = entity.modelId,
-                        modelName = entity.modelName,
+                        modelName = entity.modelName.toString(),
                         promptTokens = entity.promptTokens,
                         completionTokens = entity.completionTokens,
                         totalTokens = entity.totalTokens,
@@ -136,7 +137,7 @@ class UsageRepository @Inject constructor(
                 val usageByModel = modelEntities.associate { entity ->
                     entity.modelId to TokenUsageSummary.ModelUsage(
                         modelId = entity.modelId,
-                        modelName = entity.modelName,
+                        modelName = entity.modelName.toString(),
                         promptTokens = entity.promptTokens,
                         completionTokens = entity.completionTokens,
                         totalTokens = entity.totalTokens,
@@ -175,7 +176,7 @@ class UsageRepository @Inject constructor(
         
         val result = openRouterService.getCredits()
         
-        if (result is com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result.Success) {
+        if (result is Result.Success) {
             cachedCreditStatus = CreditStatus.fromCreditsResponse(result.value)
             lastCreditFetchTime = currentTime
             cachedCreditStatus

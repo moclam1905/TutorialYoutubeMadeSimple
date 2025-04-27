@@ -328,8 +328,9 @@ class ModelSettingsViewModel @Inject constructor(
             // Update total count for pagination info
             _totalFilteredCount.value = openRouterRepository.getFilteredModelCount(_currentFilters.value)
             
-            // Update pagination state
-            _hasMorePages.value = filteredModels.size < _totalFilteredCount.value
+            // Calculate if there are more pages
+            val totalPages = modelDataManager.getTotalPages(pageSize, _currentFilters.value)
+            _hasMorePages.value = totalPages > 1
             
             _isLoading.value = false
         }

@@ -14,12 +14,4 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object UsageModule {
-    /**
-     * Provides the TokenUsageDao for monitoring token usage.
-     */
-    @Provides
-    @Singleton
-    fun provideTokenUsageDao(database: AppDatabase): TokenUsageDao {
-        return database.tokenUsageDao()
-    }
 } 

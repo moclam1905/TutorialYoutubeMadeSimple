@@ -89,18 +89,22 @@ data class CreditStatus(
          * Creates a CreditStatus from an OpenRouterCreditsResponse.
          */
         fun fromCreditsResponse(response: OpenRouterCreditsResponse): CreditStatus {
+            // Access credits through the nested data object
+            val currentCredits = response.data.totalCredits
+            
             val status = when {
-                response.credits <= CRITICAL_BALANCE_THRESHOLD -> BalanceStatus.CRITICAL
-                response.credits <= LOW_BALANCE_THRESHOLD -> BalanceStatus.LOW
+                currentCredits <= CRITICAL_BALANCE_THRESHOLD -> BalanceStatus.CRITICAL
+                currentCredits <= LOW_BALANCE_THRESHOLD -> BalanceStatus.LOW
                 else -> BalanceStatus.OK
             }
             
             return CreditStatus(
-                credits = response.credits,
-                creditGranted = response.creditGranted,
-                creditUsed = response.creditUsed,
-                currency = response.currency,
-                userId = response.userId,
+                // Access all fields through the nested data object
+                credits = currentCredits,
+                creditGranted = response.data.creditGranted,
+                creditUsed = response.data.totalUsage, // Assuming totalUsage corresponds to creditUsed
+                currency = response.data.currency,
+                userId = response.data.userId,
                 status = status
             )
         }

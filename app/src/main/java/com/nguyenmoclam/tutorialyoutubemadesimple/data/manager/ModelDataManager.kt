@@ -264,14 +264,13 @@ class ModelDataManager @Inject constructor(
     }
     
     /**
-     * Gets a paginated list of models.
-     * Useful for UI virtualization with large model lists.
+     * Gets a paginated list of models with efficient filtering and sorting.
      * 
      * @param page The page number (0-based).
      * @param pageSize The number of models per page.
-     * @param filters The filter criteria to apply.
-     * @param sortOption The sorting option to apply.
-     * @return A page of models.
+     * @param filters Filter criteria to apply.
+     * @param sortOption Sorting option to use.
+     * @return A page of filtered and sorted models.
      */
     fun getModelsPage(
         page: Int,
@@ -279,15 +278,35 @@ class ModelDataManager @Inject constructor(
         filters: Map<ModelFilter.Category, Set<String>> = emptyMap(),
         sortOption: ModelFilter.SortOption = ModelFilter.SortOption.TOP_WEEKLY
     ): List<ModelInfo> {
+        // Get filtered models first
         val filteredModels = getFilteredModels(filters, sortOption)
+        
+        // Calculate start and end indices for pagination
         val startIndex = page * pageSize
         val endIndex = minOf(startIndex + pageSize, filteredModels.size)
         
-        return if (startIndex < filteredModels.size) {
-            filteredModels.subList(startIndex, endIndex)
-        } else {
-            emptyList()
+        // Return empty list if start index is out of bounds
+        if (startIndex >= filteredModels.size) {
+            return emptyList()
         }
+        
+        // Return the sublist representing the requested page
+        return filteredModels.subList(startIndex, endIndex)
+    }
+    
+    /**
+     * Gets the total number of pages based on the filtered models count and page size.
+     * 
+     * @param pageSize The number of models per page.
+     * @param filters Filter criteria to apply.
+     * @return The total number of pages.
+     */
+    fun getTotalPages(
+        pageSize: Int,
+        filters: Map<ModelFilter.Category, Set<String>> = emptyMap()
+    ): Int {
+        val filteredCount = getFilteredModelCount(filters)
+        return (filteredCount + pageSize - 1) / pageSize  // Ceiling division
     }
     
     /**
@@ -297,7 +316,63 @@ class ModelDataManager @Inject constructor(
      * @return The number of matching models.
      */
     fun getFilteredModelCount(filters: Map<ModelFilter.Category, Set<String>> = emptyMap()): Int {
-        return getFilteredModels(filters, ModelFilter.SortOption.TOP_WEEKLY).size
+        // Fast path: if no filters, return total count
+        if (filters.isEmpty()) {
+            return modelsCache.size
+        }
+        
+        // Otherwise, calculate the filtered count
+        var matchingIds: MutableSet<String>? = null
+        
+        // Apply each filter category
+        filters.forEach { (category, values) ->
+            if (values.isEmpty()) return@forEach
+            
+            // Set of model IDs matching this filter
+            val categoryMatches = mutableSetOf<String>()
+            
+            when (category) {
+                ModelFilter.Category.PROVIDER -> {
+                    values.forEach { provider ->
+                        providerIndex[provider]?.let { categoryMatches.addAll(it) }
+                    }
+                }
+                ModelFilter.Category.CONTEXT_LENGTH -> {
+                    values.forEach { contextLength ->
+                        contextLengthIndex[contextLength]?.let { categoryMatches.addAll(it) }
+                    }
+                }
+                ModelFilter.Category.INPUT_MODALITY -> {
+                    values.forEach { modality ->
+                        modalityIndex["input:$modality"]?.let { categoryMatches.addAll(it) }
+                    }
+                }
+                ModelFilter.Category.OUTPUT_MODALITY -> {
+                    values.forEach { modality ->
+                        modalityIndex["output:$modality"]?.let { categoryMatches.addAll(it) }
+                    }
+                }
+                ModelFilter.Category.PRICING -> {
+                    values.forEach { pricing ->
+                        pricingIndex[pricing]?.let { categoryMatches.addAll(it) }
+                    }
+                }
+            }
+            
+            // Intersect with previous matches or initialize matches
+            if (matchingIds == null) {
+                matchingIds = categoryMatches
+            } else {
+                matchingIds!!.retainAll(categoryMatches)
+            }
+            
+            // Early exit if no matches
+            if (matchingIds?.isEmpty() == true) {
+                return 0
+            }
+        }
+        
+        return matchingIds?.size ?: modelsCache.size
     }
     
     /**

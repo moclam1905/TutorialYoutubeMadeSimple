@@ -87,9 +87,9 @@ class ModelDataRefreshWorker @AssistedInject constructor(
     private fun isPermanentError(error: Throwable?): Boolean {
         return error?.message?.let { message ->
             message.contains("401") || // Unauthorized
-            message.contains("403") || // Forbidden
-            message.contains("API key not provided")
-        } ?: false
+                    message.contains("403") || // Forbidden
+                    message.contains("API key not provided")
+        } == true
     }
     
     companion object {

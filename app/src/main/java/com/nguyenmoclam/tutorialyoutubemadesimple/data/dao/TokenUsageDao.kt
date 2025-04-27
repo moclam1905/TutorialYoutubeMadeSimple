@@ -57,7 +57,7 @@ interface TokenUsageDao {
            "SUM(completionTokens) as completionTokens, SUM(totalTokens) as totalTokens, " +
            "SUM(estimatedCost) as estimatedCost, MAX(timestamp) as timestamp " +
            "FROM token_usage GROUP BY modelId")
-    fun getTokenUsageSummaryByModel(): Flow<List<TokenUsageEntity>>
+    fun getTokenUsageSummaryByModel(): Flow<List<TokenUsageSummary>>
     
     /**
      * Gets the total usage statistics for a specific time period.
@@ -71,7 +71,7 @@ interface TokenUsageDao {
            "SUM(estimatedCost) as estimatedCost, MAX(timestamp) as timestamp " +
            "FROM token_usage WHERE timestamp BETWEEN :startTime AND :endTime " +
            "GROUP BY modelId")
-    fun getTokenUsageSummaryByModelForPeriod(startTime: Long, endTime: Long): Flow<List<TokenUsageEntity>>
+    fun getTokenUsageSummaryByModelForPeriod(startTime: Long, endTime: Long): Flow<List<TokenUsageSummary>>
     
     /**
      * Gets the total usage values.
@@ -98,6 +98,19 @@ interface TokenUsageDao {
            "SUM(estimatedCost) as estimatedCost " +
            "FROM token_usage WHERE timestamp BETWEEN :startTime AND :endTime")
     suspend fun getTotalUsageStatsForPeriod(startTime: Long, endTime: Long): TokenUsageStats?
+    
+    /**
+     * Data class for holding aggregated usage statistics returned by summary queries.
+     */
+    data class TokenUsageSummary(
+        val modelId: String,
+        val modelName: String?,
+        val promptTokens: Int,
+        val completionTokens: Int,
+        val totalTokens: Int,
+        val estimatedCost: Double,
+        val timestamp: Long
+    )
     
     /**
      * Data class for holding aggregated usage statistics.

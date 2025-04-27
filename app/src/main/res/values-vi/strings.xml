@@ -132,11 +132,11 @@
     <string name="api_key_helper">Nhập khóa API OpenRouter của bạn. Bạn có thể lấy nó từ openrouter.ai</string>
     <string name="api_key_paste">Dán từ bộ nhớ tạm</string>
     <string name="api_key_toggle_visibility">Chuyển đổi hiển thị khóa API</string>
-    <string name="api_key_format_error">Định dạng khóa API không hợp lệ. Phải có dạng: sk-or-v1-...</string>
+    <string name="api_key_format_error">Định dạng khóa API không hợp lệ. Phải có dạng: sk-or-v1-…</string>
     <string name="api_key_validation_error">Không thể xác thực khóa API. Kiểm tra kết nối hoặc khóa của bạn.</string>
     <string name="api_key_validation_success">Khóa API đã được xác thực thành công</string>
-    <string name="api_key_validating">Đang xác thực khóa API...</string>
-    <string name="api_key_hint">Nhập khóa API ở đây (bắt đầu bằng sk-or-v1-...)</string>
+    <string name="api_key_validating">Đang xác thực khóa API…</string>
+    <string name="api_key_hint">Nhập khóa API ở đây (bắt đầu bằng sk-or-v1-…)</string>
     <string name="available_credits">Tín dụng khả dụng</string>
 
     <!-- Quiz Results -->
@@ -274,7 +274,7 @@
     <string name="chapters">Chương</string>
     <string name="search_in_transcript">Tìm kiếm trong bản ghi…</string>
     <string name="results_found">Tìm thấy %1$d kết quả</string>
-    <string name="no_results_found">Không tìm thấy kết quả nào cho "%1$s"</string>
+    <string name="no_results_found">Không tìm thấy kết quả nào cho %1$s</string>
     <string name="transcript_not_found">Không tìm thấy bản ghi cho quiz này</string>
     <string name="error_loading_transcript">Lỗi tải bản ghi: %1$s</string>
     <string name="error_loading_segments">Lỗi tải các đoạn bản ghi: %1$s</string>
@@ -371,10 +371,10 @@
     <string name="select_ai_model">Chọn mô hình AI</string>
     <string name="model_not_selected">Chưa chọn mô hình</string>
     <string name="selected_model_label">Mô hình đã chọn:</string>
-    <string name="loading_credits">Đang tải số dư tín dụng...</string>
+    <string name="loading_credits">Đang tải số dư tín dụng…</string>
     <string name="credits_not_available">Không có tín dụng khả dụng</string>
 
-    <string name="search_models">Tìm kiếm mô hình...</string>
+    <string name="search_models">Tìm kiếm mô hình…</string>
     <string name="input_modalities">Kiểu đầu vào</string>
     <string name="context_length">Độ dài ngữ cảnh</string>
     <string name="pricing_tiers">Mức giá</string>
@@ -385,7 +385,7 @@
     <string name="sort_context_high_low">Ngữ cảnh: Cao đến Thấp</string>
     <string name="show_filters">Hiện bộ lọc</string>
     <string name="hide_filters">Ẩn bộ lọc</string>
-    <string name="loading_models">Đang tải mô hình...</string>
+    <string name="loading_models">Đang tải mô hình…</string>
     <string name="no_models_found">Không tìm thấy mô hình nào</string>
     <string name="refresh_models">Làm mới mô hình</string>
     <string name="load_more_models">Tải thêm mô hình</string>
@@ -413,7 +413,7 @@
     <string name="last_7_days">7 ngày qua</string>
     <string name="last_30_days">30 ngày qua</string>
     <string name="all_time">Tất cả thời gian</string>
-    <string name="loading_usage_data">Đang tải dữ liệu sử dụng...</string>
+    <string name="loading_usage_data">Đang tải dữ liệu sử dụng…</string>
     <string name="total_tokens">Tổng số tokens</string>
     <string name="prompt_tokens">Tokens cho prompt</string>
     <string name="completion_tokens">Tokens cho completion</string>
@@ -453,7 +453,7 @@
     <string name="openrouter_copy_key">Sao chép khóa API</string>
     <string name="openrouter_paste_instructions">Dán khóa vào ô phía trên để truy cập hơn 100 mô hình AI</string>
     <string name="openrouter_trouble_1_title">Khóa API không hoạt động</string>
-    <string name="openrouter_trouble_1_desc">Đảm bảo rằng bạn nhập đúng khóa, không có khoảng trắng dư. Khóa API thường bắt đầu bằng 'sk-or-' và có đúng 40 ký tự sau tiền tố này.</string>
+    <string name="openrouter_trouble_1_desc">Đảm bảo rằng bạn nhập đúng khóa, không có khoảng trắng dư. Khóa API thường bắt đầu bằng sk-or- và có đúng 40 ký tự sau tiền tố này.</string>
     <string name="openrouter_trouble_2_title">Không hiển thị mô hình</string>
     <string name="openrouter_trouble_2_desc">Kiểm tra xem tài khoản của bạn có đủ tín dụng không. Tài khoản miễn phí bắt đầu với $1 tín dụng. Bạn có thể cần thêm phương thức thanh toán để truy cập đầy đủ.</string>
     <string name="openrouter_trouble_3_title">Sự cố kết nối</string>

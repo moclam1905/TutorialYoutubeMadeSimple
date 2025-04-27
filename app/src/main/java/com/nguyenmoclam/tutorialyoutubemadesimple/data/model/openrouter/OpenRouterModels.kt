@@ -97,21 +97,21 @@ data class LLMConfig(
 /**
  * Represents pricing information for a model.
  * 
- * @property prompt Price per 1M tokens for input/prompt.
- * @property completion Price per 1M tokens for output/completion.
+ * @property prompt Price per token for input/prompt.
+ * @property completion Price per token for output/completion.
+ * @property request Price per request.
+ * @property image Price for image processing.
+ * @property web_search Price for web search functionality.
+ * @property internal_reasoning Price for internal reasoning.
  */
+@Serializable
 data class ModelPricing(
     val prompt: Double,
-    val completion: Double
-)
-
-/**
- * Represents context information for a model.
- * 
- * @property maxTokens Maximum number of tokens the model can process in a single request.
- */
-data class ModelContext(
-    val maxTokens: Int
+    val completion: Double,
+    val request: String? = null,
+    val image: String? = null,
+    @SerialName("web_search") val webSearch: String? = null,
+    @SerialName("internal_reasoning") val internalReasoning: String? = null
 )
 
 /**
@@ -119,18 +119,56 @@ data class ModelContext(
  * 
  * @property id Unique identifier for the model.
  * @property name Display name of the model.
+ * @property created Timestamp when the model was created.
+ * @property description Detailed description of the model.
+ * @property context_length Maximum token context length supported by the model.
+ * @property architecture Information about the model architecture.
  * @property pricing Pricing information for the model.
- * @property context Context information for the model.
- * @property modalities Input and output modalities supported by the model.
- * @property tokenizer Information about the tokenizer used by the model.
+ * @property top_provider Information about the top provider of the model.
+ * @property per_request_limits Request limits information if any.
  */
+@Serializable
 data class OpenRouterModel(
     val id: String,
     val name: String,
+    val created: Long? = null,
+    val description: String? = null,
+    @SerialName("context_length") val contextLength: Int,
+    val architecture: ModelArchitecture? = null,
     val pricing: ModelPricing,
-    val context: ModelContext,
-    val modalities: Map<String, List<String>>,
-    val tokenizer: Map<String, String>
+    @SerialName("top_provider") val topProvider: ModelTopProvider? = null,
+)
+
+/**
+ * Represents architecture information for a model.
+ * 
+ * @property modality Type of modality (e.g., "text->text").
+ * @property input_modalities List of input modalities supported.
+ * @property output_modalities List of output modalities supported.
+ * @property tokenizer Tokenizer information.
+ * @property instruct_type Instruction type for the model.
+ */
+@Serializable
+data class ModelArchitecture(
+    val modality: String? = null,
+    @SerialName("input_modalities") val inputModalities: List<String> = emptyList(),
+    @SerialName("output_modalities") val outputModalities: List<String> = emptyList(),
+    val tokenizer: String? = null,
+    @SerialName("instruct_type") val instructType: String? = null
+)
+
+/**
+ * Represents information about a model's top provider.
+ * 
+ * @property context_length Maximum context length supported by this provider.
+ * @property max_completion_tokens Maximum completion tokens supported.
+ * @property is_moderated Whether the model is moderated.
+ */
+@Serializable
+data class ModelTopProvider(
+    @SerialName("context_length") val contextLength: Int? = null,
+    @SerialName("max_completion_tokens") val maxCompletionTokens: Int? = null,
+    @SerialName("is_moderated") val isModerated: Boolean? = null
 )
 
 /**
@@ -138,6 +176,7 @@ data class OpenRouterModel(
  * 
  * @property data List of available models.
  */
+@Serializable
 data class OpenRouterModelsResponse(
     val data: List<OpenRouterModel>
 )

@@ -39,30 +39,4 @@ object ModelDataModule {
     ): ModelDataManager {
         return ModelDataManager(context, networkUtils)
     }
-    
-    /**
-     * Provides the updated OpenRouterRepository instance with ModelDataManager integration.
-     * This method overrides the provider from RepositoryModule with our enhanced implementation.
-     * 
-     * @param openRouterService Service for OpenRouter API communication
-     * @param securePreferences Secure storage for sensitive data
-     * @param apiKeyValidator Validator for API keys
-     * @param modelDataManager Model data caching and indexing manager
-     * @return The enhanced OpenRouterRepository instance
-     */
-    @Provides
-    @Singleton
-    fun provideOpenRouterRepository(
-        openRouterService: OpenRouterService,
-        securePreferences: SecurePreferences,
-        apiKeyValidator: ApiKeyValidator,
-        modelDataManager: ModelDataManager
-    ): OpenRouterRepository {
-        return OpenRouterRepository(
-            openRouterService, 
-            securePreferences, 
-            apiKeyValidator,
-            modelDataManager
-        )
-    }
 } 
