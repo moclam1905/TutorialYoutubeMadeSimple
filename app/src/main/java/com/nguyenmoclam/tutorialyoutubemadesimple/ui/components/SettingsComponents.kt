@@ -74,9 +74,17 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ApiKeyValidationState
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.CreditStatus
+import androidx.compose.ui.text.style.TextAlign
+import java.util.*
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material3.FilterChip
 
 /**
  * Theme settings component that allows selecting between light, dark, and system theme modes
@@ -852,7 +860,13 @@ fun AIModelSettings(
     currentFilters: Map<ModelFilter.Category, Set<String>> = emptyMap(),
     currentSortOption: ModelFilter.SortOption = ModelFilter.SortOption.TOP_WEEKLY,
     onLoadMoreModels: () -> Unit = {},
-    hasMoreModels: Boolean = false
+    hasMoreModels: Boolean = false,
+    // New parameters for credits/usage monitoring
+    creditStatusState: UsageViewModel.CreditStatusState = UsageViewModel.CreditStatusState.Loading,
+    tokenUsageSummaryState: UsageViewModel.TokenUsageSummaryState = UsageViewModel.TokenUsageSummaryState.Loading,
+    selectedTimeRange: UsageViewModel.TimeRange = UsageViewModel.TimeRange.LAST_30_DAYS,
+    onTimeRangeSelected: (UsageViewModel.TimeRange) -> Unit = {},
+    onRefreshCredits: () -> Unit = {}
 ) {
     // State for password visibility
     var passwordVisible by remember { mutableStateOf(false) }
@@ -1045,49 +1059,18 @@ fun AIModelSettings(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Credits display
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.available_credits), fontWeight = FontWeight.Medium)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // Show loading indicator next to credits title if loading
-                    if (isLoading && validationState != ApiKeyValidationState.VALIDATING) {
-                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Determine the text and color based on state
-                val creditsText = when {
-                    validationState == ApiKeyValidationState.VALID && !isLoading -> 
-                        "$${String.format("%.2f", currentCredits)}"
-                    isLoading -> stringResource(R.string.loading_credits)
-                    else -> stringResource(R.string.credits_not_available)
-                }
-                val creditsColor = if (validationState == ApiKeyValidationState.VALID && !isLoading) {
-                    MaterialTheme.colorScheme.primary 
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
-                
-                Text(
-                    text = creditsText,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = creditsColor
-                )
-            }
+        // Credits and Usage Monitoring Section - replacing the old credits display
+        if (validationState == ApiKeyValidationState.VALID) {
+            CreditAndUsageMonitoring(
+                creditStatusState = creditStatusState,
+                tokenUsageSummaryState = tokenUsageSummaryState,
+                selectedTimeRange = selectedTimeRange,
+                onTimeRangeSelected = onTimeRangeSelected,
+                onRefreshCredits = onRefreshCredits
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
 
         // Model Selection Section
         Text(
@@ -1121,5 +1104,508 @@ fun AIModelSettings(
         // Help section with OpenRouter guidance
         Spacer(modifier = Modifier.height(24.dp))
         OpenRouterHelpSection()
+    }
+}
+
+/**
+ * Component for displaying credit balance and token usage monitoring.
+ * Shows current credits, usage status, and detailed statistics.
+ */
+@Composable
+fun CreditAndUsageMonitoring(
+    creditStatusState: UsageViewModel.CreditStatusState,
+    tokenUsageSummaryState: UsageViewModel.TokenUsageSummaryState,
+    selectedTimeRange: UsageViewModel.TimeRange,
+    onTimeRangeSelected: (UsageViewModel.TimeRange) -> Unit,
+    onRefreshCredits: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Header
+        Text(
+            text = stringResource(R.string.credits_and_usage),
+            fontWeight = FontWeight.Medium
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Credit Status Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = when (creditStatusState) {
+                    is UsageViewModel.CreditStatusState.Success -> {
+                        when (creditStatusState.creditStatus.status) {
+                            CreditStatus.BalanceStatus.CRITICAL -> MaterialTheme.colorScheme.errorContainer
+                            CreditStatus.BalanceStatus.LOW -> MaterialTheme.colorScheme.secondaryContainer
+                            CreditStatus.BalanceStatus.OK -> MaterialTheme.colorScheme.tertiaryContainer
+                        }
+                    }
+                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                }
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.available_credits),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        
+                        // Refresh button
+                        IconButton(
+                            onClick = onRefreshCredits,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            when (creditStatusState) {
+                                is UsageViewModel.CreditStatusState.Loading -> {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                                else -> {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = stringResource(R.string.refresh_credits),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    when (creditStatusState) {
+                        is UsageViewModel.CreditStatusState.Loading -> {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(R.string.loading_credits),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                        is UsageViewModel.CreditStatusState.Success -> {
+                            val creditStatus = creditStatusState.creditStatus
+                            
+                            // Credit amount
+                            Text(
+                                text = "$${String.format("%.2f", creditStatus.credits)}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = when (creditStatus.status) {
+                                    CreditStatus.BalanceStatus.CRITICAL -> MaterialTheme.colorScheme.error
+                                    CreditStatus.BalanceStatus.LOW -> MaterialTheme.colorScheme.secondary
+                                    CreditStatus.BalanceStatus.OK -> MaterialTheme.colorScheme.tertiary
+                                }
+                            )
+                            
+                            Spacer(modifier = Modifier.height(4.dp))
+                            
+                            // Status message
+                            val statusMessage = when (creditStatus.status) {
+                                CreditStatus.BalanceStatus.CRITICAL -> stringResource(
+                                    R.string.critical_balance_warning,
+                                    String.format("%.2f", creditStatus.credits)
+                                )
+                                CreditStatus.BalanceStatus.LOW -> stringResource(
+                                    R.string.low_balance_warning,
+                                    String.format("%.2f", creditStatus.credits)
+                                )
+                                CreditStatus.BalanceStatus.OK -> stringResource(
+                                    R.string.credit_balance_status,
+                                    String.format("%.2f", creditStatus.credits)
+                                )
+                            }
+                            
+                            Text(
+                                text = statusMessage,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            // Credit details
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.credit_granted),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "$${String.format("%.2f", creditStatus.creditGranted)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                                
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = stringResource(R.string.credit_used),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "$${String.format("%.2f", creditStatus.creditUsed)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            // Last updated
+                            Text(
+                                text = stringResource(
+                                    R.string.last_updated,
+                                    formatLastUpdated(creditStatus.lastUpdated)
+                                ),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.End
+                            )
+                        }
+                        is UsageViewModel.CreditStatusState.Error -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(40.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = stringResource(R.string.credit_fetch_error),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = creditStatusState.message,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // Token Usage Section
+        Text(
+            text = stringResource(R.string.token_usage),
+            fontWeight = FontWeight.Medium
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Time range selector
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Time range chips
+            listOf(
+                UsageViewModel.TimeRange.LAST_7_DAYS to stringResource(R.string.last_7_days),
+                UsageViewModel.TimeRange.LAST_30_DAYS to stringResource(R.string.last_30_days),
+                UsageViewModel.TimeRange.ALL_TIME to stringResource(R.string.all_time)
+            ).forEach { (range, label) ->
+                val isSelected = selectedTimeRange == range
+                
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onTimeRangeSelected(range) },
+                    label = { Text(label) },
+                    leadingIcon = if (isSelected) {
+                        {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    } else null
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Token usage summary
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                when (tokenUsageSummaryState) {
+                    is UsageViewModel.TokenUsageSummaryState.Loading -> {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.loading_usage_data),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                    is UsageViewModel.TokenUsageSummaryState.Success -> {
+                        val summary = tokenUsageSummaryState.summary
+                        
+                        // Total tokens used
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.total_tokens),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = summary.totalTokens.toString(),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Token breakdown
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.prompt_tokens),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = summary.totalPromptTokens.toString(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = stringResource(R.string.completion_tokens),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = summary.totalCompletionTokens.toString(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Total estimated cost
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.estimated_cost),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "$${String.format("%.4f", summary.totalCost)}",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        
+                        // Display usage by model if there are models
+                        if (summary.usageByModel.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            Text(
+                                text = stringResource(R.string.usage_by_model),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            // Top 3 most used models
+                            val topModels = summary.usageByModel.values
+                                .sortedByDescending { it.totalTokens }
+                                .take(3)
+                            
+                            topModels.forEach { modelUsage ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = modelUsage.modelName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            maxLines = 1
+                                        )
+                                        Text(
+                                            text = "${modelUsage.totalTokens} tokens",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    
+                                    Text(
+                                        text = "$${String.format("%.4f", modelUsage.estimatedCost)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                            }
+                            
+                            // Show "View all models" button if there are more than 3 models
+                            if (summary.usageByModel.size > 3) {
+                                TextButton(
+                                    onClick = { /* TODO: Navigate to detailed usage screen */ },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp)
+                                ) {
+                                    Text(stringResource(R.string.view_all_models))
+                                }
+                            }
+                        }
+                    }
+                    is UsageViewModel.TokenUsageSummaryState.Empty -> {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SearchOff,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(40.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.no_usage_data),
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    is UsageViewModel.TokenUsageSummaryState.Error -> {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(40.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.usage_data_error),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = tokenUsageSummaryState.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Formats a Date as a relative time string (e.g., "5 minutes ago").
+ */
+private fun formatLastUpdated(date: Date): String {
+    val now = System.currentTimeMillis()
+    val time = date.time
+    val diff = now - time
+    
+    return when {
+        diff < 60_000 -> "just now"
+        diff < 3_600_000 -> "${diff / 60_000} minutes ago"
+        diff < 86_400_000 -> "${diff / 3_600_000} hours ago"
+        diff < 604_800_000 -> "${diff / 86_400_000} days ago"
+        else -> "${diff / 604_800_000} weeks ago"
     }
 }

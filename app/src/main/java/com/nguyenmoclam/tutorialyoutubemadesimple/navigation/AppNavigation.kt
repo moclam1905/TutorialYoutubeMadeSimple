@@ -21,6 +21,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewMode
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
 
 /**
  * Main navigation component for the app.
@@ -58,7 +59,11 @@ fun AppNavigation(
         }
         // Settings Screen
         composable(AppScreens.Settings.route) {
-            SettingScreen(viewModel = settingsViewModel)
+            val usageViewModel: UsageViewModel = hiltViewModel()
+            SettingScreen(
+                viewModel = settingsViewModel,
+                usageViewModel = usageViewModel
+            )
         }
         // Quiz Detail Screen
         composable(

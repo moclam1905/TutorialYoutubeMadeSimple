@@ -57,6 +57,8 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.AIModelSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ApiKeyValidationState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * SettingScreen composable that displays all app settings organized by category.
@@ -64,11 +66,17 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingScreen(
-    viewModel: SettingsViewModel
+    viewModel: SettingsViewModel,
+    usageViewModel: UsageViewModel
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    
+    // Collect states from UsageViewModel
+    val creditStatusState by usageViewModel.creditStatusState.collectAsStateWithLifecycle()
+    val tokenUsageSummaryState by usageViewModel.tokenUsageSummary.collectAsStateWithLifecycle()
+    val selectedTimeRange by usageViewModel.timeRange.collectAsStateWithLifecycle()
 
     // Set up the Google Sign-In activity result launcher
     val signInLauncher = rememberLauncherForActivityResult(
@@ -260,7 +268,12 @@ fun SettingScreen(
                     onModelSelected = viewModel::setSelectedModel,
                     currentCredits = state.apiKeyCredits,
                     isLoading = state.apiKeyValidationState == ApiKeyValidationState.VALIDATING,
-                    validationState = state.apiKeyValidationState
+                    validationState = state.apiKeyValidationState,
+                    creditStatusState = creditStatusState,
+                    tokenUsageSummaryState = tokenUsageSummaryState,
+                    selectedTimeRange = selectedTimeRange,
+                    onTimeRangeSelected = usageViewModel::setTimeRange,
+                    onRefreshCredits = usageViewModel::refreshCreditStatus
                 )
             }
 

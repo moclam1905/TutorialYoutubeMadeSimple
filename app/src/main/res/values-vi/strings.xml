@@ -399,5 +399,28 @@
     <string name="open_openrouter_docs">Mở tài liệu hướng dẫn</string>
     <string name="popular_models">Mô hình phổ biến</string>
     <string name="all_models">Tất cả mô hình</string>
+    <string name="model_search_hint">Tìm kiếm mô hình</string>
+    <string name="credits_and_usage">Theo dõi tín dụng và mức sử dụng</string>
+    <string name="refresh_credits">Làm mới thông tin tín dụng</string>
+    <string name="credit_balance_status">Số dư tín dụng của bạn là $%1$s</string>
+    <string name="low_balance_warning">Số dư tín dụng của bạn thấp ($%1$s)</string>
+    <string name="critical_balance_warning">Số dư tín dụng của bạn cực kỳ thấp ($%1$s)</string>
+    <string name="credit_granted">Tổng tín dụng cấp</string>
+    <string name="credit_used">Tổng tín dụng đã sử dụng</string>
+    <string name="last_updated">Cập nhật lần cuối: %1$s</string>
+    <string name="credit_fetch_error">Không thể lấy thông tin tín dụng</string>
+    <string name="token_usage">Mức sử dụng tokens</string>
+    <string name="last_7_days">7 ngày qua</string>
+    <string name="last_30_days">30 ngày qua</string>
+    <string name="all_time">Tất cả thời gian</string>
+    <string name="loading_usage_data">Đang tải dữ liệu sử dụng...</string>
+    <string name="total_tokens">Tổng số tokens</string>
+    <string name="prompt_tokens">Tokens cho prompt</string>
+    <string name="completion_tokens">Tokens cho completion</string>
+    <string name="estimated_cost">Chi phí ước tính</string>
+    <string name="usage_by_model">Mức sử dụng theo mô hình</string>
+    <string name="view_all_models">Xem tất cả mô hình</string>
+    <string name="no_usage_data">Không có dữ liệu sử dụng cho khoảng thời gian này</string>
+    <string name="usage_data_error">Lỗi khi tải dữ liệu sử dụng</string>
 
 </resources>
