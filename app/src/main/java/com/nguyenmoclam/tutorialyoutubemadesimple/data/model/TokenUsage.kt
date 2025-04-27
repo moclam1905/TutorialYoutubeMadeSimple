@@ -1,5 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.data.model
 
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterCreditsResponse
 import java.util.Date
 
 /**
@@ -87,7 +88,7 @@ data class CreditStatus(
         /**
          * Creates a CreditStatus from an OpenRouterCreditsResponse.
          */
-        fun fromCreditsResponse(response: openrouter.OpenRouterCreditsResponse): CreditStatus {
+        fun fromCreditsResponse(response: OpenRouterCreditsResponse): CreditStatus {
             val status = when {
                 response.credits <= CRITICAL_BALANCE_THRESHOLD -> BalanceStatus.CRITICAL
                 response.credits <= LOW_BALANCE_THRESHOLD -> BalanceStatus.LOW

@@ -423,4 +423,21 @@
     <string name="no_usage_data">No usage data available for this period</string>
     <string name="usage_data_error">Error loading usage data</string>
 
+    <string name="allow_metered_networks">Allow Content on Metered Networks</string>
+    <string name="allow_metered_description">Allow loading content when using mobile data or other metered connections</string>
+
+    <string name="detailed_model_usage">Detailed Model Usage</string>
+    <string name="back">Back</string>
+    <string name="refresh">Refresh</string>
+    <string name="usage_summary_title">Usage Summary</string>
+    <string name="last_7_days_stats">Last 7 Days Statistics</string>
+    <string name="last_30_days_stats">Last 30 Days Statistics</string>
+    <string name="all_time_stats">All-Time Statistics</string>
+    <string name="usage_by_model_title">Usage by Model</string>
+    <string name="cost">Cost</string>
+    <string name="no_usage_data_available">No usage data available</string>
+    <string name="usage_data_description">View your token consumption and cost statistics for each AI model over time.</string>
+    <string name="error_loading_usage">Error loading usage data</string>
+    <string name="total_cost">Total Cost</string>
+
 </resources>

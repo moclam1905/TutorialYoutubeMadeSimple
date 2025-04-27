@@ -27,6 +27,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetRet
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetShowAnswerAfterWrongUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetThemeModeUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetTranscriptModeUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAllowContentOnMeteredUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -58,6 +59,7 @@ class SettingsViewModel @Inject constructor(
     private val setConnectionTypeUseCase: SetConnectionTypeUseCase,
     private val setConnectionTimeoutUseCase: SetConnectionTimeoutUseCase,
     private val setRetryPolicyUseCase: SetRetryPolicyUseCase,
+    private val setAllowContentOnMeteredUseCase: SetAllowContentOnMeteredUseCase,
     private val getQuizRepositoryUseCase: GetQuizRepositoryUseCase,
     private val authManager: AuthManager,
     private var networkUtils: NetworkUtils
@@ -83,12 +85,14 @@ class SettingsViewModel @Inject constructor(
                 connectionTimeout = settings.connectionTimeout,
                 retryPolicy = settings.retryPolicy,
                 appLanguage = settings.appLanguage,
-                isNetworkAvailable = settings.isNetworkAvailable
+                isNetworkAvailable = settings.isNetworkAvailable,
+                allowMeteredNetworks = settings.allowMeteredNetworks
             )
 
-            // Update data saver setting in NetworkUtils
+            // Update network settings in NetworkUtils
             networkUtils.setDataSaverEnabled(settings.dataSaverMode)
             networkUtils.setConnectionTypeRestriction(settings.connectionType)
+            networkUtils.setAllowContentOnMetered(settings.allowMeteredNetworks)
         }.launchIn(viewModelScope)
 
         // Observe network connectivity
@@ -280,36 +284,40 @@ class SettingsViewModel @Inject constructor(
     fun setDataSaverMode(enabled: Boolean) {
         viewModelScope.launch {
             setDataSaverModeUseCase(enabled)
-            settingsState = settingsState.copy(dataSaverMode = enabled)
-            // Update NetworkUtils with the new data saver setting
             networkUtils.setDataSaverEnabled(enabled)
+            settingsState = settingsState.copy(dataSaverMode = enabled)
         }
     }
 
     fun setConnectionType(type: String) {
         viewModelScope.launch {
             setConnectionTypeUseCase(type)
-            settingsState = settingsState.copy(connectionType = type)
-            // Update NetworkUtils with the new connection type restriction
             networkUtils.setConnectionTypeRestriction(type)
+            settingsState = settingsState.copy(connectionType = type)
         }
     }
 
     fun setConnectionTimeout(seconds: Int) {
         viewModelScope.launch {
             setConnectionTimeoutUseCase(seconds)
-            settingsState = settingsState.copy(connectionTimeout = seconds)
-            // Update timeout in NetworkUtils
             networkUtils.setConnectionTimeout(seconds)
+            settingsState = settingsState.copy(connectionTimeout = seconds)
         }
     }
 
     fun setRetryPolicy(policy: String) {
         viewModelScope.launch {
             setRetryPolicyUseCase(policy)
-            settingsState = settingsState.copy(retryPolicy = policy)
-            // Update NetworkUtils with the new retry policy setting
             networkUtils.setRetryPolicy(policy)
+            settingsState = settingsState.copy(retryPolicy = policy)
+        }
+    }
+    
+    fun setAllowMeteredNetworks(allowed: Boolean) {
+        viewModelScope.launch {
+            setAllowContentOnMeteredUseCase(allowed)
+            networkUtils.setAllowContentOnMetered(allowed)
+            settingsState = settingsState.copy(allowMeteredNetworks = allowed)
         }
     }
 
@@ -459,5 +467,8 @@ data class SettingsState(
     val openRouterApiKey: String = "",
     val selectedModel: String = "",
     val apiKeyValidationState: ApiKeyValidationState = ApiKeyValidationState.NONE,
-    val apiKeyCredits: Double = 0.0
+    val apiKeyCredits: Double = 0.0,
+
+    // New settings
+    val allowMeteredNetworks: Boolean = false
 )

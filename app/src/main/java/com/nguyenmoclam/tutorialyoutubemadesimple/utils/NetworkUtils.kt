@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.utils
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -24,6 +25,9 @@ class NetworkUtils(context: Context) {
 
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    
+    private val preferences: SharedPreferences = 
+        context.getSharedPreferences(NETWORK_PREFERENCES, Context.MODE_PRIVATE)
 
     // Data saver mode settings
     private var dataSaverEnabled = false
@@ -85,12 +89,19 @@ class NetworkUtils(context: Context) {
 
     /**
      * Determines if content should be loaded when on a metered network.
-     * TODO: Connect this to a user preference setting.
+     * Uses user preferences to decide whether to allow content loading on metered networks.
      */
     fun shouldLoadContentOnMetered(): Boolean {
-        // Default to allowing loading on metered networks.
-        // Replace with actual logic to check user preferences.
-        return true 
+        return preferences.getBoolean(KEY_ALLOW_METERED_NETWORK, DEFAULT_ALLOW_METERED_NETWORK)
+    }
+
+    /**
+     * Sets whether content should be loaded on metered networks
+     * 
+     * @param allowed true to allow loading on metered networks, false otherwise
+     */
+    fun setAllowContentOnMetered(allowed: Boolean) {
+        preferences.edit().putBoolean(KEY_ALLOW_METERED_NETWORK, allowed).apply()
     }
 
     /**
@@ -374,5 +385,14 @@ class NetworkUtils(context: Context) {
      */
     fun getRetryPolicy(): String {
         return retryPolicy
+    }
+
+    companion object {
+        // Preference keys
+        private const val NETWORK_PREFERENCES = "network_preferences"
+        private const val KEY_ALLOW_METERED_NETWORK = "allow_metered_network"
+        
+        // Default values
+        private const val DEFAULT_ALLOW_METERED_NETWORK = false
     }
 }

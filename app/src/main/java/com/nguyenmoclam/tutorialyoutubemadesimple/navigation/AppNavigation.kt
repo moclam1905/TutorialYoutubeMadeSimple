@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.CreateQuizScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.DetailedModelUsageScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.HomeScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizSettingScreen // Add import
@@ -62,6 +63,15 @@ fun AppNavigation(
             val usageViewModel: UsageViewModel = hiltViewModel()
             SettingScreen(
                 viewModel = settingsViewModel,
+                usageViewModel = usageViewModel,
+                navController = navController
+            )
+        }
+        // Detailed Model Usage Screen
+        composable(AppScreens.DetailedModelUsage.route) {
+            val usageViewModel: UsageViewModel = hiltViewModel()
+            DetailedModelUsageScreen(
+                navController = navController,
                 usageViewModel = usageViewModel
             )
         }
@@ -118,6 +128,7 @@ sealed class AppScreens(val route: String) {
     object QuizDetail : AppScreens("quiz_detail")
     object QuizSetting : AppScreens("quiz_setting") // Add QuizSetting screen
     object VideoPlayer : AppScreens("video_player")
+    object DetailedModelUsage : AppScreens("detailed_model_usage")
 
     fun withArgs(vararg args: String): String {
         return buildString {

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.NetworkWifi
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.SignalWifiStatusbar4Bar
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -59,6 +60,8 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ApiKeyValidationStat
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 
 /**
  * SettingScreen composable that displays all app settings organized by category.
@@ -67,7 +70,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun SettingScreen(
     viewModel: SettingsViewModel,
-    usageViewModel: UsageViewModel
+    usageViewModel: UsageViewModel,
+    navController: NavController
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
@@ -230,14 +234,15 @@ fun SettingScreen(
             // Network Settings Section
             SettingsSection(
                 title = stringResource(R.string.network_settings),
-                icon = Icons.Default.NetworkWifi
+                icon = Icons.Default.SignalWifiStatusbar4Bar
             ) {
                 NetworkSettings(
                     state = state,
                     onDataSaverModeChanged = viewModel::setDataSaverMode,
                     onConnectionTypeChanged = viewModel::setConnectionType,
                     onConnectionTimeoutChanged = viewModel::setConnectionTimeout,
-                    onRetryPolicyChanged = viewModel::setRetryPolicy
+                    onRetryPolicyChanged = viewModel::setRetryPolicy,
+                    onAllowMeteredNetworksChanged = viewModel::setAllowMeteredNetworks
                 )
             }
 
@@ -273,7 +278,11 @@ fun SettingScreen(
                     tokenUsageSummaryState = tokenUsageSummaryState,
                     selectedTimeRange = selectedTimeRange,
                     onTimeRangeSelected = usageViewModel::setTimeRange,
-                    onRefreshCredits = usageViewModel::refreshCreditStatus
+                    onRefreshCredits = usageViewModel::refreshCreditStatus,
+                    onViewAllModelsClick = {
+                        // Navigate to the detailed model usage screen
+                        navController.navigate(AppScreens.DetailedModelUsage.route)
+                    }
                 )
             }
 

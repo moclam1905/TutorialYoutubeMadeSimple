@@ -422,5 +422,21 @@
     <string name="view_all_models">Xem tất cả mô hình</string>
     <string name="no_usage_data">Không có dữ liệu sử dụng cho khoảng thời gian này</string>
     <string name="usage_data_error">Lỗi khi tải dữ liệu sử dụng</string>
+    <string name="allow_metered_networks">Cho phép tải nội dung qua mạng tính phí</string>
+    <string name="allow_metered_description">Cho phép tải nội dung khi sử dụng dữ liệu di động hoặc các kết nối bị tính phí</string>
+
+    <string name="detailed_model_usage">Chi tiết mức sử dụng mô hình</string>
+    <string name="back">Quay lại</string>
+    <string name="refresh">Làm mới</string>
+    <string name="usage_summary_title">Tóm tắt mức sử dụng</string>
+    <string name="last_7_days_stats">Thống kê 7 ngày qua</string>
+    <string name="last_30_days_stats">Thống kê 30 ngày qua</string>
+    <string name="all_time_stats">Thống kê toàn thời gian</string>
+    <string name="usage_by_model_title">Mức sử dụng theo mô hình</string>
+    <string name="cost">Chi phí</string>
+    <string name="no_usage_data_available">Không có dữ liệu sử dụng</string>
+    <string name="usage_data_description">Xem lượng tiêu thụ tokens và chi phí cho từng mô hình AI theo thời gian.</string>
+    <string name="error_loading_usage">Lỗi khi tải dữ liệu sử dụng</string>
+    <string name="total_cost">Tổng chi phí</string>
 
 </resources>

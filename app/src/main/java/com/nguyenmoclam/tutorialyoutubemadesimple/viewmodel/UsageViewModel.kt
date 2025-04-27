@@ -169,6 +169,19 @@ class UsageViewModel @Inject constructor(
     }
     
     /**
+     * Refreshes token usage data from the repository.
+     * Forces a refresh of the data from the database.
+     */
+    fun refreshTokenUsage() {
+        viewModelScope.launch {
+            // The token usage will be automatically refreshed through the StateFlow
+            // This method is mainly to trigger refresh on demand from the UI
+            // For database data, we just need to re-emit the current time range to trigger the flatMapLatest
+            _timeRange.value = _timeRange.value
+        }
+    }
+    
+    /**
      * Time ranges for filtering usage data.
      */
     enum class TimeRange {
@@ -205,4 +218,16 @@ class UsageViewModel @Inject constructor(
         data object Empty : TokenUsageDetailsState()
         data class Error(val message: String) : TokenUsageDetailsState()
     }
+    
+    /**
+     * Data class representing usage statistics for a specific model.
+     */
+    data class ModelUsage(
+        val modelId: String,
+        val modelName: String,
+        val promptTokens: Int,
+        val completionTokens: Int,
+        val totalTokens: Int,
+        val estimatedCost: Double
+    )
 } 

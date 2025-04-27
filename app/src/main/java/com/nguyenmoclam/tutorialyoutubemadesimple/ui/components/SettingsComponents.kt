@@ -448,7 +448,8 @@ fun NetworkSettings(
     onDataSaverModeChanged: (Boolean) -> Unit,
     onConnectionTypeChanged: (String) -> Unit,
     onConnectionTimeoutChanged: (Int) -> Unit,
-    onRetryPolicyChanged: (String) -> Unit
+    onRetryPolicyChanged: (String) -> Unit,
+    onAllowMeteredNetworksChanged: (Boolean) -> Unit
 ) {
     Column {
         // Network status indicator
@@ -503,6 +504,33 @@ fun NetworkSettings(
             Switch(
                 checked = state.dataSaverMode,
                 onCheckedChange = onDataSaverModeChanged,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
+        
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        
+        // Allow content on metered networks toggle
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(stringResource(R.string.allow_metered_networks))
+                Text(
+                    stringResource(R.string.allow_metered_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = state.allowMeteredNetworks,
+                onCheckedChange = onAllowMeteredNetworksChanged,
                 modifier = Modifier.padding(start = 16.dp)
             )
         }
@@ -866,7 +894,8 @@ fun AIModelSettings(
     tokenUsageSummaryState: UsageViewModel.TokenUsageSummaryState = UsageViewModel.TokenUsageSummaryState.Loading,
     selectedTimeRange: UsageViewModel.TimeRange = UsageViewModel.TimeRange.LAST_30_DAYS,
     onTimeRangeSelected: (UsageViewModel.TimeRange) -> Unit = {},
-    onRefreshCredits: () -> Unit = {}
+    onRefreshCredits: () -> Unit = {},
+    onViewAllModelsClick: () -> Unit = {}
 ) {
     // State for password visibility
     var passwordVisible by remember { mutableStateOf(false) }
@@ -1066,7 +1095,8 @@ fun AIModelSettings(
                 tokenUsageSummaryState = tokenUsageSummaryState,
                 selectedTimeRange = selectedTimeRange,
                 onTimeRangeSelected = onTimeRangeSelected,
-                onRefreshCredits = onRefreshCredits
+                onRefreshCredits = onRefreshCredits,
+                onViewAllModelsClick = onViewAllModelsClick
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -1111,13 +1141,15 @@ fun AIModelSettings(
  * Component for displaying credit balance and token usage monitoring.
  * Shows current credits, usage status, and detailed statistics.
  */
+@SuppressLint("DefaultLocale")
 @Composable
 fun CreditAndUsageMonitoring(
     creditStatusState: UsageViewModel.CreditStatusState,
     tokenUsageSummaryState: UsageViewModel.TokenUsageSummaryState,
     selectedTimeRange: UsageViewModel.TimeRange,
     onTimeRangeSelected: (UsageViewModel.TimeRange) -> Unit,
-    onRefreshCredits: () -> Unit
+    onRefreshCredits: () -> Unit,
+    onViewAllModelsClick: () -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         // Header
@@ -1529,7 +1561,7 @@ fun CreditAndUsageMonitoring(
                             // Show "View all models" button if there are more than 3 models
                             if (summary.usageByModel.size > 3) {
                                 TextButton(
-                                    onClick = { /* TODO: Navigate to detailed usage screen */ },
+                                    onClick = onViewAllModelsClick,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(top = 8.dp)

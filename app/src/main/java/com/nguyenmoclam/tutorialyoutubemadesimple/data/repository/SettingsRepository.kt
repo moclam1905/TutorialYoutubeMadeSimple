@@ -99,4 +99,11 @@ interface SettingsRepository {
      * @param language The app language ("en", "vi", or "system")
      */
     suspend fun setAppLanguage(language: String)
+
+    /**
+     * Update the allow content on metered networks setting.
+     *
+     * @param allowed Whether to allow loading content on metered networks
+     */
+    suspend fun setAllowContentOnMetered(allowed: Boolean)
 }
