@@ -84,6 +84,9 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.core.splashscreen)
 
+    // Security - Encrypted Shared Preferences
+    implementation(libs.androidx.security.crypto)
+
     implementation (libs.androidx.lifecycle.viewmodel.compose)
     implementation (libs.androidx.lifecycle.runtime.compose)
 

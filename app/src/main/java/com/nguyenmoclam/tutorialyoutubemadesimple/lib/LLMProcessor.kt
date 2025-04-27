@@ -1,14 +1,18 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.lib
 
-import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity.Companion.OPENROUTER_API_KEY
 import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.LLMConfig
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.Message
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterRequest
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterResponse
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UsageRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Question
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -23,12 +27,100 @@ import javax.inject.Inject
  * 1. Topic Extraction: Analyzes the video transcript to identify key topics and generate relevant questions
  * 2. Content Simplification: Transforms the extracted content into child-friendly format with ELI5 explanations
  *
- * The class uses OpenRouter's API with Gemini model for natural language processing tasks.
+ * The class uses OpenRouter's API with configurable model selection for natural language processing tasks.
  */
 class LLMProcessor @Inject constructor(
     private val networkUtils: NetworkUtils,
-    private val openRouterApi: OpenRouterApi
+    private val openRouterApi: OpenRouterApi,
+    private val securePreferences: SecurePreferences,
+    private val usageRepository: UsageRepository,
+    initialConfig: LLMConfig? = null
 ) {
+    /**
+     * The current LLM configuration being used for API calls.
+     * Defaults to the predefined default configuration.
+     */
+    private var currentConfig: LLMConfig = initialConfig ?: LLMConfig.DEFAULT
+    
+    /**
+     * Error callback for detailed error reporting.
+     * Can be set to receive detailed error information.
+     */
+    private var errorCallback: ((LLMError) -> Unit)? = null
+    
+    /**
+     * Model unavailability tracking to prevent repeated failures.
+     * Maps model IDs to timestamp when they were marked unavailable.
+     */
+    private val unavailableModels = mutableMapOf<String, Long>()
+    
+    /**
+     * The cooldown period in milliseconds before retrying an unavailable model.
+     * Default is 5 minutes.
+     */
+    private val MODEL_UNAVAILABILITY_COOLDOWN = 5 * 60 * 1000L
+    
+    /**
+     * Sets a new configuration for the LLM processor.
+     * 
+     * @param config The new configuration to use for future API calls.
+     */
+    fun setConfig(config: LLMConfig) {
+        currentConfig = config
+    }
+    
+    /**
+     * Returns the current LLM configuration.
+     * 
+     * @return The current configuration being used.
+     */
+    fun getConfig(): LLMConfig {
+        return currentConfig
+    }
+    
+    /**
+     * Resets the configuration to the default values.
+     */
+    fun resetConfig() {
+        currentConfig = LLMConfig.DEFAULT
+    }
+    
+    /**
+     * Sets a callback for receiving detailed error reports.
+     * 
+     * @param callback The function to call when errors occur.
+     */
+    fun setErrorCallback(callback: (LLMError) -> Unit) {
+        errorCallback = callback
+    }
+    
+    /**
+     * Checks if a model is currently marked as unavailable.
+     * 
+     * @param modelId The ID of the model to check.
+     * @return True if the model is unavailable, false otherwise.
+     */
+    private fun isModelUnavailable(modelId: String): Boolean {
+        val timestamp = unavailableModels[modelId] ?: return false
+        val now = System.currentTimeMillis()
+        
+        // If the cooldown period has passed, remove the model from unavailable list
+        if (now - timestamp > MODEL_UNAVAILABILITY_COOLDOWN) {
+            unavailableModels.remove(modelId)
+            return false
+        }
+        
+        return true
+    }
+    
+    /**
+     * Marks a model as unavailable for the cooldown period.
+     * 
+     * @param modelId The ID of the model to mark as unavailable.
+     */
+    private fun markModelUnavailable(modelId: String) {
+        unavailableModels[modelId] = System.currentTimeMillis()
+    }
 
     /**
      * Analyzes a video transcript to identify key topics and generate relevant questions.
@@ -165,34 +257,211 @@ class LLMProcessor @Inject constructor(
     }
 
     /**
-     * Makes an API call to OpenRouter using the Gemini model.
-     * This function handles the communication with the LLM service.
+     * Processes a prompt through the configured LLM to get a response.
+     * Handles retries, error classification, and model fallback.
+     * 
+     * @param prompt The prompt to send to the LLM.
+     * @param config Optional configuration override for this specific call.
+     * @return The LLM's response as a string.
      */
-    private suspend fun callLLM(prompt: String): String {
+    private suspend fun callLLM(
+        prompt: String,
+        config: LLMConfig? = null
+    ): String {
         // Check if content should not be loaded based on data saver settings
         if (!networkUtils.shouldLoadContent(highQuality = true)) {
             throw IllegalStateException("Network restricted by data saver settings")
         }
-
+        
+        // Use the provided config or fall back to the current config
+        var usedConfig = config ?: currentConfig
+        
+        // Check if the selected model is unavailable and needs a fallback
+        if (isModelUnavailable(usedConfig.modelId)) {
+            val message = "Model ${usedConfig.modelId} is currently unavailable, falling back to default model"
+            errorCallback?.invoke(LLMError.ModelUnavailable(usedConfig.modelId, message))
+            usedConfig = LLMConfig.DEFAULT
+        }
+        
+        // Determine which API key to use
+        val apiKey = if (usedConfig.apiKey.isNotBlank()) {
+            usedConfig.apiKey
+        } else {
+            // Get API key from secure storage
+            securePreferences.getOpenRouterApiKey()
+        }
+        
         val messages = listOf(
             Message(role = "user", content = prompt)
         )
+        
         val request = OpenRouterRequest(
-            model = "deepseek/deepseek-chat-v3-0324:free",
-            messages = messages
+            model = usedConfig.modelId,
+            messages = messages,
+            max_tokens = usedConfig.maxTokens,
+            temperature = usedConfig.temperature,
+            top_p = usedConfig.topP
         )
-        val authHeader = "Bearer $OPENROUTER_API_KEY"
-
-        // Use withConnectionTimeout to apply user's timeout setting
-        val result = networkUtils.withConnectionTimeout {
-            openRouterApi.createCompletion(authHeader, request)
+        
+        val authHeader = "Bearer $apiKey"
+        
+        // Implement retry with exponential backoff
+        val maxRetries = 3
+        var retryCount = 0
+        var lastError: Throwable? = null
+        
+        while (retryCount <= maxRetries) {
+            try {
+                // Use withConnectionTimeout to apply user's timeout setting
+                val result = networkUtils.withConnectionTimeout {
+                    openRouterApi.createCompletion(authHeader, request)
+                }
+                
+                // Handle the result - using the custom Result class
+                val apiResponse = when (result) {
+                    is Result.Success -> {
+                        // result.value is Result<OpenRouterResponse>
+                        when (val innerResult = result.value) {
+                            is Result.Success -> innerResult.value
+                            is Result.Failure -> throw innerResult.error
+                        }
+                    }
+                    is Result.Failure -> throw result.error
+                }
+                
+                // Reset unavailability status if the call succeeded
+                if (unavailableModels.containsKey(usedConfig.modelId)) {
+                    unavailableModels.remove(usedConfig.modelId)
+                }
+                
+                // Record token usage for successful responses
+                try {
+                    val usageInfo = apiResponse.usage
+                    // Create TokenUsage object first
+                    val tokenUsage = usageRepository.createTokenUsage(
+                        modelId = usedConfig.modelId,
+                        modelName = "", // Placeholder: Fetch actual model name if needed
+                        promptTokens = usageInfo?.promptTokens ?: 0,
+                        completionTokens = usageInfo?.completionTokens ?: 0,
+                        promptPrice = 0.0, // Placeholder: Fetch actual prompt price if needed
+                        completionPrice = 0.0 // Placeholder: Fetch actual completion price if needed
+                    )
+                    // Then record it
+                    usageRepository.recordTokenUsage(tokenUsage)
+                } catch (e: Exception) {
+                    // Log the error but don't fail the main operation
+                    errorCallback?.invoke(LLMError.TrackingError("Failed to record token usage: ${e.message}"))
+                }
+                
+                // Now apiResponse is OpenRouterResponse
+                return apiResponse.choices.firstOrNull()?.message?.content ?: ""
+            } catch (e: Exception) {
+                lastError = e
+                val errorType = classifyError(e)
+                
+                when (errorType) {
+                    ErrorType.MODEL_UNAVAILABLE -> {
+                        // Mark model as unavailable and try again with default model
+                        markModelUnavailable(usedConfig.modelId)
+                        val fallbackError = LLMError.ModelUnavailable(
+                            usedConfig.modelId,
+                            "Model unavailable: ${e.message}. Falling back to default model."
+                        )
+                        errorCallback?.invoke(fallbackError)
+                        
+                        // Only fallback if we're not already using the default model
+                        if (usedConfig.modelId != LLMConfig.DEFAULT.modelId) {
+                            usedConfig = LLMConfig.DEFAULT
+                            continue  // Skip the retry delay and retry immediately with fallback
+                        }
+                    }
+                    ErrorType.TEMPORARY -> {
+                        // Decide whether to retry or break BEFORE incrementing count
+                        if (retryCount < maxRetries) {
+                            retryCount++ // Increment only if we are actually retrying
+                            // Log the retry attempt count correctly
+                            val retryError = LLMError.TemporaryError(
+                                "Temporary error: ${lastError?.message}. Retrying ($retryCount/$maxRetries)"
+                            )
+                            errorCallback?.invoke(retryError)
+                            
+                            // Exponential backoff using the updated retryCount
+                            val delayTime = 500L * (1 shl (retryCount - 1))
+                            kotlinx.coroutines.delay(delayTime)
+                        } else {
+                            // Permanent error OR max retries reached
+                            if (errorType == ErrorType.PERMANENT) {
+                                // Log permanent error if it hasn't been thrown yet
+                                val permanentError = LLMError.PermanentError(
+                                    "Permanent error: ${lastError?.message}. API call failed."
+                                )
+                                errorCallback?.invoke(permanentError)
+                                throw lastError // Throw the original error for permanent issues
+                            }
+                            // If it wasn't permanent, it means retries are exhausted
+                            break // Exit the loop
+                        }
+                    }
+                    ErrorType.PERMANENT -> {
+                        // Permanent error, no point in retrying
+                        val permanentError = LLMError.PermanentError(
+                            "Permanent error: ${e.message}. API call failed."
+                        )
+                        errorCallback?.invoke(permanentError)
+                        throw e
+                    }
+                }
+            }
         }
-
-        // Handle the result
-        return result.fold(
-            onSuccess = { response -> response.choices.firstOrNull()?.message?.content ?: "" },
-            onFailure = { exception -> throw exception }
+        
+        // If we've reached here, all retries failed
+        val exhaustedError = LLMError.RetriesExhausted(
+            "Failed after $maxRetries retries: ${lastError?.message}"
         )
+        errorCallback?.invoke(exhaustedError)
+        throw lastError ?: IllegalStateException("API call failed after retries")
+    }
+    
+    /**
+     * Classifies an error to determine if it's temporary, permanent, or model-specific.
+     * 
+     * @param error The error to classify.
+     * @return The ErrorType classification.
+     */
+    private fun classifyError(error: Throwable): ErrorType {
+        return when {
+            // Model unavailable errors
+            error.message?.contains("model_not_found") == true -> ErrorType.MODEL_UNAVAILABLE
+            error.message?.contains("invalid model") == true -> ErrorType.MODEL_UNAVAILABLE
+            error.message?.contains("model capacity") == true -> ErrorType.MODEL_UNAVAILABLE
+            error.message?.contains("not available") == true -> ErrorType.MODEL_UNAVAILABLE
+            
+            // Temporary errors
+            error is java.net.SocketTimeoutException -> ErrorType.TEMPORARY
+            error is java.io.IOException -> ErrorType.TEMPORARY
+            error.message?.contains("timeout") == true -> ErrorType.TEMPORARY
+            error.message?.contains("429") == true -> ErrorType.TEMPORARY  // Too many requests
+            error.message?.contains("503") == true -> ErrorType.TEMPORARY  // Service unavailable
+            error.message?.contains("502") == true -> ErrorType.TEMPORARY  // Bad gateway
+            
+            // Permanent errors
+            error.message?.contains("401") == true -> ErrorType.PERMANENT  // Unauthorized
+            error.message?.contains("403") == true -> ErrorType.PERMANENT  // Forbidden
+            error.message?.contains("400") == true -> ErrorType.PERMANENT  // Bad request
+            error.message?.contains("404") == true -> ErrorType.PERMANENT  // Not found
+            
+            // Default to temporary for unknown errors
+            else -> ErrorType.TEMPORARY
+        }
+    }
+    
+    /**
+     * Error types for classifying API errors.
+     */
+    private enum class ErrorType {
+        TEMPORARY,      // Can be retried
+        PERMANENT,      // Should not be retried
+        MODEL_UNAVAILABLE // Model-specific error, should fallback
     }
 
     /**
@@ -649,6 +918,36 @@ class LLMProcessor @Inject constructor(
     }
 
     /**
+     * Represents errors that can occur during LLM operations.
+     */
+    sealed class LLMError {
+        /**
+         * Error when a model is unavailable and fallback is used.
+         */
+        data class ModelUnavailable(val modelId: String, val message: String) : LLMError()
+        
+        /**
+         * Error for temporary issues that were retried.
+         */
+        data class TemporaryError(val message: String) : LLMError()
+        
+        /**
+         * Error for permanent issues that cannot be resolved with retries.
+         */
+        data class PermanentError(val message: String) : LLMError()
+        
+        /**
+         * Error when all retries are exhausted.
+         */
+        data class RetriesExhausted(val message: String) : LLMError()
+        
+        /**
+         * Error when tracking token usage fails.
+         */
+        data class TrackingError(val message: String) : LLMError()
+    }
+    
+    /**
      * Parses the JSON response from the key point extraction prompt into a list of key point strings.
      * @param jsonResponse The raw JSON string response from the LLM.
      * @return List of key point texts (max 5) or an empty list if parsing fails or no key points found.
@@ -674,5 +973,4 @@ class LLMProcessor @Inject constructor(
             emptyList()
         }
     }
-
 }

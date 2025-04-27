@@ -9,6 +9,11 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkStateListener
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.OpenRouterRepository
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.service.OpenRouterService
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.ApiKeyValidator
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -97,5 +102,44 @@ abstract class RepositoryModule {
         ): NetworkStateListener {
             return NetworkStateListener(context, offlineSyncManager)
         }
+    }
+
+    /**
+     * Provides the OpenRouterService instance.
+     */
+    @Provides
+    @Singleton
+    fun provideOpenRouterService(
+        openRouterApi: OpenRouterApi,
+        networkUtils: NetworkUtils,
+        securePreferences: SecurePreferences,
+        apiKeyValidator: ApiKeyValidator
+    ): OpenRouterService {
+        return OpenRouterService(openRouterApi, networkUtils, securePreferences, apiKeyValidator)
+    }
+
+    /**
+     * Provides the OpenRouterRepository instance.
+     */
+    @Provides
+    @Singleton
+    fun provideOpenRouterRepository(
+        openRouterService: OpenRouterService,
+        securePreferences: SecurePreferences,
+        apiKeyValidator: ApiKeyValidator
+    ): OpenRouterRepository {
+        return OpenRouterRepository(openRouterService, securePreferences, apiKeyValidator)
+    }
+
+    /**
+     * Provides the ApiKeyValidator instance.
+     */
+    @Provides
+    @Singleton
+    fun provideApiKeyValidator(
+        openRouterApi: OpenRouterApi,
+        networkUtils: NetworkUtils
+    ): ApiKeyValidator {
+        return ApiKeyValidator(openRouterApi, networkUtils)
     }
 }

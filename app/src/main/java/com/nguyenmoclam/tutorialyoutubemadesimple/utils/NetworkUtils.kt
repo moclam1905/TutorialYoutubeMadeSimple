@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -244,11 +245,11 @@ class NetworkUtils(context: Context) {
             val result = withTimeout(connectionTimeout * 1000L) {
                 block()
             }
-            Result.success(result)
+            Result.Success(result)
         } catch (e: TimeoutCancellationException) {
-            Result.failure(SocketTimeoutException("Connection timed out after $connectionTimeout seconds"))
+            Result.Failure(SocketTimeoutException("Connection timed out after $connectionTimeout seconds"))
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.Failure(e)
         }
     }
 

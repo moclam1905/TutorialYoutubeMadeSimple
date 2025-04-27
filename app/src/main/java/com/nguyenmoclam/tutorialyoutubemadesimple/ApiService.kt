@@ -1,8 +1,11 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple
 
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterModelsResponse
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterRequest
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterResponse
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.video.VideoResponse
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -24,7 +27,29 @@ interface OpenRouterApi {
     suspend fun createCompletion(
         @Header("Authorization") authHeader: String,
         @Body request: OpenRouterRequest
-    ): OpenRouterResponse
+    ): Result<OpenRouterResponse>
+
+    /**
+     * Fetches the list of available models from OpenRouter.
+     *
+     * @param authHeader The Authorization header with the API key.
+     * @return A Result containing the OpenRouterModelsResponse or an error.
+     */
+    @GET("models")
+    suspend fun getAvailableModels(
+        @Header("Authorization") authHeader: String
+    ): Result<OpenRouterModelsResponse>
+
+    /**
+     * Fetches the user's credits information from OpenRouter.
+     *
+     * @param authHeader The Authorization header with the API key.
+     * @return A Response containing the credits information.
+     */
+    @GET("credits")
+    suspend fun getCredits(
+        @Header("Authorization") authHeader: String
+    ): Response<Map<String, Any>>
 }
 
 object ApiService {
