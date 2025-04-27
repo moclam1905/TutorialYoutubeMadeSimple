@@ -3,7 +3,6 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.data.repository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.manager.ModelDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterCreditsResponse
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.service.OpenRouterService
@@ -51,33 +50,34 @@ class OpenRouterRepository @Inject constructor(
     private val _validationErrorMessage = MutableStateFlow<String?>(null)
     val validationErrorMessage: StateFlow<String?> = _validationErrorMessage.asStateFlow()
     
+    // Cache expiration constants
+    companion object {
+        private const val CREDITS_CACHE_EXPIRATION_TIME = 15 * 60 * 1000L // 15 minutes
+        private const val VALIDATION_CACHE_EXPIRATION_TIME = 30 * 60 * 1000L // 30 minutes
+    }
+    
     /**
      * Gets the list of available models from OpenRouter.
      * Uses the ModelDataManager for efficient caching and data management.
      * 
      * @param forceRefresh If true, forces a network request even if cached data is available.
-     * @return A Result containing the list of models or an error.
+     * @return A list of models
      */
-    suspend fun getAvailableModels(forceRefresh: Boolean = false): Result<List<ModelInfo>> {
+    suspend fun getAvailableModels(forceRefresh: Boolean = false): List<ModelInfo> {
         val needsRefresh = forceRefresh || modelDataManager.needsRefresh()
         
         if (!needsRefresh) {
             // Use cached models from ModelDataManager using firstOrNull()
-            val models = modelDataManager.cachedModels.firstOrNull() ?: emptyList()
-            return Result.Success(models)
+            return modelDataManager.cachedModels.firstOrNull() ?: emptyList()
         }
         
-        return try {
-            val result = openRouterService.getAvailableModels()
-            
-            if (result is Result.Success) {
-                // Update the ModelDataManager cache
-                modelDataManager.updateCache(result.value)
-            }
-            
-            result
+        try {
+            val models = openRouterService.getAvailableModels()
+            // Update the ModelDataManager cache
+            modelDataManager.updateCache(models)
+            return models
         } catch (e: Exception) {
-            Result.Failure(e)
+            throw e
         }
     }
     
@@ -139,29 +139,25 @@ class OpenRouterRepository @Inject constructor(
      * Uses cached data if available and not expired.
      * 
      * @param forceRefresh If true, forces a network request even if cached data is available.
-     * @return A Result containing the credits information or an error.
+     * @return The credits information
      */
-    suspend fun getCredits(forceRefresh: Boolean = false): Result<OpenRouterCreditsResponse> {
+    suspend fun getCredits(forceRefresh: Boolean = false): OpenRouterCreditsResponse {
         // Check if we need to fetch new data
         val currentTime = System.currentTimeMillis()
         val cacheExpired = (currentTime - lastCreditsRefreshTime) > CREDITS_CACHE_EXPIRATION_TIME
         val needsRefresh = forceRefresh || _credits.value == null || cacheExpired
         
         if (!needsRefresh && _credits.value != null) {
-            return Result.Success(_credits.value!!)
+            return _credits.value!!
         }
         
-        return try {
-            val result = openRouterService.getCredits()
-            
-            if (result is Result.Success) {
-                _credits.value = result.value
-                lastCreditsRefreshTime = currentTime
-            }
-            
-            result
+        try {
+            val response = openRouterService.getCredits()
+            _credits.value = response
+            lastCreditsRefreshTime = currentTime
+            return response
         } catch (e: Exception) {
-            Result.Failure(e)
+            throw e
         }
     }
     
@@ -173,13 +169,13 @@ class OpenRouterRepository @Inject constructor(
      * 
      * @param apiKey The API key to validate.
      * @param forceValidation If true, forces a validation even if cached result is available.
-     * @return A Result containing the validation state or an error.
+     * @return The validation state
      */
-    suspend fun validateApiKey(apiKey: String, forceValidation: Boolean = false): Result<ApiKeyValidationState> {
+    suspend fun validateApiKey(apiKey: String, forceValidation: Boolean = false): ApiKeyValidationState {
         if (apiKey.isBlank()) {
             _apiKeyValidationState.value = ApiKeyValidationState.INVALID_FORMAT
             _validationErrorMessage.value = "API key cannot be empty"
-            return Result.Success(ApiKeyValidationState.INVALID_FORMAT)
+            return ApiKeyValidationState.INVALID_FORMAT
         }
         
         // Check cache first if we're not forcing validation
@@ -202,7 +198,7 @@ class OpenRouterRepository @Inject constructor(
                     _validationErrorMessage.value = null
                 }
                 
-                return Result.Success(cachedEntry.state)
+                return cachedEntry.state
             }
         }
         
@@ -227,34 +223,18 @@ class OpenRouterRepository @Inject constructor(
                 )
             }
             
-            return Result.Success(state)
+            return state
         } catch (e: Exception) {
             _apiKeyValidationState.value = ApiKeyValidationState.ERROR
             _validationErrorMessage.value = "Error validating API key: ${e.message}"
-            return Result.Failure(e)
+            throw e
         }
     }
     
     /**
-     * Saves an API key to secure storage.
-     * Only saves valid API keys unless force is true.
+     * Gets the stored API key from secure storage.
      * 
-     * @param apiKey The API key to save.
-     * @param force If true, saves the key regardless of validation state.
-     */
-    fun saveApiKey(apiKey: String, force: Boolean = false) {
-        if (force || _apiKeyValidationState.value == ApiKeyValidationState.VALID) {
-            securePreferences.saveOpenRouterApiKey(apiKey)
-            
-            // Invalidate caches to force refresh with new key
-            lastCreditsRefreshTime = 0
-        }
-    }
-    
-    /**
-     * Gets the currently stored API key.
-     * 
-     * @return The stored API key or empty string if not found.
+     * @return The stored API key or an empty string if none is stored.
      */
     fun getStoredApiKey(): String {
         return securePreferences.getOpenRouterApiKey()
@@ -292,9 +272,19 @@ class OpenRouterRepository @Inject constructor(
         }
     }
     
-    companion object {
-        // Cache expiration times
-        private const val CREDITS_CACHE_EXPIRATION_TIME = 15 * 60 * 1000L // 15 minutes
-        private const val VALIDATION_CACHE_EXPIRATION_TIME = 30 * 60 * 1000L // 30 minutes
+    /**
+     * Saves an API key to secure storage.
+     * Only saves valid API keys unless force is true.
+     * 
+     * @param apiKey The API key to save.
+     * @param force If true, saves the key regardless of validation state.
+     */
+    fun saveApiKey(apiKey: String, force: Boolean = false) {
+        if (force || _apiKeyValidationState.value == ApiKeyValidationState.VALID) {
+            securePreferences.saveOpenRouterApiKey(apiKey)
+            
+            // Invalidate caches to force refresh with new key
+            lastCreditsRefreshTime = 0
+        }
     }
 } 

@@ -464,4 +464,7 @@
     <string name="error_loading_usage">Error loading usage data</string>
     <string name="total_cost">Total Cost</string>
 
+    <string name="click_refresh_to_load_models">Click refresh to load models</string>
+    <string name="no_matching_models">No matching models found</string>
+
 </resources>

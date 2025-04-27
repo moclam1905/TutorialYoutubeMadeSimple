@@ -2,7 +2,6 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.utils
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterCreditsResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -14,6 +13,7 @@ import java.net.UnknownHostException
 import javax.inject.Inject
 import javax.inject.Singleton
 import retrofit2.HttpException
+import retrofit2.Response
 
 /**
  * Utility for validating API keys, including format validation and 
@@ -27,10 +27,10 @@ class ApiKeyValidator @Inject constructor(
     companion object {
         // Regex pattern for OpenRouter API key format validation
         // OpenRouter keys typically follow the pattern "sk-or-..." followed by alphanumeric characters
-        private val OPENROUTER_API_KEY_PATTERN = Regex("^sk-or-[a-zA-Z0-9-]{10,50}$")
+        private val OPENROUTER_API_KEY_PATTERN = Regex("^sk-or(-v1)?-[a-zA-Z0-9-]{10,64}$")
         
         // Example of valid OpenRouter API key format for user guidance
-        private const val OPENROUTER_API_KEY_EXAMPLE = "sk-or-abcd1234-xxxx-yyyy-zzzz"
+        private const val OPENROUTER_API_KEY_EXAMPLE = "sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxx"
         
         // Timeout for network validation in milliseconds
         private const val VALIDATION_TIMEOUT_MS = 10000L // 10 seconds
@@ -86,12 +86,12 @@ class ApiKeyValidator @Inject constructor(
                 val authHeader = "Bearer $apiKey"
                 
                 // Use withTimeoutOrNull to prevent hanging on slow connections
-                val validationResult: Result<OpenRouterCreditsResponse>? = withTimeoutOrNull(VALIDATION_TIMEOUT_MS) {
-                    // Call the service method which returns Result<OpenRouterCreditsResponse>
+                val response: Response<OpenRouterCreditsResponse>? = withTimeoutOrNull(VALIDATION_TIMEOUT_MS) {
+                    // Call the service method which returns Response<OpenRouterCreditsResponse>
                     openRouterApi.getCredits(authHeader = authHeader)
                 }
                 
-                if (validationResult == null) {
+                if (response == null) {
                     // Timeout occurred
                     if (attempts >= MAX_RETRIES) {
                         return@withContext ApiKeyValidationState.NETWORK_ERROR
@@ -101,52 +101,45 @@ class ApiKeyValidator @Inject constructor(
                     continue
                 }
                 
-                // Handle the single Result<OpenRouterCreditsResponse>
-                when (validationResult) {
-                    is Result.Success -> {
-                        // Successfully fetched credits - API key is valid
-                        return@withContext ApiKeyValidationState.VALID
-                    }
-                    is Result.Failure -> {
-                        // Handle specific errors from the failure
-                        val error = validationResult.error
-                        if (error is HttpException) {
-                            when (error.code()) {
-                                401, 403 -> return@withContext ApiKeyValidationState.INVALID_NETWORK
-                                429 -> { // Rate limited
-                                    if (attempts >= MAX_RETRIES) return@withContext ApiKeyValidationState.ERROR
-                                    delay(currentDelay)
-                                    currentDelay = (currentDelay * BACKOFF_MULTIPLIER).toLong()
-                                    continue // Retry
-                                }
-                                in 500..599 -> { // Server error
-                                    if (attempts >= MAX_RETRIES) return@withContext ApiKeyValidationState.NETWORK_ERROR
-                                    delay(currentDelay)
-                                    currentDelay = (currentDelay * BACKOFF_MULTIPLIER).toLong()
-                                    continue // Retry
-                                }
-                                else -> return@withContext ApiKeyValidationState.ERROR // Other HTTP errors
-                            }
-                        } else if (error is SocketTimeoutException || error is UnknownHostException || error is IOException) {
-                            // Handle specific network errors that might be wrapped in Failure
+                // Check if the response was successful
+                if (response.isSuccessful) {
+                    // Successfully fetched credits - API key is valid
+                    return@withContext ApiKeyValidationState.VALID
+                } else {
+                    // Handle HTTP error codes
+                    when (response.code()) {
+                        401, 403 -> return@withContext ApiKeyValidationState.INVALID_NETWORK
+                        429 -> { // Rate limited
+                            if (attempts >= MAX_RETRIES) return@withContext ApiKeyValidationState.ERROR
+                            delay(currentDelay)
+                            currentDelay = (currentDelay * BACKOFF_MULTIPLIER).toLong()
+                            continue // Retry
+                        }
+                        in 500..599 -> { // Server error
                             if (attempts >= MAX_RETRIES) return@withContext ApiKeyValidationState.NETWORK_ERROR
                             delay(currentDelay)
                             currentDelay = (currentDelay * BACKOFF_MULTIPLIER).toLong()
                             continue // Retry
-                        } else {
-                            // Other non-HTTP/network errors within the result
-                            return@withContext ApiKeyValidationState.ERROR
                         }
+                        else -> return@withContext ApiKeyValidationState.ERROR // Other HTTP errors
                     }
                 }
             } catch (e: Exception) {
-                // Catch any other unexpected exceptions during the process (e.g., exceptions before the API call)
-                if (attempts >= MAX_RETRIES) {
-                    return@withContext ApiKeyValidationState.ERROR
+                // Handle specific network errors
+                if (e is SocketTimeoutException || e is UnknownHostException || e is IOException) {
+                    if (attempts >= MAX_RETRIES) return@withContext ApiKeyValidationState.NETWORK_ERROR
+                    delay(currentDelay)
+                    currentDelay = (currentDelay * BACKOFF_MULTIPLIER).toLong()
+                    continue // Retry
+                } else {
+                    // Other non-HTTP/network errors
+                    if (attempts >= MAX_RETRIES) {
+                        return@withContext ApiKeyValidationState.ERROR
+                    }
+                    delay(currentDelay)
+                    currentDelay = (currentDelay * BACKOFF_MULTIPLIER).toLong()
+                    continue // Retry
                 }
-                delay(currentDelay)
-                currentDelay = (currentDelay * BACKOFF_MULTIPLIER).toLong()
-                continue // Retry
             }
         }
         

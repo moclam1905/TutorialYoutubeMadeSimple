@@ -1,7 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.lib
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.LLMConfig
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.Message
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterRequest
@@ -313,21 +312,17 @@ class LLMProcessor @Inject constructor(
         while (retryCount <= maxRetries) {
             try {
                 // Use withConnectionTimeout to apply user's timeout setting
-                val result = networkUtils.withConnectionTimeout {
+                val response = networkUtils.withConnectionTimeout {
                     openRouterApi.createCompletion(authHeader, request)
                 }
                 
-                // Handle the result - using the custom Result class
-                val apiResponse = when (result) {
-                    is Result.Success -> {
-                        // result.value is Result<OpenRouterResponse>
-                        when (val innerResult = result.value) {
-                            is Result.Success -> innerResult.value
-                            is Result.Failure -> throw innerResult.error
-                        }
-                    }
-                    is Result.Failure -> throw result.error
+                // Handle the response
+                if (!response.isSuccessful) {
+                    val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                    throw Exception("API error: ${response.code()} - $errorBody")
                 }
+                
+                val apiResponse = response.body() ?: throw Exception("Empty response body")
                 
                 // Reset unavailability status if the call succeeded
                 if (unavailableModels.containsKey(usedConfig.modelId)) {

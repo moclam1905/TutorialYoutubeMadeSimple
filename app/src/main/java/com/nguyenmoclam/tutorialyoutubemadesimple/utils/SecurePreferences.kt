@@ -22,6 +22,7 @@ class SecurePreferences @Inject constructor(
         private const val ENCRYPTED_PREFS_FILE_NAME = "secure_api_keys"
         private const val KEY_OPENROUTER_API_KEY = "openrouter_api_key"
         private const val KEY_YOUTUBE_API_KEY = "youtube_api_key"
+        private const val KEY_SELECTED_MODEL_ID = "selected_model_id"
         private const val KEY_HAS_MIGRATED = "has_migrated_keys"
     }
 
@@ -87,6 +88,22 @@ class SecurePreferences @Inject constructor(
     }
 
     /**
+     * Saves the selected model ID securely.
+     * @param modelId The model ID to be stored
+     */
+    fun saveSelectedModelId(modelId: String) {
+        securePrefs.edit().putString(KEY_SELECTED_MODEL_ID, modelId).apply()
+    }
+
+    /**
+     * Retrieves the securely stored selected model ID.
+     * @return The stored model ID or empty string if not found
+     */
+    fun getSelectedModelId(): String {
+        return securePrefs.getString(KEY_SELECTED_MODEL_ID, "") ?: ""
+    }
+
+    /**
      * Checks if keys have been migrated from the old storage to the secure storage.
      * @return true if migration has been completed, false otherwise
      */
@@ -109,6 +126,7 @@ class SecurePreferences @Inject constructor(
         securePrefs.edit()
             .remove(KEY_OPENROUTER_API_KEY)
             .remove(KEY_YOUTUBE_API_KEY)
+            .remove(KEY_SELECTED_MODEL_ID)
             .remove(KEY_HAS_MIGRATED)
             .apply()
     }

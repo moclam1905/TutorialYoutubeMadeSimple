@@ -77,7 +77,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ApiKeyValidationState
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.CreditStatus
 import androidx.compose.ui.text.style.TextAlign
@@ -879,7 +879,7 @@ fun AIModelSettings(
     onModelSelected: (String) -> Unit,
     currentCredits: Double,
     isLoading: Boolean = false,
-    validationState: ApiKeyValidationState = ApiKeyValidationState.NONE,
+    validationState: ApiKeyValidationState = ApiKeyValidationState.NOT_VALIDATED,
     models: List<ModelInfo> = emptyList(),
     onRefreshModels: () -> Unit = {},
     onApplyFilter: (ModelFilter.Category, String) -> Unit = { _, _ -> },
@@ -1018,7 +1018,7 @@ fun AIModelSettings(
         )
 
         // Status Indicator (Using Card instead of Chip)
-        if (validationState != ApiKeyValidationState.NONE) {
+        if (validationState != ApiKeyValidationState.NOT_VALIDATED) {
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),

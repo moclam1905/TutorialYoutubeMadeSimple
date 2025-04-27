@@ -463,4 +463,7 @@
     <string name="openrouter_discord_help">Vẫn gặp sự cố? Hãy truy cập cộng đồng Discord của OpenRouter để được hỗ trợ.</string>
     <string name="no_browser_available">Không có trình duyệt khả dụng để mở liên kết</string>
 
+    <string name="click_refresh_to_load_models">Nhấn làm mới để tải các mô hình</string>
+    <string name="no_matching_models">Không tìm thấy mô hình phù hợp</string>
+
 </resources>

@@ -43,16 +43,14 @@ class ModelDataRefreshWorker @AssistedInject constructor(
             }
 
             // Fetch models from repository
-            val modelsResult = openRouterRepository.getAvailableModels(true)
-            
-            // Update cache with new data if successful
-            if (modelsResult is com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result.Success) {
-                modelDataManager.updateCache(modelsResult.value)
+            try {
+                val models = openRouterRepository.getAvailableModels(true)
+                // Update cache with new data if successful
+                modelDataManager.updateCache(models)
                 return@withContext Result.success()
-            } else {
+            } catch (e: Exception) {
                 // On failure, retry unless it's a permanent error
-                val error = (modelsResult as? com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result.Failure)?.error
-                return@withContext if (isPermanentError(error)) {
+                return@withContext if (isPermanentError(e)) {
                     Result.failure()
                 } else {
                     Result.retry()

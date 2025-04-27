@@ -13,6 +13,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.tasks.Task
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
 import com.nguyenmoclam.tutorialyoutubemadesimple.auth.AuthManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.manager.ModelDataManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.OpenRouterRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.repository.GetQuizRepositoryUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.GetSettingsUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAppLanguageUseCase
@@ -29,6 +33,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetThe
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetTranscriptModeUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAllowContentOnMeteredUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -62,12 +67,23 @@ class SettingsViewModel @Inject constructor(
     private val setAllowContentOnMeteredUseCase: SetAllowContentOnMeteredUseCase,
     private val getQuizRepositoryUseCase: GetQuizRepositoryUseCase,
     private val authManager: AuthManager,
-    private var networkUtils: NetworkUtils
+    private var networkUtils: NetworkUtils,
+    private val openRouterRepository: OpenRouterRepository,
+    private val modelDataManager: ModelDataManager,
+    private val securePreferences: SecurePreferences
 ) : ViewModel() {
 
     // Settings state
     var settingsState by mutableStateOf(SettingsState())
         private set
+
+    // Models list for display
+    private val _models = mutableStateOf<List<ModelInfo>>(emptyList())
+    val models: List<ModelInfo> get() = _models.value
+    
+    // Loading state for models
+    private val _isLoadingModels = mutableStateOf(false)
+    val isLoadingModels: Boolean get() = _isLoadingModels.value
 
     init {
         // Load settings using the use case
@@ -103,6 +119,45 @@ class SettingsViewModel @Inject constructor(
         }
 
         updateStorageInfo()
+
+        // Load stored API key and validate if exists
+        viewModelScope.launch {
+            val storedApiKey = openRouterRepository.getStoredApiKey()
+            val storedModelId = securePreferences.getSelectedModelId()
+            
+            // Set selected model if stored
+            if (storedModelId.isNotEmpty()) {
+                settingsState = settingsState.copy(selectedModel = storedModelId)
+            }
+            
+            if (storedApiKey.isNotEmpty()) {
+                // Set the API key in state
+                settingsState = settingsState.copy(
+                    openRouterApiKey = storedApiKey
+                )
+                
+                // If we have a valid key, set validation state and load models
+                if (validateApiKeyFormat(storedApiKey) == ApiKeyValidationState.VALIDATING) {
+                    // Set initial state to validating
+                    settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.VALIDATING)
+                    
+                    try {
+                        // Validate the API key
+                        val validationState = openRouterRepository.validateApiKey(storedApiKey, false)
+                        settingsState = settingsState.copy(apiKeyValidationState = validationState)
+                        
+                        // If valid, fetch models and credits
+                        if (validationState == ApiKeyValidationState.VALID) {
+                            fetchModels()
+                            fetchCredits()
+                        }
+                    } catch (e: Exception) {
+                        // Handle error silently on startup
+                        settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.ERROR)
+                    }
+                }
+            }
+        }
     }
 
     // Theme settings
@@ -361,7 +416,7 @@ class SettingsViewModel @Inject constructor(
                 apiKeyValidationState = validateApiKeyFormat(key)
             )
             
-            // If format is valid, simulate API validation
+            // If format is valid, validate with server
             if (settingsState.apiKeyValidationState == ApiKeyValidationState.VALIDATING) {
                 validateApiKeyWithServer(key)
             }
@@ -374,15 +429,14 @@ class SettingsViewModel @Inject constructor(
      */
     private fun validateApiKeyFormat(key: String): ApiKeyValidationState {
         return when {
-            key.isEmpty() -> ApiKeyValidationState.NONE
+            key.isEmpty() -> ApiKeyValidationState.NOT_VALIDATED
             !key.startsWith("sk-or-v1-") -> ApiKeyValidationState.INVALID_FORMAT
             else -> ApiKeyValidationState.VALIDATING
         }
     }
     
     /**
-     * Simulates validating the API key with the server
-     * In a real implementation, this would make a network request to validate the key
+     * Validates the API key with the server and fetches models if valid
      */
     private fun validateApiKeyWithServer(key: String) {
         viewModelScope.launch {
@@ -390,22 +444,21 @@ class SettingsViewModel @Inject constructor(
                 // Set state to validating
                 settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.VALIDATING)
                 
-                // Simulate network delay
-                delay(1500)
+                // Validate the API key with the repository
+                val validationState = openRouterRepository.validateApiKey(key)
                 
-                // For demo purposes, let's simulate a successful validation 
-                // if the key follows a specific pattern
-                val isValid = Pattern.matches("sk-or-v1-[a-zA-Z0-9]{10,}", key)
+                // Update validation state
+                settingsState = settingsState.copy(apiKeyValidationState = validationState)
                 
-                // Update validation state and credits
-                settingsState = settingsState.copy(
-                    apiKeyValidationState = if (isValid) ApiKeyValidationState.VALID else ApiKeyValidationState.INVALID,
-                    apiKeyCredits = if (isValid) 10.0 else 0.0
-                )
-                
-                // In a real app, you would also store the key securely here
-                // using EncryptedSharedPreferences
-                
+                // If the key is valid, fetch models and credits
+                if (validationState == ApiKeyValidationState.VALID) {
+                    // Save the API key securely
+                    openRouterRepository.saveApiKey(key, force = true)
+                    
+                    // Fetch models and credits
+                    fetchModels()
+                    fetchCredits()
+                }
             } catch (e: Exception) {
                 // Handle error (timeout, network error, etc.)
                 settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.INVALID)
@@ -413,23 +466,50 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setSelectedModel(model: String) {
+    /**
+     * Fetches models from the OpenRouter API
+     */
+    fun fetchModels() {
         viewModelScope.launch {
-            // Will be implemented later with the model selection logic
-            settingsState = settingsState.copy(selectedModel = model)
+            _isLoadingModels.value = true
+            try {
+                // Fetch models from repository
+                val modelsList = openRouterRepository.getAvailableModels(true)
+                _models.value = modelsList
+            } catch (e: Exception) {
+                // Handle error
+            } finally {
+                _isLoadingModels.value = false
+            }
         }
     }
-}
+    
+    /**
+     * Fetches credits information from OpenRouter
+     */
+    private fun fetchCredits() {
+        viewModelScope.launch {
+            try {
+                val creditsResponse = openRouterRepository.getCredits(true)
+                settingsState = settingsState.copy(apiKeyCredits = creditsResponse.data.totalCredits)
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
 
-/**
- * API Key Validation State for tracking API key validation process
- */
-enum class ApiKeyValidationState {
-    NONE,
-    INVALID_FORMAT,
-    VALIDATING,
-    VALID,
-    INVALID
+    fun setSelectedModel(model: String) {
+        viewModelScope.launch {
+            settingsState = settingsState.copy(selectedModel = model)
+            
+            // Save selected model
+            try {
+                securePreferences.saveSelectedModelId(model)
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
 }
 
 /**
@@ -466,7 +546,7 @@ data class SettingsState(
     // AI Model Settings
     val openRouterApiKey: String = "",
     val selectedModel: String = "",
-    val apiKeyValidationState: ApiKeyValidationState = ApiKeyValidationState.NONE,
+    val apiKeyValidationState: ApiKeyValidationState = ApiKeyValidationState.NOT_VALIDATED,
     val apiKeyCredits: Double = 0.0,
 
     // New settings

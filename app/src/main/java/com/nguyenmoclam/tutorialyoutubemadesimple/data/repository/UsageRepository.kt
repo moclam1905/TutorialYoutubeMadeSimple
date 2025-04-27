@@ -3,7 +3,6 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.data.repository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TokenUsageDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TokenUsageEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.CreditStatus
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.TokenUsage
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.TokenUsageSummary
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.service.OpenRouterService
@@ -174,13 +173,12 @@ class UsageRepository @Inject constructor(
             return@withContext cachedCreditStatus
         }
         
-        val result = openRouterService.getCredits()
-        
-        if (result is Result.Success) {
-            cachedCreditStatus = CreditStatus.fromCreditsResponse(result.value)
+        try {
+            val response = openRouterService.getCredits()
+            cachedCreditStatus = CreditStatus.fromCreditsResponse(response)
             lastCreditFetchTime = currentTime
             cachedCreditStatus
-        } else {
+        } catch (e: Exception) {
             null
         }
     }

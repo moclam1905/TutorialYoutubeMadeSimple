@@ -6,7 +6,6 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -266,23 +265,20 @@ class NetworkUtils(context: Context) {
     }
 
     /**
-     * Apply connection timeout to a network request
-     * This method should be used when making network requests to apply the user's timeout setting
+     * Execute a network operation with a timeout.
+     * Applies the configured timeout value to the operation.
      *
      * @param block The suspend function to execute with timeout
-     * @return Result of the network operation
+     * @return The result of the operation
      */
-    suspend fun <T> withConnectionTimeout(block: suspend () -> T): Result<T> {
+    suspend fun <T> withConnectionTimeout(block: suspend () -> T): T {
         return try {
-            // withTimeout to apply the timeout
-            val result = withTimeout(connectionTimeout * 1000L) {
+            // Use the configured timeout value from settings (in seconds)
+            withTimeout(connectionTimeout * 1000L) {
                 block()
             }
-            Result.Success(result)
         } catch (e: TimeoutCancellationException) {
-            Result.Failure(SocketTimeoutException("Connection timed out after $connectionTimeout seconds"))
-        } catch (e: Exception) {
-            Result.Failure(e)
+            throw SocketTimeoutException("Connection timed out after $connectionTimeout seconds")
         }
     }
 

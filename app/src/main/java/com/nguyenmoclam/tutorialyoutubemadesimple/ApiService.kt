@@ -1,6 +1,5 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple
 
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterCreditsResponse
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterModelsResponse
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterRequest
@@ -26,18 +25,18 @@ interface OpenRouterApi {
     suspend fun createCompletion(
         @Header("Authorization") authHeader: String,
         @Body request: OpenRouterRequest
-    ): Result<OpenRouterResponse>
+    ): Response<OpenRouterResponse>
 
     /**
      * Fetches the list of available models from OpenRouter.
      *
      * @param authHeader The Authorization header with the API key.
-     * @return A Result containing the OpenRouterModelsResponse or an error.
+     * @return A Response containing the OpenRouterModelsResponse or an error.
      */
     @GET("models")
         suspend fun getAvailableModels(
         @Header("Authorization") authHeader: String
-    ): Result<OpenRouterModelsResponse>
+    ): Response<OpenRouterModelsResponse>
 
     /**
      * Fetches the user's credits information from OpenRouter.
@@ -48,6 +47,6 @@ interface OpenRouterApi {
     @GET("credits")
     suspend fun getCredits(
         @Header("Authorization") authHeader: String
-    ): Result<OpenRouterCreditsResponse>
+    ): Response<OpenRouterCreditsResponse>
 }
 

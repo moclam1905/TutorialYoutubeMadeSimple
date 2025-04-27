@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.Button
@@ -478,8 +479,23 @@ fun ModelSelectionComponent(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = { onRefresh() }) {
-                        Text(stringResource(R.string.refresh_models))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.refresh_models))
+                        }
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.click_refresh_to_load_models),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         } else {
@@ -519,6 +535,32 @@ fun ModelSelectionComponent(
                         ) {
                             OutlinedButton(onClick = { onLoadMore() }) {
                                 Text(stringResource(R.string.load_more_models))
+                            }
+                        }
+                    }
+                }
+                
+                // Show a message if no models are found after filtering
+                if (filteredModels.isEmpty() && !isLoading && models.isNotEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Default.SearchOff,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(36.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = stringResource(R.string.no_matching_models),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
                             }
                         }
                     }

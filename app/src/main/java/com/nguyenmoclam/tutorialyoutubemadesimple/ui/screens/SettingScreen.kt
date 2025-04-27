@@ -56,7 +56,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.AIModelSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ApiKeyValidationState
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -272,8 +272,10 @@ fun SettingScreen(
                     selectedModel = state.selectedModel,
                     onModelSelected = viewModel::setSelectedModel,
                     currentCredits = state.apiKeyCredits,
-                    isLoading = state.apiKeyValidationState == ApiKeyValidationState.VALIDATING,
+                    isLoading = state.apiKeyValidationState == ApiKeyValidationState.VALIDATING || viewModel.isLoadingModels,
                     validationState = state.apiKeyValidationState,
+                    models = viewModel.models,
+                    onRefreshModels = viewModel::fetchModels,
                     creditStatusState = creditStatusState,
                     tokenUsageSummaryState = tokenUsageSummaryState,
                     selectedTimeRange = selectedTimeRange,

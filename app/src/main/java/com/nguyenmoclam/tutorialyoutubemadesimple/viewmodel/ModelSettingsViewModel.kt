@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.manager.ModelDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.Result
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.LLMConfig
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterCreditsResponse
@@ -138,12 +137,9 @@ class ModelSettingsViewModel @Inject constructor(
             _errorMessage.value = null
             
             try {
-                val result = openRouterRepository.getAvailableModels(forceRefresh)
-                if (result is Result.Failure) {
-                    _errorMessage.value = "Failed to load models: ${result.error.message}"
-                }
+                openRouterRepository.getAvailableModels(forceRefresh)
             } catch (e: Exception) {
-                _errorMessage.value = "Error: ${e.message}"
+                _errorMessage.value = "Failed to load models: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -232,7 +228,7 @@ class ModelSettingsViewModel @Inject constructor(
     }
     
     /**
-     * Saves the API key to secure storage.
+     * Saves an API key to secure storage.
      * 
      * @param key The API key to save.
      * @param force If true, saves the key regardless of validation state.
