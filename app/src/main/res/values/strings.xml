@@ -399,6 +399,30 @@
     <string name="popular_models">Popular Models</string>
     <string name="all_models">All Models</string>
 
+    <!-- OpenRouter Help & Troubleshooting -->
+    <string name="troubleshooting_guide">Troubleshooting Guide</string>
+    <string name="troubleshooting_button">Troubleshooting</string>
+    <string name="openrouter_connection_available">Internet Connection: Available</string>
+    <string name="openrouter_connection_unavailable">Internet Connection: Unavailable</string>
+    <string name="openrouter_services_available">You can access OpenRouter services when API key is valid</string>
+    <string name="openrouter_services_unavailable">Check your internet connection to use OpenRouter services</string>
+    <string name="openrouter_visit">Visit openrouter.ai</string>
+    <string name="openrouter_create_account">Create a free account or sign in with Google/GitHub</string>
+    <string name="openrouter_generate_key">Generate API Key</string>
+    <string name="openrouter_key_instructions">Go to Settings → API Keys and create a new key</string>
+    <string name="openrouter_copy_key">Copy API Key</string>
+    <string name="openrouter_paste_instructions">Paste it in the field above to access 100+ AI models</string>
+    <string name="openrouter_trouble_1_title">API Key Not Working</string>
+    <string name="openrouter_trouble_1_desc">Ensure your key is typed correctly with no trailing spaces. API keys typically start with \'sk-or-\' and contain exactly 40 characters after that prefix.</string>
+    <string name="openrouter_trouble_2_title">No Models Showing</string>
+    <string name="openrouter_trouble_2_desc">Check that your account has sufficient credits. Free accounts start with $1 in credits. You may need to add a payment method for full access.</string>
+    <string name="openrouter_trouble_3_title">Connection Issues</string>
+    <string name="openrouter_trouble_3_desc">Ensure you have a stable internet connection. Try disabling VPNs or proxies which might interfere with API connectivity.</string>
+    <string name="openrouter_trouble_4_title">Billing or Credit Issues</string>
+    <string name="openrouter_trouble_4_desc">Visit your OpenRouter dashboard to check your usage and add more credits if needed. Credits are consumed based on the models you use.</string>
+    <string name="openrouter_discord_help">Still having problems? Visit the OpenRouter Discord community for help.</string>
+    <string name="no_browser_available">No browser available to open link</string>
+
     <!-- Credits and Usage Monitoring -->
     <string name="credits_and_usage">Credits and Usage Monitoring</string>
     <string name="refresh_credits">Refresh credits information</string>

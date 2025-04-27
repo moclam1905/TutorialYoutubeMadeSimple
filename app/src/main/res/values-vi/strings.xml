@@ -439,4 +439,28 @@
     <string name="error_loading_usage">Lỗi khi tải dữ liệu sử dụng</string>
     <string name="total_cost">Tổng chi phí</string>
 
+    <!-- Hỗ trợ và xử lý sự cố OpenRouter -->
+    <string name="troubleshooting_guide">Hướng dẫn xử lý sự cố</string>
+    <string name="troubleshooting_button">Xử lý sự cố</string>
+    <string name="openrouter_connection_available">Kết nối Internet: Sẵn sàng</string>
+    <string name="openrouter_connection_unavailable">Kết nối Internet: Không khả dụng</string>
+    <string name="openrouter_services_available">Bạn có thể truy cập dịch vụ OpenRouter khi khóa API hợp lệ</string>
+    <string name="openrouter_services_unavailable">Kiểm tra kết nối Internet để sử dụng dịch vụ OpenRouter</string>
+    <string name="openrouter_visit">Truy cập openrouter.ai</string>
+    <string name="openrouter_create_account">Tạo tài khoản miễn phí hoặc đăng nhập bằng Google/GitHub</string>
+    <string name="openrouter_generate_key">Tạo khóa API</string>
+    <string name="openrouter_key_instructions">Vào Cài đặt → API Keys và tạo một khóa mới</string>
+    <string name="openrouter_copy_key">Sao chép khóa API</string>
+    <string name="openrouter_paste_instructions">Dán khóa vào ô phía trên để truy cập hơn 100 mô hình AI</string>
+    <string name="openrouter_trouble_1_title">Khóa API không hoạt động</string>
+    <string name="openrouter_trouble_1_desc">Đảm bảo rằng bạn nhập đúng khóa, không có khoảng trắng dư. Khóa API thường bắt đầu bằng 'sk-or-' và có đúng 40 ký tự sau tiền tố này.</string>
+    <string name="openrouter_trouble_2_title">Không hiển thị mô hình</string>
+    <string name="openrouter_trouble_2_desc">Kiểm tra xem tài khoản của bạn có đủ tín dụng không. Tài khoản miễn phí bắt đầu với $1 tín dụng. Bạn có thể cần thêm phương thức thanh toán để truy cập đầy đủ.</string>
+    <string name="openrouter_trouble_3_title">Sự cố kết nối</string>
+    <string name="openrouter_trouble_3_desc">Đảm bảo rằng bạn có kết nối Internet ổn định. Hãy thử tắt VPN hoặc proxy nếu chúng gây cản trở kết nối API.</string>
+    <string name="openrouter_trouble_4_title">Sự cố thanh toán hoặc tín dụng</string>
+    <string name="openrouter_trouble_4_desc">Truy cập bảng điều khiển OpenRouter để kiểm tra mức sử dụng và thêm tín dụng nếu cần. Tín dụng được tiêu hao dựa trên mô hình bạn sử dụng.</string>
+    <string name="openrouter_discord_help">Vẫn gặp sự cố? Hãy truy cập cộng đồng Discord của OpenRouter để được hỗ trợ.</string>
+    <string name="no_browser_available">Không có trình duyệt khả dụng để mở liên kết</string>
+
 </resources>

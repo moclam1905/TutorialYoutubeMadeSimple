@@ -1,5 +1,16 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -23,14 +35,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -51,6 +67,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -516,13 +534,18 @@ fun ModelSelectionComponent(
 @Composable
 fun OpenRouterHelpSection() {
     var expanded by remember { mutableStateOf(false) }
-    
+    var showTroubleshooting by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val noBrowserAvailableDes=  stringResource(R.string.no_browser_available)
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        ),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // Main Header - Clickable to expand/collapse
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -546,57 +569,365 @@ fun OpenRouterHelpSection() {
                 
                 Icon(
                     if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = null
+                    contentDescription = if (expanded) "Collapse" else "Expand"
                 )
             }
             
+            // Expanded content
             if (expanded) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Connection Status Indicator
+                ConnectionStatusIndicator()
+                
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Step-by-step instructions
                 Text(
                     text = stringResource(R.string.openrouter_instructions_title),
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold
                 )
                 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
-                Text(
-                    text = stringResource(R.string.openrouter_step_1),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                // Step 1
+                Row(verticalAlignment = Alignment.Top) {
+                    Card(
+                        modifier = Modifier.size(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = CircleShape
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Text(
+                                "1", 
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Column {
+                        Text(
+                            text = stringResource(R.string.openrouter_visit),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = stringResource(R.string.openrouter_create_account),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
-                Text(
-                    text = stringResource(R.string.openrouter_step_2),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                // Step 2
+                Row(verticalAlignment = Alignment.Top) {
+                    Card(
+                        modifier = Modifier.size(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = CircleShape
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Text(
+                                "2", 
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Column {
+                        Text(
+                            text = stringResource(R.string.openrouter_generate_key),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = stringResource(R.string.openrouter_key_instructions),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
-                Text(
-                    text = stringResource(R.string.openrouter_step_3),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                // Step 3
+                Row(verticalAlignment = Alignment.Top) {
+                    Card(
+                        modifier = Modifier.size(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = CircleShape
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Text(
+                                "3", 
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Column {
+                        Text(
+                            text = stringResource(R.string.openrouter_copy_key),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = stringResource(R.string.openrouter_paste_instructions),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Documentation link
-                OutlinedButton(
-                    onClick = { /* Open browser with OpenRouter docs */ },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                // Documentation & Help Links
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        Icons.Default.OpenInNew,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.open_openrouter_docs))
+                    // Documentation Button
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://openrouter.ai/docs"))
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: ActivityNotFoundException) {
+                                // Handle case where no browser is available
+                                Toast.makeText(
+                                    context,
+                                    noBrowserAvailableDes,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.OpenInNew,
+                            contentDescription = "Open documentation"
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.open_openrouter_docs))
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    // Troubleshooting Button
+                    OutlinedButton(
+                        onClick = { showTroubleshooting = !showTroubleshooting },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (showTroubleshooting) 
+                                MaterialTheme.colorScheme.secondaryContainer
+                            else 
+                                MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Icon(
+                            if (showTroubleshooting) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = "Troubleshooting"
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.troubleshooting_button))
+                    }
+                }
+                
+                // Troubleshooting Guide - only visible when troubleshooting is expanded
+                AnimatedVisibility(
+                    visible = showTroubleshooting,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    TroubleshootingGuide()
                 }
             }
         }
+    }
+}
+
+/**
+ * Component that displays the current connection status to OpenRouter.
+ */
+@Composable
+private fun ConnectionStatusIndicator() {
+    // We would want to connect this to a real API status check
+    // For now, determining status based on ApiKeyValidationState
+    val context = LocalContext.current
+    val isConnected = remember {
+        // This is a simplified check - in a real app, you would want
+        // to validate actual connection status with the API
+        val connectivityManager = 
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        connectivityManager.activeNetwork != null
+    }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isConnected) 
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+            else 
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (isConnected) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                contentDescription = "Connection Status",
+                tint = if (isConnected) 
+                    MaterialTheme.colorScheme.primary
+                else 
+                    MaterialTheme.colorScheme.error
+            )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(
+                        if (isConnected) 
+                            R.string.openrouter_connection_available 
+                        else 
+                            R.string.openrouter_connection_unavailable
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                Text(
+                    text = stringResource(
+                        if (isConnected) 
+                            R.string.openrouter_services_available
+                        else
+                            R.string.openrouter_services_unavailable
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Expandable troubleshooting guide for OpenRouter integration.
+ */
+@Composable
+private fun TroubleshootingGuide() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(16.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.troubleshooting_guide),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // Trouble 1: API Key Not Working
+        TroubleshootingItem(
+            title = stringResource(R.string.openrouter_trouble_1_title),
+            description = stringResource(R.string.openrouter_trouble_1_desc)
+        )
+        
+        // Trouble 2: No Models Showing
+        TroubleshootingItem(
+            title = stringResource(R.string.openrouter_trouble_2_title),
+            description = stringResource(R.string.openrouter_trouble_2_desc)
+        )
+        
+        // Trouble 3: Connection Issues
+        TroubleshootingItem(
+            title = stringResource(R.string.openrouter_trouble_3_title),
+            description = stringResource(R.string.openrouter_trouble_3_desc)
+        )
+        
+        // Trouble 4: Billing Issues
+        TroubleshootingItem(
+            title = stringResource(R.string.openrouter_trouble_4_title),
+            description = stringResource(R.string.openrouter_trouble_4_desc)
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = stringResource(R.string.openrouter_discord_help),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+    }
+}
+
+/**
+ * Individual troubleshooting item with title and description.
+ */
+@Composable
+private fun TroubleshootingItem(
+    title: String,
+    description: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.ErrorOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 24.dp)
+        )
     }
 }
 
