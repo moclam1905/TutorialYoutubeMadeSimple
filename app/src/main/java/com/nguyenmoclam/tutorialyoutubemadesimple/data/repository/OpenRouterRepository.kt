@@ -12,6 +12,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -61,8 +62,8 @@ class OpenRouterRepository @Inject constructor(
         val needsRefresh = forceRefresh || modelDataManager.needsRefresh()
         
         if (!needsRefresh) {
-            // Use cached models from ModelDataManager
-            val models = modelDataManager.cachedModels.collect { it }
+            // Use cached models from ModelDataManager using firstOrNull()
+            val models = modelDataManager.cachedModels.firstOrNull() ?: emptyList()
             return Result.Success(models)
         }
         
@@ -120,6 +121,17 @@ class OpenRouterRepository @Inject constructor(
      */
     fun getModelById(modelId: String): ModelInfo? {
         return modelDataManager.getModelById(modelId)
+    }
+    
+    /**
+     * Gets the total number of models matching the filters.
+     * Delegates to ModelDataManager.
+     * 
+     * @param filters The filter criteria to apply.
+     * @return The number of matching models.
+     */
+    fun getFilteredModelCount(filters: Map<ModelFilter.Category, Set<String>> = emptyMap()): Int {
+        return modelDataManager.getFilteredModelCount(filters)
     }
     
     /**

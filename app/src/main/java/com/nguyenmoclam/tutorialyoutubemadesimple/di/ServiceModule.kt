@@ -2,6 +2,7 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.di
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.LLMConfig
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UsageRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.YouTubeTranscriptLight
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
@@ -27,7 +28,7 @@ object ServiceModule {
      * @param networkUtils The NetworkUtils instance for checking network conditions
      * @param openRouterApi The OpenRouterApi instance for making API calls
      * @param securePreferences The SecurePreferences instance for secure API key storage
-     * @param config The initial LLM configuration (optional)
+     * @param usageRepository The UsageRepository instance for managing usage data
      * @return The LLMProcessor instance
      */
     @Provides
@@ -35,9 +36,10 @@ object ServiceModule {
     fun provideLLMProcessor(
         networkUtils: NetworkUtils,
         openRouterApi: OpenRouterApi,
-        securePreferences: SecurePreferences
+        securePreferences: SecurePreferences,
+        usageRepository: UsageRepository
     ): LLMProcessor {
-        return LLMProcessor(networkUtils, openRouterApi, securePreferences, null)
+        return LLMProcessor(networkUtils, openRouterApi, securePreferences, usageRepository, null)
     }
 
     /**

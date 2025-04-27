@@ -14,6 +14,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInf
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -77,7 +78,7 @@ class ModelDataManager @Inject constructor(
      * @return True if the cache needs refreshing, false otherwise.
      */
     suspend fun needsRefresh(cacheDuration: Long = DEFAULT_CACHE_DURATION): Boolean {
-        val lastRefresh = modelDataStore.data.map { it[MODELS_LAST_REFRESH_KEY] ?: 0L }.collect { it }
+        val lastRefresh = modelDataStore.data.map { it[MODELS_LAST_REFRESH_KEY] ?: 0L }.firstOrNull() ?: 0L
         val currentTime = System.currentTimeMillis()
         return currentTime - lastRefresh > cacheDuration
     }

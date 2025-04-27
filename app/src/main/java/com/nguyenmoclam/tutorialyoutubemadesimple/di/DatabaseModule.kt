@@ -16,7 +16,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TokenUsageDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TopicDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptSegmentDao
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.migration.Migrations
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,7 +46,6 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-        .addMigrations(*Migrations.getAllMigrations())
         .build()
     }
 

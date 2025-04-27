@@ -54,7 +54,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TranscriptSegmentE
         QuizTagCrossRef::class,
         TokenUsageEntity::class
     ],
-    version = 2,
+    version = 1,
     exportSchema = true
 )
 @TypeConverters(StringListConverter::class, StringMapConverter::class)

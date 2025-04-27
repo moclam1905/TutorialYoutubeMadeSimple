@@ -47,24 +47,30 @@ class OpenRouterService @Inject constructor(
             
             when (response) {
                 is Result.Success -> {
-                    // Transform OpenRouterModelsResponse to List<ModelInfo>
-                    val modelsList = response.value.data.map { model ->
-                        ModelInfo(
-                            id = model.id,
-                            name = model.name,
-                            contextLength = model.context.maxTokens,
-                            promptPrice = model.pricing.prompt,
-                            completionPrice = model.pricing.completion,
-                            tokenizerType = model.tokenizer["type"] ?: "unknown",
-                            inputModalities = model.modalities["input"] ?: emptyList(),
-                            outputModalities = model.modalities["output"] ?: emptyList(),
-                            providerName = extractProviderFromId(model.id),
-                            isFree = model.pricing.prompt == 0.0 && model.pricing.completion == 0.0
-                        )
+                    // Now check the inner result (response.value)
+                    when (val innerResult = response.value) {
+                        is Result.Success -> {
+                            // Transform OpenRouterModelsResponse to List<ModelInfo>
+                            val modelsList = innerResult.value.data.map { model ->
+                                ModelInfo(
+                                    id = model.id,
+                                    name = model.name,
+                                    contextLength = model.context.maxTokens,
+                                    promptPrice = model.pricing.prompt,
+                                    completionPrice = model.pricing.completion,
+                                    tokenizerType = model.tokenizer["type"] ?: "unknown",
+                                    inputModalities = model.modalities["input"] ?: emptyList(),
+                                    outputModalities = model.modalities["output"] ?: emptyList(),
+                                    providerName = extractProviderFromId(model.id),
+                                    isFree = model.pricing.prompt == 0.0 && model.pricing.completion == 0.0
+                                )
+                            }
+                            Result.Success(modelsList)
+                        }
+                        is Result.Failure -> Result.Failure(innerResult.error) // Propagate inner failure
                     }
-                    Result.Success(modelsList)
                 }
-                is Result.Failure -> response
+                is Result.Failure -> Result.Failure(response.error) // Propagate outer failure (e.g., timeout)
             }
         } catch (e: Exception) {
             Result.Failure(e)
@@ -87,17 +93,28 @@ class OpenRouterService @Inject constructor(
         
         return try {
             // Use withConnectionTimeout to apply user's timeout setting
-            val response = networkUtils.withConnectionTimeout {
+            val responseResult = networkUtils.withConnectionTimeout {
                 openRouterApi.getCredits(authHeader)
             }
-            
-            if (response.isSuccessful) {
-                val creditsMap = response.body() ?: emptyMap()
-                Result.Success(OpenRouterCreditsResponse.fromMap(creditsMap))
-            } else {
-                Result.Failure(
-                    Exception("Failed to fetch credits: ${response.code()} ${response.message()}")
-                )
+
+            // Handle the outer Result (from withConnectionTimeout)
+            when (responseResult) {
+                is Result.Success -> {
+                    // Now handle the inner Response (from Retrofit)
+                    val retrofitResponse = responseResult.value
+                    if (retrofitResponse.isSuccessful) {
+                        val creditsMap = retrofitResponse.body() ?: emptyMap()
+                        Result.Success(OpenRouterCreditsResponse.fromMap(creditsMap))
+                    } else {
+                        Result.Failure(
+                            Exception("Failed to fetch credits: ${retrofitResponse.code()} ${retrofitResponse.message()}")
+                        )
+                    }
+                }
+                is Result.Failure -> {
+                    // Propagate the failure from withConnectionTimeout (e.g., timeout)
+                    Result.Failure(responseResult.error)
+                }
             }
         } catch (e: Exception) {
             Result.Failure(e)

@@ -1,19 +1,20 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.di
 
 import android.content.Context
+import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.manager.ModelDataManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.OpenRouterRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.QuizRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.QuizRepositoryImpl
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.SettingsRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.SettingsRepositoryImpl
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.service.OpenRouterService
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.ApiKeyValidator
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkStateListener
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
-import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.OpenRouterRepository
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.service.OpenRouterService
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
-import com.nguyenmoclam.tutorialyoutubemadesimple.utils.ApiKeyValidator
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -126,9 +127,10 @@ abstract class RepositoryModule {
     fun provideOpenRouterRepository(
         openRouterService: OpenRouterService,
         securePreferences: SecurePreferences,
-        apiKeyValidator: ApiKeyValidator
+        apiKeyValidator: ApiKeyValidator,
+        modelDataManager: ModelDataManager
     ): OpenRouterRepository {
-        return OpenRouterRepository(openRouterService, securePreferences, apiKeyValidator)
+        return OpenRouterRepository(openRouterService, securePreferences, apiKeyValidator, modelDataManager)
     }
 
     /**
