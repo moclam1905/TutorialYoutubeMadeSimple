@@ -74,6 +74,8 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.material.icons.filled.ArrowDropDown
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ApiKeyValidationState
 
 /**
@@ -841,19 +843,24 @@ fun AIModelSettings(
     onModelSelected: (String) -> Unit,
     currentCredits: Double,
     isLoading: Boolean = false,
-    validationState: ApiKeyValidationState = ApiKeyValidationState.NONE
+    validationState: ApiKeyValidationState = ApiKeyValidationState.NONE,
+    models: List<ModelInfo> = emptyList(),
+    onRefreshModels: () -> Unit = {},
+    onApplyFilter: (ModelFilter.Category, String) -> Unit = { _, _ -> },
+    onClearFilter: (ModelFilter.Category) -> Unit = { _ -> },
+    onSetSortOption: (ModelFilter.SortOption) -> Unit = { _ -> },
+    currentFilters: Map<ModelFilter.Category, Set<String>> = emptyMap(),
+    currentSortOption: ModelFilter.SortOption = ModelFilter.SortOption.TOP_WEEKLY,
+    onLoadMoreModels: () -> Unit = {},
+    hasMoreModels: Boolean = false
 ) {
     // State for password visibility
     var passwordVisible by remember { mutableStateOf(false) }
-    // State for dropdown menu expansion
-    var isModelDropdownExpanded by remember { mutableStateOf(false) }
-    // Placeholder for available models - replace with actual list
-    val availableModels = listOf("google/gemini-flash-1.5", "openai/gpt-4o", "anthropic/claude-3.5-sonnet")
-
+    
     // Clipboard manager for paste functionality
     val clipboardManager = LocalClipboardManager.current
 
-    Column {
+    Column(modifier = Modifier.fillMaxWidth()) {
         // API Key Section
         Text(
             stringResource(R.string.api_key_label),
@@ -1038,57 +1045,6 @@ fun AIModelSettings(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Model Selection Dropdown
-        Text(
-            stringResource(R.string.select_ai_model),
-            fontWeight = FontWeight.Medium
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ExposedDropdownMenuBox(
-            expanded = isModelDropdownExpanded,
-            onExpandedChange = {
-                // Only allow expanding if API key is valid
-                if (validationState == ApiKeyValidationState.VALID) {
-                    isModelDropdownExpanded = !isModelDropdownExpanded
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            TextField(
-                value = selectedModel.ifEmpty { stringResource(R.string.model_not_selected) },
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.selected_model_label)) },
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = isModelDropdownExpanded)
-                },
-                colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
-                enabled = validationState == ApiKeyValidationState.VALID
-            )
-
-            ExposedDropdownMenu(
-                expanded = isModelDropdownExpanded,
-                onDismissRequest = { isModelDropdownExpanded = false },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                availableModels.forEach { model ->
-                    DropdownMenuItem(
-                        text = { Text(model) },
-                        onClick = {
-                            onModelSelected(model)
-                            isModelDropdownExpanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
         // Credits display
         Card(
             modifier = Modifier
@@ -1130,5 +1086,40 @@ fun AIModelSettings(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Model Selection Section
+        Text(
+            stringResource(R.string.select_ai_model),
+            fontWeight = FontWeight.Medium
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        if (validationState == ApiKeyValidationState.VALID) {
+            // Use our new ModelSelectionComponent
+            ModelSelectionComponent(
+                models = models,
+                selectedModelId = selectedModel,
+                onModelSelected = onModelSelected,
+                currentFilters = currentFilters,
+                currentSortOption = currentSortOption,
+                onApplyFilter = onApplyFilter,
+                onClearFilter = onClearFilter,
+                onSetSortOption = onSetSortOption,
+                isLoading = isLoading,
+                onRefresh = onRefreshModels,
+                onLoadMore = onLoadMoreModels,
+                hasMoreModels = hasMoreModels
+            )
+        } else {
+            // Show message requiring valid API key
+            ApiKeyRequiredMessage()
+        }
+
+        // Help section with OpenRouter guidance
+        Spacer(modifier = Modifier.height(24.dp))
+        OpenRouterHelpSection()
     }
 }

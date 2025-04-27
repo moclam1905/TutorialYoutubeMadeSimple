@@ -374,5 +374,30 @@
     <string name="loading_credits">Đang tải số dư tín dụng...</string>
     <string name="credits_not_available">Không có tín dụng khả dụng</string>
 
+    <string name="search_models">Tìm kiếm mô hình...</string>
+    <string name="input_modalities">Kiểu đầu vào</string>
+    <string name="context_length">Độ dài ngữ cảnh</string>
+    <string name="pricing_tiers">Mức giá</string>
+    <string name="sort_top_weekly">Phổ biến tuần này</string>
+    <string name="sort_newest">Mới nhất</string>
+    <string name="sort_price_low_high">Giá: Thấp đến Cao</string>
+    <string name="sort_price_high_low">Giá: Cao đến Thấp</string>
+    <string name="sort_context_high_low">Ngữ cảnh: Cao đến Thấp</string>
+    <string name="show_filters">Hiện bộ lọc</string>
+    <string name="hide_filters">Ẩn bộ lọc</string>
+    <string name="loading_models">Đang tải mô hình...</string>
+    <string name="no_models_found">Không tìm thấy mô hình nào</string>
+    <string name="refresh_models">Làm mới mô hình</string>
+    <string name="load_more_models">Tải thêm mô hình</string>
+    <string name="per_million_tokens">trên mỗi triệu tokens</string>
+    <string name="enter_valid_api_key">Nhập khóa API hợp lệ để xem các mô hình khả dụng</string>
+    <string name="openrouter_help_title">Cách lấy khóa API từ OpenRouter</string>
+    <string name="openrouter_instructions_title">Bắt đầu với OpenRouter</string>
+    <string name="openrouter_step_1">1. Truy cập openrouter.ai và tạo tài khoản</string>
+    <string name="openrouter_step_2">2. Vào phần cài đặt tài khoản để tạo khóa API</string>
+    <string name="openrouter_step_3">3. Sao chép và dán khóa vào trên để truy cập các mô hình AI hàng đầu</string>
+    <string name="open_openrouter_docs">Mở tài liệu hướng dẫn</string>
+    <string name="popular_models">Mô hình phổ biến</string>
+    <string name="all_models">Tất cả mô hình</string>
 
 </resources>

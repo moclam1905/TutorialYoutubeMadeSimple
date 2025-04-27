@@ -304,7 +304,7 @@
     <string name="continue_using_app">Continue Using App</string>
     <string name="next_chapter">Next Chapter</string>
     <string name="toggle_search">Toggle Search</string>
-    <string name="clear_search">Clear Search</string>
+    <string name="clear_search">Clear search</string>
     <string name="previous_chapter">Previous Chapter</string>
 
     <string name="watch_video">Watch Video</string>
@@ -369,9 +369,33 @@
     <string name="tag_selected_desc">Tag selected</string>
     <string name="select_ai_model">Select AI Model</string>
     <string name="model_not_selected">No model selected</string>
-    <string name="selected_model_label">Selected Model:</string>
+    <string name="selected_model_label">Selected Model</string>
     <string name="loading_credits">Loading credits...</string>
     <string name="credits_not_available">Credits not available</string>
-
+    <string name="search_models">Search models...</string>
+    <string name="input_modalities">Input Modalities</string>
+    <string name="context_length">Context Length</string>
+    <string name="pricing_tiers">Pricing Tiers</string>
+    <string name="sort_top_weekly">Top Weekly</string>
+    <string name="sort_newest">Newest</string>
+    <string name="sort_price_low_high">Price: Low to High</string>
+    <string name="sort_price_high_low">Price: High to Low</string>
+    <string name="sort_context_high_low">Context: High to Low</string>
+    <string name="show_filters">Show Filters</string>
+    <string name="hide_filters">Hide Filters</string>
+    <string name="loading_models">Loading models...</string>
+    <string name="no_models_found">No models found</string>
+    <string name="refresh_models">Refresh Models</string>
+    <string name="load_more_models">Load More Models</string>
+    <string name="per_million_tokens">per million tokens</string>
+    <string name="enter_valid_api_key">Enter a valid API key to view available models</string>
+    <string name="openrouter_help_title">How to Get an OpenRouter API Key</string>
+    <string name="openrouter_instructions_title">Getting Started with OpenRouter</string>
+    <string name="openrouter_step_1">1. Visit openrouter.ai and create an account</string>
+    <string name="openrouter_step_2">2. Navigate to your account settings to generate an API key</string>
+    <string name="openrouter_step_3">3. Copy and paste the key above and get access to top AI models</string>
+    <string name="open_openrouter_docs">Open Documentation</string>
+    <string name="popular_models">Popular Models</string>
+    <string name="all_models">All Models</string>
 
 </resources>
