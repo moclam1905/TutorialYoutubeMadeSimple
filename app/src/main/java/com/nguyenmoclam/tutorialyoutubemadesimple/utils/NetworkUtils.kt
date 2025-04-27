@@ -72,6 +72,28 @@ class NetworkUtils(context: Context) {
     }
 
     /**
+     * Check if the current active network is metered.
+     */
+    fun isMeteredNetwork(): Boolean {
+        return try {
+            connectivityManager.isActiveNetworkMetered
+        } catch (e: SecurityException) {
+            // Assume metered if we can't check due to permissions
+            true 
+        }
+    }
+
+    /**
+     * Determines if content should be loaded when on a metered network.
+     * TODO: Connect this to a user preference setting.
+     */
+    fun shouldLoadContentOnMetered(): Boolean {
+        // Default to allowing loading on metered networks.
+        // Replace with actual logic to check user preferences.
+        return true 
+    }
+
+    /**
      * Observe network connectivity changes as a Flow.
      * @return Flow<Boolean> that emits true when connected, false when disconnected
      */
