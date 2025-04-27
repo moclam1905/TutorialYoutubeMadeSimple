@@ -36,6 +36,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
+import java.util.regex.Pattern
+import kotlinx.coroutines.delay
 
 /**
  * ViewModel for managing app settings
@@ -341,6 +343,85 @@ class SettingsViewModel @Inject constructor(
             "Unknown"
         }.toString()
     }
+
+    // AI Model Settings Functions
+    fun setOpenRouterApiKey(key: String) {
+        viewModelScope.launch {
+            // Store the API key
+            settingsState = settingsState.copy(
+                openRouterApiKey = key,
+                apiKeyValidationState = validateApiKeyFormat(key)
+            )
+            
+            // If format is valid, simulate API validation
+            if (settingsState.apiKeyValidationState == ApiKeyValidationState.VALIDATING) {
+                validateApiKeyWithServer(key)
+            }
+        }
+    }
+    
+    /**
+     * Validates the API key format
+     * A valid OpenRouter API key should start with "sk-or-v1-"
+     */
+    private fun validateApiKeyFormat(key: String): ApiKeyValidationState {
+        return when {
+            key.isEmpty() -> ApiKeyValidationState.NONE
+            !key.startsWith("sk-or-v1-") -> ApiKeyValidationState.INVALID_FORMAT
+            else -> ApiKeyValidationState.VALIDATING
+        }
+    }
+    
+    /**
+     * Simulates validating the API key with the server
+     * In a real implementation, this would make a network request to validate the key
+     */
+    private fun validateApiKeyWithServer(key: String) {
+        viewModelScope.launch {
+            try {
+                // Set state to validating
+                settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.VALIDATING)
+                
+                // Simulate network delay
+                delay(1500)
+                
+                // For demo purposes, let's simulate a successful validation 
+                // if the key follows a specific pattern
+                val isValid = Pattern.matches("sk-or-v1-[a-zA-Z0-9]{10,}", key)
+                
+                // Update validation state and credits
+                settingsState = settingsState.copy(
+                    apiKeyValidationState = if (isValid) ApiKeyValidationState.VALID else ApiKeyValidationState.INVALID,
+                    apiKeyCredits = if (isValid) 10.0 else 0.0
+                )
+                
+                // In a real app, you would also store the key securely here
+                // using EncryptedSharedPreferences
+                
+            } catch (e: Exception) {
+                // Handle error (timeout, network error, etc.)
+                settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.INVALID)
+            }
+        }
+    }
+
+    fun setSelectedModel(model: String) {
+        viewModelScope.launch {
+            // Will be implemented later with the model selection logic
+            settingsState = settingsState.copy(selectedModel = model)
+        }
+    }
+}
+
+/**
+ * API Key Validation State for tracking API key validation process
+ */
+enum class ApiKeyValidationState {
+    NONE,
+    INVALID_FORMAT,
+    VALIDATING,
+    VALID,
+    INVALID
 }
 
 /**
@@ -372,5 +453,11 @@ data class SettingsState(
     val retryPolicy: String = "exponential", // "none", "linear", or "exponential"
 
     // Language
-    val appLanguage: String = "system" // "en", "vi", or "system"
+    val appLanguage: String = "system", // "en", "vi", or "system"
+
+    // AI Model Settings
+    val openRouterApiKey: String = "",
+    val selectedModel: String = "",
+    val apiKeyValidationState: ApiKeyValidationState = ApiKeyValidationState.NONE,
+    val apiKeyCredits: Double = 0.0
 )

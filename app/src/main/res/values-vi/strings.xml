@@ -125,7 +125,19 @@
     <string name="github_repository">Kho lưu trữ GitHub</string>
     <string name="privacy_policy">Chính sách Bảo mật</string>
     <string name="contact_information">Thông tin Liên hệ</string>
-    <string name="license_information">Thông tin Giấy phép</string>
+    <string name="license_information">Thông tin giấy phép</string>
+    <string name="ai_model_settings">Cài đặt mô hình AI</string>
+    <string name="api_key_label">Khóa API OpenRouter</string>
+    <string name="api_key_description">Cấu hình khóa API và chọn mô hình AI để sử dụng trong ứng dụng.</string>
+    <string name="api_key_helper">Nhập khóa API OpenRouter của bạn. Bạn có thể lấy nó từ openrouter.ai</string>
+    <string name="api_key_paste">Dán từ bộ nhớ tạm</string>
+    <string name="api_key_toggle_visibility">Chuyển đổi hiển thị khóa API</string>
+    <string name="api_key_format_error">Định dạng khóa API không hợp lệ. Phải có dạng: sk-or-v1-...</string>
+    <string name="api_key_validation_error">Không thể xác thực khóa API. Kiểm tra kết nối hoặc khóa của bạn.</string>
+    <string name="api_key_validation_success">Khóa API đã được xác thực thành công</string>
+    <string name="api_key_validating">Đang xác thực khóa API...</string>
+    <string name="api_key_hint">Nhập khóa API ở đây (bắt đầu bằng sk-or-v1-...)</string>
+    <string name="available_credits">Tín dụng khả dụng</string>
 
     <!-- Quiz Results -->
     <string name="quiz_results_title">Kết quả Quiz</string>
@@ -356,5 +368,11 @@
     <string name="mindmap_generation_description">Hình dung các ý chính của nội dung video bằng bản đồ tư duy được tạo tự động.</string>
     <string name="clear_tag_filters_short">Xóa</string>
     <string name="tag_selected_desc">Đã chọn thẻ</string>
+    <string name="select_ai_model">Chọn mô hình AI</string>
+    <string name="model_not_selected">Chưa chọn mô hình</string>
+    <string name="selected_model_label">Mô hình đã chọn:</string>
+    <string name="loading_credits">Đang tải số dư tín dụng...</string>
+    <string name="credits_not_available">Không có tín dụng khả dụng</string>
+
 
 </resources>

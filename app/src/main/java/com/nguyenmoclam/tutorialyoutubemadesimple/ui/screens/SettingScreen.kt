@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NetworkWifi
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -52,7 +53,9 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.GoogleAccountSet
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.LanguageSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.AIModelSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ApiKeyValidationState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 
 /**
@@ -240,6 +243,24 @@ fun SettingScreen(
                 LanguageSettings(
                     state = state,
                     onAppLanguageChanged = viewModel::setAppLanguage
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // AI Model Settings Section
+            SettingsSection(
+                title = stringResource(R.string.ai_model_settings),
+                icon = Icons.Default.SmartToy
+            ) {
+                AIModelSettings(
+                    openRouterApiKey = state.openRouterApiKey,
+                    onApiKeyChanged = viewModel::setOpenRouterApiKey,
+                    selectedModel = state.selectedModel,
+                    onModelSelected = viewModel::setSelectedModel,
+                    currentCredits = state.apiKeyCredits,
+                    isLoading = state.apiKeyValidationState == ApiKeyValidationState.VALIDATING,
+                    validationState = state.apiKeyValidationState
                 )
             }
 

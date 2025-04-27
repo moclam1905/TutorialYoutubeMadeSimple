@@ -126,6 +126,18 @@
     <string name="privacy_policy">Privacy Policy</string>
     <string name="contact_information">Contact Information</string>
     <string name="license_information">License Information</string>
+    <string name="ai_model_settings">AI Model Settings</string>
+    <string name="api_key_label">OpenRouter API Key</string>
+    <string name="api_key_description">Configure your API key and select AI models to use in the app.</string>
+    <string name="api_key_helper">Enter your OpenRouter API key. You can get it from openrouter.ai</string>
+    <string name="api_key_paste">Paste from clipboard</string>
+    <string name="api_key_toggle_visibility">Toggle API key visibility</string>
+    <string name="api_key_format_error">Invalid API key format. Should be like: sk-or-v1-...</string>
+    <string name="api_key_validation_error">Couldn't validate API key. Check your connection or key.</string>
+    <string name="api_key_validation_success">API key validated successfully</string>
+    <string name="api_key_validating">Validating API key...</string>
+    <string name="api_key_hint">Enter API key here (starts with sk-or-v1-...)</string>
+    <string name="available_credits">Available Credits</string>
 
     <!-- Quiz Results -->
     <string name="quiz_results_title">Quiz Results</string>
@@ -355,6 +367,11 @@
     <string name="mindmap_generation_description">Visualize the key ideas of your video content with an automatically generated mind map.</string>
     <string name="clear_tag_filters_short">Clear</string>
     <string name="tag_selected_desc">Tag selected</string>
+    <string name="select_ai_model">Select AI Model</string>
+    <string name="model_not_selected">No model selected</string>
+    <string name="selected_model_label">Selected Model:</string>
+    <string name="loading_credits">Loading credits...</string>
+    <string name="credits_not_available">Credits not available</string>
 
 
 </resources>

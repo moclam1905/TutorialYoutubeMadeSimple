@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -51,10 +52,34 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.material.icons.filled.ArrowDropDown
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.ApiKeyValidationState
 
 /**
  * Theme settings component that allows selecting between light, dark, and system theme modes
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSettings(
     state: SettingsState,
@@ -131,6 +156,7 @@ fun ThemeSettings(
 /**
  * Quiz configuration settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizConfigSettings(
     state: SettingsState,
@@ -225,6 +251,7 @@ fun QuizConfigSettings(
 /**
  * Google account settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoogleAccountSettings(
     state: SettingsState,
@@ -327,6 +354,7 @@ fun GoogleAccountSettings(
 /**
  * Data management settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataManagementSettings(
     state: SettingsState,
@@ -403,6 +431,7 @@ fun DataManagementSettings(
 /**
  * Network settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NetworkSettings(
     state: SettingsState,
@@ -582,6 +611,7 @@ fun NetworkSettings(
 /**
  * Language settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageSettings(
     state: SettingsState,
@@ -651,6 +681,7 @@ fun LanguageSettings(
 /**
  * App information settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppInfoSettings(
     appVersion: String,
@@ -747,6 +778,7 @@ private fun formatBytes(bytes: Long): String {
 /**
  * Reusable settings item with consistent styling for clickable settings
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsItem(
     title: String,
@@ -792,6 +824,311 @@ fun SettingsItem(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+/**
+ * AI Model Settings component that displays AI model configuration options.
+ */
+@SuppressLint("DefaultLocale")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AIModelSettings(
+    openRouterApiKey: String,
+    onApiKeyChanged: (String) -> Unit,
+    selectedModel: String,
+    onModelSelected: (String) -> Unit,
+    currentCredits: Double,
+    isLoading: Boolean = false,
+    validationState: ApiKeyValidationState = ApiKeyValidationState.NONE
+) {
+    // State for password visibility
+    var passwordVisible by remember { mutableStateOf(false) }
+    // State for dropdown menu expansion
+    var isModelDropdownExpanded by remember { mutableStateOf(false) }
+    // Placeholder for available models - replace with actual list
+    val availableModels = listOf("google/gemini-flash-1.5", "openai/gpt-4o", "anthropic/claude-3.5-sonnet")
+
+    // Clipboard manager for paste functionality
+    val clipboardManager = LocalClipboardManager.current
+
+    Column {
+        // API Key Section
+        Text(
+            stringResource(R.string.api_key_label),
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            stringResource(R.string.api_key_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // API key input field with password visibility toggle
+        OutlinedTextField(
+            value = openRouterApiKey,
+            onValueChange = {
+                onApiKeyChanged(it)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.api_key_label)) },
+            placeholder = { Text(stringResource(R.string.api_key_hint)) },
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true,
+            trailingIcon = {
+                Row {
+                    // Paste button
+                    IconButton(onClick = {
+                        clipboardManager.getText()?.text?.let {
+                            onApiKeyChanged(it)
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ContentPaste,
+                            contentDescription = stringResource(R.string.api_key_paste)
+                        )
+                    }
+
+                    // Password visibility toggle
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = stringResource(R.string.api_key_toggle_visibility)
+                        )
+                    }
+                }
+            },
+            // Show validation indicator
+            leadingIcon = when (validationState) {
+                ApiKeyValidationState.VALID -> {
+                    {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Valid",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                ApiKeyValidationState.INVALID, ApiKeyValidationState.INVALID_FORMAT -> {
+                    {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = "Invalid",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                ApiKeyValidationState.VALIDATING -> {
+                    {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .padding(4.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
+                else -> null
+            },
+            // Set colors based on validation state
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = when (validationState) {
+                    ApiKeyValidationState.VALID -> MaterialTheme.colorScheme.primary
+                    ApiKeyValidationState.INVALID, ApiKeyValidationState.INVALID_FORMAT -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.primary
+                },
+                unfocusedBorderColor = when (validationState) {
+                    ApiKeyValidationState.VALID -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    ApiKeyValidationState.INVALID, ApiKeyValidationState.INVALID_FORMAT -> MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                }
+            ),
+            supportingText = {
+                Text(
+                    text = when (validationState) {
+                        ApiKeyValidationState.INVALID_FORMAT -> stringResource(R.string.api_key_format_error)
+                        ApiKeyValidationState.INVALID -> stringResource(R.string.api_key_validation_error)
+                        ApiKeyValidationState.VALID -> stringResource(R.string.api_key_validation_success)
+                        ApiKeyValidationState.VALIDATING -> stringResource(R.string.api_key_validating)
+                        else -> stringResource(R.string.api_key_helper)
+                    },
+                    color = when (validationState) {
+                        ApiKeyValidationState.INVALID_FORMAT, ApiKeyValidationState.INVALID -> MaterialTheme.colorScheme.error
+                        ApiKeyValidationState.VALID -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+        )
+
+        // Status Indicator (Using Card instead of Chip)
+        if (validationState != ApiKeyValidationState.NONE) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Card(
+                    modifier = Modifier.padding(4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = when (validationState) {
+                            ApiKeyValidationState.VALID -> MaterialTheme.colorScheme.primaryContainer
+                            ApiKeyValidationState.INVALID, ApiKeyValidationState.INVALID_FORMAT -> MaterialTheme.colorScheme.errorContainer
+                            ApiKeyValidationState.VALIDATING -> MaterialTheme.colorScheme.secondaryContainer
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Leading icon
+                        when (validationState) {
+                            ApiKeyValidationState.VALID -> {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            ApiKeyValidationState.INVALID, ApiKeyValidationState.INVALID_FORMAT -> {
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            ApiKeyValidationState.VALIDATING -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .padding(2.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                            else -> {}
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Text
+                        Text(
+                            text = when (validationState) {
+                                ApiKeyValidationState.VALID -> stringResource(R.string.api_key_validation_success)
+                                ApiKeyValidationState.INVALID -> stringResource(R.string.api_key_validation_error)
+                                ApiKeyValidationState.INVALID_FORMAT -> stringResource(R.string.api_key_format_error)
+                                ApiKeyValidationState.VALIDATING -> stringResource(R.string.api_key_validating)
+                                else -> ""
+                            },
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Model Selection Dropdown
+        Text(
+            stringResource(R.string.select_ai_model),
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        ExposedDropdownMenuBox(
+            expanded = isModelDropdownExpanded,
+            onExpandedChange = {
+                // Only allow expanding if API key is valid
+                if (validationState == ApiKeyValidationState.VALID) {
+                    isModelDropdownExpanded = !isModelDropdownExpanded
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            TextField(
+                value = selectedModel.ifEmpty { stringResource(R.string.model_not_selected) },
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(R.string.selected_model_label)) },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = isModelDropdownExpanded)
+                },
+                colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
+                enabled = validationState == ApiKeyValidationState.VALID
+            )
+
+            ExposedDropdownMenu(
+                expanded = isModelDropdownExpanded,
+                onDismissRequest = { isModelDropdownExpanded = false },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                availableModels.forEach { model ->
+                    DropdownMenuItem(
+                        text = { Text(model) },
+                        onClick = {
+                            onModelSelected(model)
+                            isModelDropdownExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Credits display
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.available_credits), fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // Show loading indicator next to credits title if loading
+                    if (isLoading && validationState != ApiKeyValidationState.VALIDATING) {
+                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Determine the text and color based on state
+                val creditsText = when {
+                    validationState == ApiKeyValidationState.VALID && !isLoading -> 
+                        "$${String.format("%.2f", currentCredits)}"
+                    isLoading -> stringResource(R.string.loading_credits)
+                    else -> stringResource(R.string.credits_not_available)
+                }
+                val creditsColor = if (validationState == ApiKeyValidationState.VALID && !isLoading) {
+                    MaterialTheme.colorScheme.primary 
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                
+                Text(
+                    text = creditsText,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = creditsColor
+                )
+            }
         }
     }
 }
