@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,10 +16,12 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
 import com.nguyenmoclam.tutorialyoutubemadesimple.auth.AuthManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.manager.ModelDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.OpenRouterRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.repository.GetQuizRepositoryUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.GetSettingsUseCase
+import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAllowContentOnMeteredUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAppLanguageUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAutoNextQuestionUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetConnectionTimeoutUseCase
@@ -31,19 +34,21 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetRet
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetShowAnswerAfterWrongUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetThemeModeUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetTranscriptModeUseCase
-import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAllowContentOnMeteredUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
-import java.util.regex.Pattern
-import kotlinx.coroutines.delay
 
 /**
  * ViewModel for managing app settings
@@ -77,13 +82,39 @@ class SettingsViewModel @Inject constructor(
     var settingsState by mutableStateOf(SettingsState())
         private set
 
-    // Models list for display
-    private val _models = mutableStateOf<List<ModelInfo>>(emptyList())
-    val models: List<ModelInfo> get() = _models.value
-    
-    // Loading state for models
+    // --- Model List Management ---
+
+    // Internal state for ALL fetched models
+    private val _allModels = MutableStateFlow<List<ModelInfo>>(emptyList())
+
+    // Loading state specifically for fetching/refreshing models
     private val _isLoadingModels = mutableStateOf(false)
     val isLoadingModels: Boolean get() = _isLoadingModels.value
+
+    // Loading state for loading MORE models (for pagination - implement later)
+    // private val _isLoadingMoreModels = mutableStateOf(false)
+    // val isLoadingMoreModels: Boolean get() = _isLoadingMoreModels.value
+
+    // Indicator if more models can be loaded (for pagination - implement later)
+    // private val _hasMoreModels = mutableStateOf(true)
+    // val hasMoreModels: Boolean get() = _hasMoreModels.value
+
+    // **Public StateFlow for the DISPLAYED (filtered and sorted) models**
+    val displayedModels: StateFlow<List<ModelInfo>> = combine(
+        _allModels,
+        // Need to observe changes in settingsState for filters and sort
+        snapshotFlow { settingsState } // Observe changes in the entire state object
+    ) { allModels, currentState ->
+        // Apply filtering
+        val filteredModels = applyAllFilters(allModels, currentState.modelFilters)
+        // Apply sorting
+        sortModels(filteredModels, currentState.modelSortOption)
+        // Apply pagination later if needed
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000), // Keep active 5s after last subscriber
+        initialValue = emptyList() // Initial value
+    )
 
     init {
         // Load settings using the use case
@@ -467,17 +498,24 @@ class SettingsViewModel @Inject constructor(
     }
 
     /**
-     * Fetches models from the OpenRouter API
+     * Fetches models from the OpenRouter API and populates the internal `_allModels` state.
+     * Resets pagination state if implemented.
      */
     fun fetchModels() {
+        // Reset filters and sort? Optional, depends on desired UX. Let's keep them for now.
         viewModelScope.launch {
             _isLoadingModels.value = true
+            // _isLoadingMoreModels.value = false // Reset pagination loading state
+            // _hasMoreModels.value = true // Assume there are more initially
+            // currentPage = 0 // Reset page count
             try {
-                // Fetch models from repository
-                val modelsList = openRouterRepository.getAvailableModels(true)
-                _models.value = modelsList
+                // Fetch ALL models for now (assuming no API pagination support yet)
+                val modelsList = openRouterRepository.getAvailableModels(forceRefresh = true)
+                _allModels.value = modelsList
+                // _hasMoreModels.value = modelsList.size >= PAGE_SIZE // Update based on first page size
             } catch (e: Exception) {
-                // Handle error
+                _allModels.value = emptyList() // Clear on error
+                // Handle error appropriately (e.g., show a message)
             } finally {
                 _isLoadingModels.value = false
             }
@@ -485,7 +523,7 @@ class SettingsViewModel @Inject constructor(
     }
     
     /**
-     * Fetches credits information from OpenRouter
+     * Fetches credits information from OpenRouter.
      */
     private fun fetchCredits() {
         viewModelScope.launch {
@@ -498,18 +536,151 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setSelectedModel(model: String) {
+    fun setSelectedModel(modelId: String) { // Renamed parameter for clarity
         viewModelScope.launch {
-            settingsState = settingsState.copy(selectedModel = model)
-            
-            // Save selected model
+            settingsState = settingsState.copy(selectedModel = modelId)
             try {
-                securePreferences.saveSelectedModelId(model)
+                securePreferences.saveSelectedModelId(modelId)
             } catch (e: Exception) {
-                // Handle error
+                // Handle error saving preference
             }
         }
     }
+
+    // --- Filtering and Sorting Logic ---
+
+    /**
+     * Applies a filter for a specific category.
+     * If the option is already selected for the category, it effectively clears the filter for that category.
+     */
+    fun applyModelFilter(category: ModelFilter.Category, option: String) {
+        val currentFilters = settingsState.modelFilters.toMutableMap()
+        // For single-select filters, just set the new option
+        currentFilters[category] = setOf(option)
+        settingsState = settingsState.copy(modelFilters = currentFilters)
+    }
+
+    /**
+     * Clears the filter for a specific category.
+     */
+    fun clearModelFilter(category: ModelFilter.Category) {
+        val currentFilters = settingsState.modelFilters.toMutableMap()
+        currentFilters.remove(category)
+        settingsState = settingsState.copy(modelFilters = currentFilters)
+    }
+
+    /**
+     * Sets the sorting option for the model list.
+     */
+    fun setModelSortOption(sortOption: ModelFilter.SortOption) {
+        settingsState = settingsState.copy(modelSortOption = sortOption)
+    }
+
+    /**
+     * Applies all active filters to the list of models.
+     */
+    private fun applyAllFilters(models: List<ModelInfo>, filters: Map<ModelFilter.Category, Set<String>>): List<ModelInfo> {
+        if (filters.isEmpty()) return models
+
+        return models.filter { model ->
+            filters.all { (category, selectedOptions) ->
+                if (selectedOptions.isEmpty()) return@all true // No filter applied for this category
+
+                val option = selectedOptions.first() // Assuming single select for now
+
+                when (category) {
+                    ModelFilter.Category.INPUT_MODALITY -> model.inputModalities.contains(option.lowercase())
+                    ModelFilter.Category.CONTEXT_LENGTH -> checkContextLength(model.contextLength, option)
+                    ModelFilter.Category.PRICING -> checkPricingTier(model.promptPrice, option)
+                    // Add else branch to make when exhaustive
+                    else -> true // Don't filter for unhandled categories (PROVIDER, OUTPUT_MODALITY)
+                }
+            }
+        }
+    }
+
+     /** Helper to check if a model fits a context length filter option */
+    private fun checkContextLength(contextLength: Int, filterOption: String): Boolean {
+        // Use correct constants from ModelFilter.ContextLengths and adjust logic
+        return when (filterOption) {
+            ModelFilter.ContextLengths.RANGE_4K -> contextLength <= 4000
+            ModelFilter.ContextLengths.RANGE_8K -> contextLength > 4000 && contextLength <= 8000
+            ModelFilter.ContextLengths.RANGE_16K -> contextLength > 8000 && contextLength <= 16000
+            ModelFilter.ContextLengths.RANGE_32K -> contextLength > 16000 && contextLength <= 32000
+            ModelFilter.ContextLengths.RANGE_64K -> contextLength > 32000 && contextLength <= 64000
+            ModelFilter.ContextLengths.RANGE_128K_PLUS -> contextLength > 64000 // Or adjust if needed
+            else -> true // Default case if filter option is unexpected
+        }
+    }
+
+    /** Helper to check if a model fits a pricing tier filter option */
+     private fun checkPricingTier(promptPrice: Double, filterOption: String): Boolean {
+         // Prices are per million tokens
+         // Use correct constants from ModelFilter.PricingTiers and adjust logic
+         return when (filterOption) {
+             ModelFilter.PricingTiers.FREE -> promptPrice == 0.0
+             ModelFilter.PricingTiers.BUDGET -> promptPrice > 0.0 && promptPrice <= 0.5 // Example range
+             ModelFilter.PricingTiers.STANDARD -> promptPrice > 0.5 && promptPrice <= 1.5 // Example range
+             ModelFilter.PricingTiers.PREMIUM -> promptPrice > 1.5 // Example range
+             else -> true // Default case if filter option is unexpected
+         }
+     }
+
+
+    /**
+     * Sorts the list of models based on the selected sort option.
+     */
+    private fun sortModels(models: List<ModelInfo>, sortOption: ModelFilter.SortOption): List<ModelInfo> {
+        return when (sortOption) {
+            ModelFilter.SortOption.TOP_WEEKLY -> models // Assuming API returns this by default, or implement ranking if available
+            ModelFilter.SortOption.NEWEST -> models.sortedByDescending { it.id } // Assuming ID correlates with creation time - might need a real date field
+            ModelFilter.SortOption.PRICE_LOW_TO_HIGH -> models.sortedBy { it.promptPrice }
+            ModelFilter.SortOption.PRICE_HIGH_TO_LOW -> models.sortedByDescending { it.promptPrice }
+            ModelFilter.SortOption.CONTEXT_HIGH_TO_LOW -> models.sortedByDescending { it.contextLength }
+        }
+    }
+
+    // --- Pagination Logic (Placeholder - Implement later if needed) ---
+    // private var currentPage = 0
+    // private val PAGE_SIZE = 20 // Example page size
+
+    // fun loadMoreModels() {
+    //     if (isLoadingModels || isLoadingMoreModels || !hasMoreModels) return
+    //
+    //     viewModelScope.launch {
+    //         _isLoadingMoreModels.value = true
+    //         currentPage++
+    //         try {
+    //             // Fetch next page - Requires repository changes
+    //             // val nextPageModels = openRouterRepository.getAvailableModels(
+    //             //     offset = currentPage * PAGE_SIZE,
+    //             //     limit = PAGE_SIZE
+    //             // )
+    //             // Simulating loading more from the existing list for now
+    //             delay(1000) // Simulate network delay
+    //             val currentAll = _allModels.value
+    //             val start = currentPage * PAGE_SIZE
+    //             val end = minOf(start + PAGE_SIZE, currentAll.size)
+    //             val nextPageModels = if (start < currentAll.size) currentAll.subList(start, end) else emptyList()
+    //
+    //             if (nextPageModels.isNotEmpty()) {
+    //                 // Append to _allModels if repository fetched new data
+    //                 // _allModels.value = _allModels.value + nextPageModels
+    //             }
+    //             // Update hasMoreModels based on the actual result size from repo
+    //             // _hasMoreModels.value = nextPageModels.size >= PAGE_SIZE
+    //              _hasMoreModels.value = false // TEMPORARY: Disable load more after one attempt
+    //
+    //         } catch (e: Exception) {
+    //             // Handle error
+    //             currentPage-- // Revert page count on error
+    //             _hasMoreModels.value = false // Stop trying on error
+    //         } finally {
+    //             _isLoadingMoreModels.value = false
+    //         }
+    //     }
+    // }
+
 }
 
 /**
@@ -550,5 +721,12 @@ data class SettingsState(
     val apiKeyCredits: Double = 0.0,
 
     // New settings
-    val allowMeteredNetworks: Boolean = false
+    val allowMeteredNetworks: Boolean = false,
+
+    // Model List Filters and Sort
+    val modelFilters: Map<ModelFilter.Category, Set<String>> = emptyMap(),
+    val modelSortOption: ModelFilter.SortOption = ModelFilter.SortOption.TOP_WEEKLY,
+    // Add pagination state later if needed
+    // val isLoadingMoreModels: Boolean = false,
+    // val hasMoreModels: Boolean = true 
 )

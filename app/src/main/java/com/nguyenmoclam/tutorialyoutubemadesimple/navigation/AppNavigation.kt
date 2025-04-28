@@ -18,6 +18,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizSettingScreen // Add import
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.VideoPlayerWithTranscriptScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.AIModelSettingsScreen // Import the new screen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
@@ -75,6 +76,12 @@ fun AppNavigation(
                 usageViewModel = usageViewModel
             )
         }
+        // AI Model Settings Screen (New)
+        composable(AppScreens.AIModelSettings.route) {
+            // ViewModels are typically scoped to the NavHost or provided via Hilt
+            // No need to explicitly pass them if using hiltViewModel() inside the screen
+            AIModelSettingsScreen(navController = navController)
+        }
         // Quiz Detail Screen
         composable(
             route = AppScreens.QuizDetail.route + "/{quizId}",
@@ -129,6 +136,7 @@ sealed class AppScreens(val route: String) {
     object QuizSetting : AppScreens("quiz_setting") // Add QuizSetting screen
     object VideoPlayer : AppScreens("video_player")
     object DetailedModelUsage : AppScreens("detailed_model_usage")
+    object AIModelSettings : AppScreens("ai_model_settings") // Add new screen route
 
     fun withArgs(vararg args: String): String {
         return buildString {

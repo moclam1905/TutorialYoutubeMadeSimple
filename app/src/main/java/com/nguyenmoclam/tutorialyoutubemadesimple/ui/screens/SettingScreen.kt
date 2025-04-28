@@ -54,7 +54,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.GoogleAccountSet
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.LanguageSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.AIModelSettings
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.SettingsItem
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -261,30 +261,17 @@ fun SettingScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // AI Model Settings Section
+            // AI Model Settings Section - Changed to SettingsItem for navigation
             SettingsSection(
                 title = stringResource(R.string.ai_model_settings),
                 icon = Icons.Default.SmartToy
             ) {
-                AIModelSettings(
-                    openRouterApiKey = state.openRouterApiKey,
-                    onApiKeyChanged = viewModel::setOpenRouterApiKey,
-                    selectedModel = state.selectedModel,
-                    onModelSelected = viewModel::setSelectedModel,
-                    currentCredits = state.apiKeyCredits,
-                    isLoading = state.apiKeyValidationState == ApiKeyValidationState.VALIDATING || viewModel.isLoadingModels,
-                    validationState = state.apiKeyValidationState,
-                    models = viewModel.models,
-                    onRefreshModels = viewModel::fetchModels,
-                    creditStatusState = creditStatusState,
-                    tokenUsageSummaryState = tokenUsageSummaryState,
-                    selectedTimeRange = selectedTimeRange,
-                    onTimeRangeSelected = usageViewModel::setTimeRange,
-                    onRefreshCredits = usageViewModel::refreshCreditStatus,
-                    onViewAllModelsClick = {
-                        // Navigate to the detailed model usage screen
-                        navController.navigate(AppScreens.DetailedModelUsage.route)
-                    }
+                SettingsItem(
+                    title = stringResource(R.string.configure_ai_api_title),
+                    subtitle = stringResource(R.string.configure_ai_api_subtitle),
+                    onClick = { navController.navigate(AppScreens.AIModelSettings.route) },
+                    leadingIcon = { /* Keep the icon implicitly from SettingsSection */ },
+                    showArrow = true
                 )
             }
 

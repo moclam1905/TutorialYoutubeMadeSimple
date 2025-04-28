@@ -466,5 +466,16 @@
 
     <string name="click_refresh_to_load_models">Click refresh to load models</string>
     <string name="no_matching_models">No matching models found</string>
+    <string name="api_key_needed_for_features">An API key is required to use these features</string>
+    <string name="time_just_now">Just now</string>
+    <string name="time_minutes_ago">%1$d minutes ago</string>
+    <string name="time_hours_ago">%1$d hours ago</string>
+    <string name="time_days_ago">%1$d days ago</string>
+    <string name="time_weeks_ago">%1$d weeks ago</string>
+    <string name="configure_ai_api_title">Configure AI API</string>
+    <string name="configure_ai_api_subtitle">Set up your API key and model preferences to start using AI features</string>
+    <string name="no_model_selected">No model selected</string>
+    <string name="selected_model">Selected Model</string>
+    <string name="change_model">Change Model</string>
 
 </resources>

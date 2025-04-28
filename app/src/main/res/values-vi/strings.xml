@@ -465,5 +465,16 @@
 
     <string name="click_refresh_to_load_models">Nhấn làm mới để tải các mô hình</string>
     <string name="no_matching_models">Không tìm thấy mô hình phù hợp</string>
+    <string name="api_key_needed_for_features">Cần có khóa API để sử dụng các tính năng này</string>
+    <string name="time_just_now">Vừa xong</string>
+    <string name="time_minutes_ago">%1$d phút trước</string>
+    <string name="time_hours_ago">%1$d giờ trước</string>
+    <string name="time_days_ago">%1$d ngày trước</string>
+    <string name="time_weeks_ago">%1$d tuần trước</string>
+    <string name="configure_ai_api_title">Cấu hình API AI</string>
+    <string name="configure_ai_api_subtitle">Thiết lập khóa API và tùy chọn mô hình để bắt đầu sử dụng các tính năng AI</string>
+    <string name="no_model_selected">Chưa chọn mô hình</string>
+    <string name="selected_model">Mô hình đã chọn</string>
+    <string name="change_model">Thay đổi mô hình</string>
 
 </resources>
