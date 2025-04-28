@@ -450,7 +450,7 @@ private fun AIModelSettingsContent(
             onDismissRequest = { showModelSheet = false },
             sheetState = sheetState,
             // Consider adding dragHandle
-            // dragHandle = { BottomSheetDefaults.DragHandle() },
+            dragHandle = { BottomSheetDefaults.DragHandle() },
             // Optional: Set window insets to handle keyboard, etc.
              windowInsets = WindowInsets.ime.union(WindowInsets.navigationBars)
         ) {

@@ -14,11 +14,11 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class CreditsData(
-    @SerialName("total_credits") val totalCredits: Double,
-    @SerialName("total_usage") val totalUsage: Double,
-    @SerialName("credit_granted") val creditGranted: Double,
-    @SerialName("currency") val currency: String,
-    @SerialName("user_id") val userId: String
+    @SerialName("total_credits") val totalCredits: Double?,
+    @SerialName("total_usage") val totalUsage: Double?,
+    @SerialName("credit_granted") val creditGranted: Double?,
+    @SerialName("currency") val currency: String?,
+    @SerialName("user_id") val userId: String?
 )
 
 /**

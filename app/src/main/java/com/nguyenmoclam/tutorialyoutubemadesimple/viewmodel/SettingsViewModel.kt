@@ -529,7 +529,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val creditsResponse = openRouterRepository.getCredits(true)
-                settingsState = settingsState.copy(apiKeyCredits = creditsResponse.data.totalCredits)
+                settingsState = settingsState.copy(apiKeyCredits = creditsResponse.data.totalCredits ?: 0.0)
             } catch (e: Exception) {
                 // Handle error
             }
