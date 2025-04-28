@@ -478,4 +478,14 @@
     <string name="selected_model">Selected Model</string>
     <string name="change_model">Change Model</string>
 
+    <!-- API Requirement Dialog -->
+    <string name="network_required">Network Connection Required</string>
+    <string name="network_required_message">A network connection is required to use this feature. Please check your network settings and try again.</string>
+    <string name="api_key_required">AI Service API Key Required</string>
+    <string name="api_key_required_message">An OpenRouter API key is required to use this feature. Please set your API key in Settings.</string>
+    <string name="model_required">AI Model Selection Required</string>
+    <string name="model_required_message">Please select an AI model in Settings before using this feature.</string>
+    <string name="go_to_settings">Go to Settings</string>
+    <string name="ok">OK</string>
+
 </resources>

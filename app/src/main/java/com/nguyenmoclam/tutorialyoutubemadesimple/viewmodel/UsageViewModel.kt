@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.Date
 import javax.inject.Inject
 
 /**
@@ -62,32 +61,7 @@ class UsageViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = TokenUsageSummaryState.Loading
         )
-    
-    // Token usage details based on selected time range
-    val tokenUsageDetails: StateFlow<TokenUsageDetailsState> = _timeRange
-        .flatMapLatest { range ->
-            when (range) {
-                TimeRange.LAST_7_DAYS -> usageRepository.getTokenUsageForLastDays(7)
-                TimeRange.LAST_30_DAYS -> usageRepository.getTokenUsageForLastDays(30)
-                TimeRange.ALL_TIME -> usageRepository.getAllTokenUsage()
-            }
-        }
-        .map { usageList ->
-            if (usageList.isNotEmpty()) {
-                TokenUsageDetailsState.Success(usageList)
-            } else {
-                TokenUsageDetailsState.Empty
-            }
-        }
-        .catch { e ->
-            emit(TokenUsageDetailsState.Error(e.message ?: "Unknown error"))
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = TokenUsageDetailsState.Loading
-        )
-    
+
     init {
         refreshCreditStatus()
     }

@@ -96,7 +96,7 @@ class UsageRepository @Inject constructor(
                 val usageByModel = modelEntities.associate { entity ->
                     entity.modelId to TokenUsageSummary.ModelUsage(
                         modelId = entity.modelId,
-                        modelName = entity.modelName.toString(),
+                        modelName = entity.modelName,
                         promptTokens = entity.promptTokens,
                         completionTokens = entity.completionTokens,
                         totalTokens = entity.totalTokens,
@@ -104,14 +104,11 @@ class UsageRepository @Inject constructor(
                     )
                 }
                 
-                val totalStats = runBlocking { tokenUsageDao.getTotalUsageStats() } 
-                    ?: TokenUsageDao.TokenUsageStats(0, 0, 0, 0.0)
-                
                 TokenUsageSummary(
-                    totalPromptTokens = totalStats.promptTokens,
-                    totalCompletionTokens = totalStats.completionTokens,
-                    totalTokens = totalStats.totalTokens,
-                    totalCost = totalStats.estimatedCost,
+                    totalPromptTokens = modelEntities.sumOf { it.promptTokens },
+                    totalCompletionTokens = modelEntities.sumOf { it.completionTokens },
+                    totalTokens = modelEntities.sumOf { it.totalTokens },
+                    totalCost = modelEntities.sumOf { it.estimatedCost },
                     usageByModel = usageByModel
                 )
             }
@@ -136,7 +133,7 @@ class UsageRepository @Inject constructor(
                 val usageByModel = modelEntities.associate { entity ->
                     entity.modelId to TokenUsageSummary.ModelUsage(
                         modelId = entity.modelId,
-                        modelName = entity.modelName.toString(),
+                        modelName = entity.modelName,
                         promptTokens = entity.promptTokens,
                         completionTokens = entity.completionTokens,
                         totalTokens = entity.totalTokens,
@@ -144,14 +141,11 @@ class UsageRepository @Inject constructor(
                     )
                 }
                 
-                val totalStats = runBlocking { tokenUsageDao.getTotalUsageStatsForPeriod(startTime, endTime) } 
-                    ?: TokenUsageDao.TokenUsageStats(0, 0, 0, 0.0)
-                
                 TokenUsageSummary(
-                    totalPromptTokens = totalStats.promptTokens,
-                    totalCompletionTokens = totalStats.completionTokens,
-                    totalTokens = totalStats.totalTokens,
-                    totalCost = totalStats.estimatedCost,
+                    totalPromptTokens = modelEntities.sumOf { it.promptTokens },
+                    totalCompletionTokens = modelEntities.sumOf { it.completionTokens },
+                    totalTokens = modelEntities.sumOf { it.totalTokens },
+                    totalCost = modelEntities.sumOf { it.estimatedCost },
                     usageByModel = usageByModel
                 )
             }

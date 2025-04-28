@@ -95,7 +95,11 @@ class QuizDetailViewModel @Inject constructor(
         val completionTime: Long = 0,
         val showExitConfirmation: Boolean = false,
         val mindMapCode: String = "",
-        val currentMindMapStep: ProcessingMindMapStep = ProcessingMindMapStep.NONE
+        val currentMindMapStep: ProcessingMindMapStep = ProcessingMindMapStep.NONE,
+        val showApiRequirementDialog: Boolean = false,
+        val apiRequirementTitle: String = "",
+        val apiRequirementMessage: String = "",
+        val showSettingsButton: Boolean = false
     )
 
     var state by mutableStateOf(QuizDetailState(isLoading = false))
@@ -732,6 +736,27 @@ class QuizDetailViewModel @Inject constructor(
             }
         }
         return map
+    }
+
+    /**
+     * Shows a dialog about API requirements (network connectivity, API key, model selection)
+     */
+    fun showApiRequirementDialog(title: String, message: String, showSettingsButton: Boolean = false) {
+        state = state.copy(
+            showApiRequirementDialog = true,
+            apiRequirementTitle = title,
+            apiRequirementMessage = message,
+            showSettingsButton = showSettingsButton
+        )
+    }
+
+    /**
+     * Hides the API requirement dialog
+     */
+    fun hideApiRequirementDialog() {
+        state = state.copy(
+            showApiRequirementDialog = false
+        )
     }
 }
 

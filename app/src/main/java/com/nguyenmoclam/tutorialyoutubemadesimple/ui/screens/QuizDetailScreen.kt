@@ -75,10 +75,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.AndroidWebViewWithOfflineContent
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ApiRequirementDialog
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.EmptyStateComponent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ErrorStateComponent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ExitConfirmationDialog
@@ -101,6 +103,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
@@ -401,6 +404,8 @@ fun QuizDetailScreenContent(
 ) {
     val context = LocalContext.current
     val navController = LocalNavController.current // Get NavController from CompositionLocal
+    val networkUtils = LocalNetworkUtils.current
+    val settingsVM = hiltViewModel<SettingsViewModel>()
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -589,7 +594,45 @@ fun QuizDetailScreenContent(
                                     title = stringResource(R.string.mindmap_tab),
                                     description = stringResource(R.string.mindmap_generation_description),
                                     actionContent = {
-                                        Button(onClick = { quizDetailViewModel.generateMindMap() }) {
+                                        Button(onClick = { 
+                                            // Check network connectivity first
+                                            if (!networkUtils.isNetworkAvailable()) {
+                                                // Show network required dialog
+                                                quizDetailViewModel.showApiRequirementDialog(
+                                                    context.getString(R.string.network_required),
+                                                    context.getString(R.string.network_required_message)
+                                                )
+                                                return@Button
+                                            }
+                                            
+                                            // Get settings from settings view model
+                                            val settingsState = settingsVM.settingsState
+                                            
+                                            // Check for OpenRouter API key
+                                            if (settingsState.apiKeyValidationState != ApiKeyValidationState.VALID) {
+                                                // Show API key required dialog
+                                                quizDetailViewModel.showApiRequirementDialog(
+                                                    context.getString(R.string.api_key_required),
+                                                    context.getString(R.string.api_key_required_message),
+                                                    true
+                                                )
+                                                return@Button
+                                            }
+                                            
+                                            // Check for model selection
+                                            if (settingsState.selectedModel.isBlank()) {
+                                                // Show model selection required dialog
+                                                quizDetailViewModel.showApiRequirementDialog(
+                                                    context.getString(R.string.model_required),
+                                                    context.getString(R.string.model_required_message),
+                                                    true
+                                                )
+                                                return@Button
+                                            }
+                                            
+                                            // All requirements met, proceed with mind map generation
+                                            quizDetailViewModel.generateMindMap() 
+                                        }) {
                                             Text(stringResource(R.string.generate_mindmap))
                                         }
                                     }
@@ -785,6 +828,16 @@ fun QuizDetailScreen(
             }
         }
 
+        // API Requirement Dialog
+        if (quizDetailViewModel.state.showApiRequirementDialog) {
+            ApiRequirementDialog(
+                title = quizDetailViewModel.state.apiRequirementTitle,
+                message = quizDetailViewModel.state.apiRequirementMessage,
+                showSettingsButton = quizDetailViewModel.state.showSettingsButton,
+                navController = navController,
+                onDismiss = { quizDetailViewModel.hideApiRequirementDialog() }
+            )
+        }
 
         // --- UI Structure ---
         SlidingRootNav(

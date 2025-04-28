@@ -32,7 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ApiRequirementDialog
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ErrorMessage
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavigationButtons
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step1Content
@@ -62,10 +64,22 @@ fun CreateQuizScreen(
     var showLanguageDropdown by remember { mutableStateOf(false) }
     val languages = listOf("English", "Tiếng Việt", "Français", "Español", "Deutsch")
 
+    // State for API requirement dialog
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogTitle by remember { mutableStateOf("") }
+    var dialogMessage by remember { mutableStateOf("") }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val errorString = stringResource(R.string.error_occurred)
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
+    val dialogTitleNetwork = stringResource(R.string.network_required)
+    val dialogMessageNetwork = stringResource(R.string.network_required_message)
+    val dialogTitleApi = stringResource(R.string.api_key_required)
+    val dialogMessageApi = stringResource(R.string.api_key_required_message)
+    val dialogTitleModel = stringResource(R.string.model_required)
+    val dialogMessageModel = stringResource(R.string.model_required_message)
 
     // Function to validate the current step and move to the next
     fun moveToNextStep() {
@@ -93,7 +107,34 @@ fun CreateQuizScreen(
             3 -> {
                 // Start quiz generation process
                 if (viewModel.generateSummary || viewModel.generateQuestions) {
-                    // Call createQuiz in QuizCreationViewModel
+                    // Check network connectivity first
+                    if (!settingsState.isNetworkAvailable) {
+                        // Show network required dialog
+                        dialogTitle = dialogTitleNetwork
+                        dialogMessage = dialogMessageNetwork
+                        showDialog = true
+                        return
+                    }
+
+                    // Check for OpenRouter API key if needed
+                    if (settingsState.apiKeyValidationState != ApiKeyValidationState.VALID) {
+                        // Show API key required dialog
+                        dialogTitle = dialogTitleApi
+                        dialogMessage = dialogMessageApi
+                        showDialog = true
+                        return
+                    }
+
+                    // Check for model selection if needed
+                    if (settingsState.selectedModel.isBlank()) {
+                        // Show model selection required dialog
+                        dialogTitle = dialogTitleModel
+                        dialogMessage = dialogMessageModel
+                        showDialog = true
+                        return
+                    }
+
+                    // All requirements met, proceed with quiz creation
                     quizViewModel.createQuiz(
                         videoUrlOrId = viewModel.youtubeUrl,
                         youtubeApiKey = MainActivity.YOUTUBE_API_KEY,
@@ -127,6 +168,17 @@ fun CreateQuizScreen(
         }
     }
 
+    // Show API Requirement Dialog when needed
+    if (showDialog) {
+        ApiRequirementDialog(
+            title = dialogTitle,
+            message = dialogMessage,
+            showSettingsButton = true,
+            navController = navController,
+            onDismiss = { showDialog = false }
+        )
+    }
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -142,7 +194,7 @@ fun CreateQuizScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
 
-    ) { paddingValues ->
+        ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()

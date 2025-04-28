@@ -4,20 +4,47 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Message(val role: String, val content: String)
+data class Message(
+    val role: String, 
+    val content: String,
+    val refusal: String? = null,
+    val reasoning: String? = null
+)
 
 @Serializable
-data class Choice(val message: Message)
+data class Choice(
+    val message: Message,
+    val logprobs: String? = null,
+    @SerialName("finish_reason") val finishReason: String? = null,
+    @SerialName("native_finish_reason") val nativeFinishReason: String? = null,
+    val index: Int? = null
+)
+
+@Serializable
+data class PromptTokensDetails(
+    @SerialName("cached_tokens") val cachedTokens: Int? = null
+)
+
+@Serializable
+data class CompletionTokensDetails(
+    @SerialName("reasoning_tokens") val reasoningTokens: Int? = null
+)
 
 @Serializable
 data class UsageInfo(
     @SerialName("prompt_tokens") val promptTokens: Int? = null,
     @SerialName("completion_tokens") val completionTokens: Int? = null,
-    @SerialName("total_tokens") val totalTokens: Int? = null
+    @SerialName("total_tokens") val totalTokens: Int? = null,
+    @SerialName("prompt_tokens_details") val promptTokensDetails: PromptTokensDetails? = null,
+    @SerialName("completion_tokens_details") val completionTokensDetails: CompletionTokensDetails? = null
 )
 
 @Serializable
 data class OpenRouterResponse(
+    val id: String? = null,
+    val provider: String? = null,
+    val model: String? = null,
+    val created: Long? = null,
     val choices: List<Choice>,
     val usage: UsageInfo? = null
 )

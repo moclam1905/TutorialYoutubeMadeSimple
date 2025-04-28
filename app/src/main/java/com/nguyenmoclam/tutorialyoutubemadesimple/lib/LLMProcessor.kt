@@ -332,17 +332,23 @@ class LLMProcessor @Inject constructor(
                 // Record token usage for successful responses
                 try {
                     val usageInfo = apiResponse.usage
-                    // Create TokenUsage object first
-                    val tokenUsage = usageRepository.createTokenUsage(
-                        modelId = usedConfig.modelId,
-                        modelName = "", // Placeholder: Fetch actual model name if needed
-                        promptTokens = usageInfo?.promptTokens ?: 0,
-                        completionTokens = usageInfo?.completionTokens ?: 0,
-                        promptPrice = 0.0, // Placeholder: Fetch actual prompt price if needed
-                        completionPrice = 0.0 // Placeholder: Fetch actual completion price if needed
-                    )
-                    // Then record it
-                    usageRepository.recordTokenUsage(tokenUsage)
+                    if (usageInfo != null) {
+                        // Get model pricing information (you may need to implement a model price lookup function)
+                        val promptPrice = 0.0 // Default or get from a pricing service
+                        val completionPrice = 0.0 // Default or get from a pricing service
+                        
+                        // Create TokenUsage object first
+                        val tokenUsage = usageRepository.createTokenUsage(
+                            modelId = usedConfig.modelId,
+                            modelName = apiResponse.model ?: usedConfig.modelId, // Use actual model from response
+                            promptTokens = usageInfo.promptTokens ?: 0,
+                            completionTokens = usageInfo.completionTokens ?: 0,
+                            promptPrice = promptPrice,
+                            completionPrice = completionPrice
+                        )
+                        // Then record it
+                        usageRepository.recordTokenUsage(tokenUsage)
+                    }
                 } catch (e: Exception) {
                     // Log the error but don't fail the main operation
                     errorCallback?.invoke(LLMError.TrackingError("Failed to record token usage: ${e.message}"))

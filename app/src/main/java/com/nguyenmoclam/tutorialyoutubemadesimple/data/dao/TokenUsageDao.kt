@@ -53,7 +53,7 @@ interface TokenUsageDao {
      * 
      * @return A list of aggregated usage statistics by model.
      */
-    @Query("SELECT modelId, modelName, SUM(promptTokens) as promptTokens, " +
+    @Query("SELECT modelId, COALESCE(modelName, modelId) as modelName, SUM(promptTokens) as promptTokens, " +
            "SUM(completionTokens) as completionTokens, SUM(totalTokens) as totalTokens, " +
            "SUM(estimatedCost) as estimatedCost, MAX(timestamp) as timestamp " +
            "FROM token_usage GROUP BY modelId")
@@ -66,7 +66,7 @@ interface TokenUsageDao {
      * @param endTime The end time of the period (in milliseconds).
      * @return A list of aggregated usage statistics by model for the specified time period.
      */
-    @Query("SELECT modelId, modelName, SUM(promptTokens) as promptTokens, " +
+    @Query("SELECT modelId, COALESCE(modelName, modelId) as modelName, SUM(promptTokens) as promptTokens, " +
            "SUM(completionTokens) as completionTokens, SUM(totalTokens) as totalTokens, " +
            "SUM(estimatedCost) as estimatedCost, MAX(timestamp) as timestamp " +
            "FROM token_usage WHERE timestamp BETWEEN :startTime AND :endTime " +
@@ -104,7 +104,7 @@ interface TokenUsageDao {
      */
     data class TokenUsageSummary(
         val modelId: String,
-        val modelName: String?,
+        val modelName: String,
         val promptTokens: Int,
         val completionTokens: Int,
         val totalTokens: Int,
