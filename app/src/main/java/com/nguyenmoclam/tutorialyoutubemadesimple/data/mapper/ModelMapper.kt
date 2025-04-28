@@ -10,6 +10,7 @@ object ModelMapper {
     
     /**
      * Converts an OpenRouterModel to a ModelInfo object.
+     * Handles parsing of String prices to Double.
      * 
      * @param model The OpenRouterModel from the API response.
      * @return A ModelInfo object with extracted information.
@@ -19,26 +20,30 @@ object ModelMapper {
         val providerName = model.id.split("/").firstOrNull() ?: ""
         
         // Extract input and output modalities from architecture
-        val inputModalities = model.architecture?.inputModalities ?: emptyList()
-        val outputModalities = model.architecture?.outputModalities ?: emptyList()
+        val inputModalities = model.architecture?.input_modalities ?: emptyList()
+        val outputModalities = model.architecture?.output_modalities ?: emptyList()
         
         // Extract tokenizer type from architecture
         val tokenizerType = model.architecture?.tokenizer ?: "Unknown"
         
-        // Check if model is free (both prompt and completion price are 0)
-        val isFree = model.pricing.prompt == 0.0 && model.pricing.completion == 0.0
+        // Safely convert string prices to Double, defaulting to 0.0 if invalid
+        val promptPriceDouble = model.pricing.prompt.toDoubleOrNull() ?: 0.0
+        val completionPriceDouble = model.pricing.completion.toDoubleOrNull() ?: 0.0
+
+        // Check if model is free based on the parsed Double values
+        val isFree = promptPriceDouble == 0.0 && completionPriceDouble == 0.0
         
         return ModelInfo(
             id = model.id,
             name = model.name,
-            contextLength = model.contextLength,
-            promptPrice = model.pricing.prompt,
-            completionPrice = model.pricing.completion,
+            contextLength = model.context_length,
+            promptPrice = promptPriceDouble, // Use parsed Double
+            completionPrice = completionPriceDouble, // Use parsed Double
             tokenizerType = tokenizerType,
             inputModalities = inputModalities,
             outputModalities = outputModalities,
             providerName = providerName,
-            isFree = isFree
+            isFree = isFree // Use updated check
         )
     }
     

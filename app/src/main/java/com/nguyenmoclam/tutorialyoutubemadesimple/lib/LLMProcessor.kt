@@ -4,7 +4,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.LLMConfig
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.Message
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterRequest
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterResponse
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UsageRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Question
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
@@ -341,8 +340,8 @@ class LLMProcessor @Inject constructor(
                         val tokenUsage = usageRepository.createTokenUsage(
                             modelId = usedConfig.modelId,
                             modelName = apiResponse.model ?: usedConfig.modelId, // Use actual model from response
-                            promptTokens = usageInfo.promptTokens ?: 0,
-                            completionTokens = usageInfo.completionTokens ?: 0,
+                            promptTokens = usageInfo.prompt_tokens ?: 0,
+                            completionTokens = usageInfo.completion_tokens ?: 0,
                             promptPrice = promptPrice,
                             completionPrice = completionPrice
                         )

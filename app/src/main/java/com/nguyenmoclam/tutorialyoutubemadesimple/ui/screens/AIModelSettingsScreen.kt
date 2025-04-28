@@ -452,26 +452,27 @@ private fun AIModelSettingsContent(
             // Consider adding dragHandle
             dragHandle = { BottomSheetDefaults.DragHandle() },
             // Optional: Set window insets to handle keyboard, etc.
-             windowInsets = WindowInsets.ime.union(WindowInsets.navigationBars)
+            windowInsets = WindowInsets.ime.union(WindowInsets.navigationBars)
         ) {
             // Content of the Bottom Sheet
             Column(
-                 modifier = Modifier
-                     .fillMaxWidth()
-                     // Add padding inside the sheet
-                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                     // Ensure content doesn't go under navigation bars inside the sheet
-                     .navigationBarsPadding()
-                     // Limit max height to prevent sheet taking full screen unnecessarily
-                     .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.85f)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(fraction = 0.95f)
+                    // Add padding inside the sheet
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    // Ensure content doesn't go under navigation bars inside the sheet
+                    .navigationBarsPadding()
+                    // Limit max height to prevent sheet taking full screen unnecessarily
+                    .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.85f)
             ) {
-                 // Title inside the sheet
-                 Text(
-                     stringResource(R.string.select_ai_model),
-                     style = MaterialTheme.typography.titleLarge,
-                     modifier = Modifier.padding(bottom = 16.dp)
-                 )
-                 
+                // Title inside the sheet
+                Text(
+                    stringResource(R.string.select_ai_model),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
                 ModelSelectionComponent(
                     models = models, // Pass the displayed (filtered/sorted) list
                     selectedModelId = selectedModel,

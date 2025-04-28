@@ -487,5 +487,7 @@
     <string name="model_required_message">Please select an AI model in Settings before using this feature.</string>
     <string name="go_to_settings">Go to Settings</string>
     <string name="ok">OK</string>
+    <string name="model_price_free">Free</string>
+
 
 </resources>

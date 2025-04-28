@@ -599,33 +599,36 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-     /** Helper to check if a model fits a context length filter option */
+    /** Helper to check if a model fits a context length filter option */
     private fun checkContextLength(contextLength: Int, filterOption: String): Boolean {
-        // Use correct constants from ModelFilter.ContextLengths and adjust logic
+        // Use constants directly from ModelFilter for reliable comparison
         return when (filterOption) {
             ModelFilter.ContextLengths.RANGE_4K -> contextLength <= 4000
-            ModelFilter.ContextLengths.RANGE_8K -> contextLength > 4000 && contextLength <= 8000
-            ModelFilter.ContextLengths.RANGE_16K -> contextLength > 8000 && contextLength <= 16000
-            ModelFilter.ContextLengths.RANGE_32K -> contextLength > 16000 && contextLength <= 32000
-            ModelFilter.ContextLengths.RANGE_64K -> contextLength > 32000 && contextLength <= 64000
-            ModelFilter.ContextLengths.RANGE_128K_PLUS -> contextLength > 64000 // Or adjust if needed
+            ModelFilter.ContextLengths.RANGE_8K -> contextLength in 4001..8000
+            ModelFilter.ContextLengths.RANGE_16K -> contextLength in 8001..16000
+            ModelFilter.ContextLengths.RANGE_32K -> contextLength in 16001..32000
+            ModelFilter.ContextLengths.RANGE_64K -> contextLength in 32001..64000
+            ModelFilter.ContextLengths.RANGE_128K_PLUS -> contextLength > 64000
             else -> true // Default case if filter option is unexpected
         }
     }
 
-    /** Helper to check if a model fits a pricing tier filter option */
+    /** 
+     * Helper to check if a model fits a pricing tier filter option.
+     * Assumes promptPrice is the price per **million** tokens.
+     * NOTE: The thresholds for BUDGET, STANDARD, PREMIUM might need adjustment.
+     */
      private fun checkPricingTier(promptPrice: Double, filterOption: String): Boolean {
-         // Prices are per million tokens
-         // Use correct constants from ModelFilter.PricingTiers and adjust logic
+         // Use constants directly from ModelFilter for reliable comparison
          return when (filterOption) {
              ModelFilter.PricingTiers.FREE -> promptPrice == 0.0
-             ModelFilter.PricingTiers.BUDGET -> promptPrice > 0.0 && promptPrice <= 0.5 // Example range
-             ModelFilter.PricingTiers.STANDARD -> promptPrice > 0.5 && promptPrice <= 1.5 // Example range
-             ModelFilter.PricingTiers.PREMIUM -> promptPrice > 1.5 // Example range
+             // Adjusted budget to include very small prices > 0
+             ModelFilter.PricingTiers.BUDGET -> promptPrice > 0.0 && promptPrice <= 0.5 // Example threshold
+             ModelFilter.PricingTiers.STANDARD -> promptPrice > 0.5 && promptPrice <= 1.5 // Example threshold
+             ModelFilter.PricingTiers.PREMIUM -> promptPrice > 1.5 // Example threshold
              else -> true // Default case if filter option is unexpected
          }
      }
-
 
     /**
      * Sorts the list of models based on the selected sort option.

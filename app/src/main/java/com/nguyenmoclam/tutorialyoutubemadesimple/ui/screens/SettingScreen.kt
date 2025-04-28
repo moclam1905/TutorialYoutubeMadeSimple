@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.NetworkWifi
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Storage
@@ -56,10 +55,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.SettingsItem
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 
@@ -70,17 +66,11 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 @Composable
 fun SettingScreen(
     viewModel: SettingsViewModel,
-    usageViewModel: UsageViewModel,
     navController: NavController
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
-    
-    // Collect states from UsageViewModel
-    val creditStatusState by usageViewModel.creditStatusState.collectAsStateWithLifecycle()
-    val tokenUsageSummaryState by usageViewModel.tokenUsageSummary.collectAsStateWithLifecycle()
-    val selectedTimeRange by usageViewModel.timeRange.collectAsStateWithLifecycle()
 
     // Set up the Google Sign-In activity result launcher
     val signInLauncher = rememberLauncherForActivityResult(

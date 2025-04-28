@@ -476,5 +476,14 @@
     <string name="no_model_selected">Chưa chọn mô hình</string>
     <string name="selected_model">Mô hình đã chọn</string>
     <string name="change_model">Thay đổi mô hình</string>
+    <string name="network_required">Yêu cầu kết nối mạng</string>
+    <string name="network_required_message">Cần có kết nối mạng để sử dụng tính năng này. Vui lòng kiểm tra cài đặt mạng của bạn và thử lại.</string>
+    <string name="api_key_required">Yêu cầu khóa API dịch vụ AI</string>
+    <string name="api_key_required_message">Cần có khóa API OpenRouter để sử dụng tính năng này. Vui lòng thiết lập khóa API trong phần Cài đặt.</string>
+    <string name="model_required">Yêu cầu chọn mô hình AI</string>
+    <string name="model_required_message">Vui lòng chọn một mô hình AI trong Cài đặt trước khi sử dụng tính năng này.</string>
+    <string name="go_to_settings">Đi tới Cài đặt</string>
+    <string name="ok">OK</string>
+    <string name="model_price_free">Miễn phí</string>
 
 </resources>

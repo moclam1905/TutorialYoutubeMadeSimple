@@ -2,10 +2,11 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class Message(
-    val role: String, 
+    val role: String,
     val content: String,
     val refusal: String? = null,
     val reasoning: String? = null
@@ -15,28 +16,28 @@ data class Message(
 data class Choice(
     val message: Message,
     val logprobs: String? = null,
-    @SerialName("finish_reason") val finishReason: String? = null,
-    @SerialName("native_finish_reason") val nativeFinishReason: String? = null,
+    val finish_reason: String? = null,
+    val native_finish_reason: String? = null,
     val index: Int? = null
 )
 
 @Serializable
 data class PromptTokensDetails(
-    @SerialName("cached_tokens") val cachedTokens: Int? = null
+    val cached_tokens: Int? = null
 )
 
 @Serializable
 data class CompletionTokensDetails(
-    @SerialName("reasoning_tokens") val reasoningTokens: Int? = null
+    val reasoning_tokens: Int? = null
 )
 
 @Serializable
 data class UsageInfo(
-    @SerialName("prompt_tokens") val promptTokens: Int? = null,
-    @SerialName("completion_tokens") val completionTokens: Int? = null,
-    @SerialName("total_tokens") val totalTokens: Int? = null,
-    @SerialName("prompt_tokens_details") val promptTokensDetails: PromptTokensDetails? = null,
-    @SerialName("completion_tokens_details") val completionTokensDetails: CompletionTokensDetails? = null
+    val prompt_tokens: Int? = null,
+    val completion_tokens: Int? = null,
+    val total_tokens: Int? = null,
+    val prompt_tokens_details: PromptTokensDetails? = null,
+    val completion_tokens_details: CompletionTokensDetails? = null
 )
 
 @Serializable
@@ -68,7 +69,7 @@ data class OpenRouterRequest(
 
 /**
  * Represents information about an AI model available through OpenRouter.
- * 
+ *
  * @property id Unique identifier for the model.
  * @property name Display name of the model.
  * @property contextLength Maximum token context length supported by the model.
@@ -123,7 +124,7 @@ data class LLMConfig(
 
 /**
  * Represents pricing information for a model.
- * 
+ *
  * @property prompt Price per token for input/prompt.
  * @property completion Price per token for output/completion.
  * @property request Price per request.
@@ -133,17 +134,18 @@ data class LLMConfig(
  */
 @Serializable
 data class ModelPricing(
-    val prompt: Double,
-    val completion: Double,
+    val prompt: String,
+    val completion: String,
     val request: String? = null,
     val image: String? = null,
-    @SerialName("web_search") val webSearch: String? = null,
-    @SerialName("internal_reasoning") val internalReasoning: String? = null
+    val web_search: String? = null,
+    val internal_reasoning: String? = null,
+    val input_cache_read: String? = null
 )
 
 /**
  * Represents a model from the OpenRouter API models listing.
- * 
+ *
  * @property id Unique identifier for the model.
  * @property name Display name of the model.
  * @property created Timestamp when the model was created.
@@ -160,15 +162,16 @@ data class OpenRouterModel(
     val name: String,
     val created: Long? = null,
     val description: String? = null,
-    @SerialName("context_length") val contextLength: Int,
+    val context_length: Int,
     val architecture: ModelArchitecture? = null,
     val pricing: ModelPricing,
-    @SerialName("top_provider") val topProvider: ModelTopProvider? = null,
+    val top_provider: ModelTopProvider? = null,
+    val per_request_limits: JsonElement? = null
 )
 
 /**
  * Represents architecture information for a model.
- * 
+ *
  * @property modality Type of modality (e.g., "text->text").
  * @property input_modalities List of input modalities supported.
  * @property output_modalities List of output modalities supported.
@@ -178,29 +181,29 @@ data class OpenRouterModel(
 @Serializable
 data class ModelArchitecture(
     val modality: String? = null,
-    @SerialName("input_modalities") val inputModalities: List<String> = emptyList(),
-    @SerialName("output_modalities") val outputModalities: List<String> = emptyList(),
+    val input_modalities: List<String> = emptyList(),
+    val output_modalities: List<String> = emptyList(),
     val tokenizer: String? = null,
-    @SerialName("instruct_type") val instructType: String? = null
+    val instruct_type: String? = null
 )
 
 /**
  * Represents information about a model's top provider.
- * 
+ *
  * @property context_length Maximum context length supported by this provider.
  * @property max_completion_tokens Maximum completion tokens supported.
  * @property is_moderated Whether the model is moderated.
  */
 @Serializable
 data class ModelTopProvider(
-    @SerialName("context_length") val contextLength: Int? = null,
-    @SerialName("max_completion_tokens") val maxCompletionTokens: Int? = null,
-    @SerialName("is_moderated") val isModerated: Boolean? = null
+    val context_length: Int? = null,
+    val max_completion_tokens: Int? = null,
+    val is_moderated: Boolean? = null
 )
 
 /**
  * Represents the response from the OpenRouter API's model listing endpoint.
- * 
+ *
  * @property data List of available models.
  */
 @Serializable

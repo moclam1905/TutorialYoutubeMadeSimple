@@ -1,5 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -110,6 +111,7 @@ fun FilterChipRow(
 /**
  * Card displaying model information.
  */
+@SuppressLint("DefaultLocale")
 @Composable
 fun ModelCard(
     model: ModelInfo,
@@ -229,7 +231,16 @@ fun ModelCard(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = if (model.isFree) "FREE" else "$${String.format("%.4f", model.promptPrice)}",
+                    text = if (model.isFree) {
+                        stringResource(R.string.model_price_free)
+                    } else {
+                        val formattedPrice = if (model.promptPrice > 0.0 && model.promptPrice < 0.0001) {
+                            String.format("~%.6f", model.promptPrice)
+                        } else {
+                            String.format("%.4f", model.promptPrice)
+                        }
+                        "$$formattedPrice"
+                    },
                     style = MaterialTheme.typography.titleSmall,
                     color = if (model.isFree) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )

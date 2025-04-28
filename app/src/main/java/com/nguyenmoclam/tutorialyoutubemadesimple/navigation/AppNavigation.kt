@@ -64,7 +64,6 @@ fun AppNavigation(
             val usageViewModel: UsageViewModel = hiltViewModel()
             SettingScreen(
                 viewModel = settingsViewModel,
-                usageViewModel = usageViewModel,
                 navController = navController
             )
         }
