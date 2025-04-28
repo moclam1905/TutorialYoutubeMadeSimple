@@ -24,7 +24,8 @@ class ModelFilter {
         NEWEST,             // Most recently released models
         PRICE_LOW_TO_HIGH,  // Cheapest models first
         PRICE_HIGH_TO_LOW,  // Most expensive models first
-        CONTEXT_HIGH_TO_LOW // Highest context length first
+        CONTEXT_HIGH_TO_LOW, // Highest context length first
+        MODERATED_FIRST     // Moderated models first
     }
     
     /**

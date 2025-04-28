@@ -485,5 +485,9 @@
     <string name="go_to_settings">Đi tới Cài đặt</string>
     <string name="ok">OK</string>
     <string name="model_price_free">Miễn phí</string>
+    <string name="sort_moderated_first">Ưu tiên mô hình đã kiểm duyệt</string>
+    <string name="models_available">mô hình khả dụng</string>
+    <string name="moderated">đã kiểm duyệt</string>
+    <string name="moderated_label">ĐÃ KIỂM DUYỆT</string>
 
 </resources>

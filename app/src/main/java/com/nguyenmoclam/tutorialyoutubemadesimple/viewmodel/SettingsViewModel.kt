@@ -512,6 +512,12 @@ class SettingsViewModel @Inject constructor(
                 // Fetch ALL models for now (assuming no API pagination support yet)
                 val modelsList = openRouterRepository.getAvailableModels(forceRefresh = true)
                 _allModels.value = modelsList
+                
+                // Update the default sort option to MODERATED_FIRST if not already set
+                if (settingsState.modelSortOption == ModelFilter.SortOption.TOP_WEEKLY) {
+                    settingsState = settingsState.copy(modelSortOption = ModelFilter.SortOption.MODERATED_FIRST)
+                }
+                
                 // _hasMoreModels.value = modelsList.size >= PAGE_SIZE // Update based on first page size
             } catch (e: Exception) {
                 _allModels.value = emptyList() // Clear on error
@@ -640,6 +646,10 @@ class SettingsViewModel @Inject constructor(
             ModelFilter.SortOption.PRICE_LOW_TO_HIGH -> models.sortedBy { it.promptPrice }
             ModelFilter.SortOption.PRICE_HIGH_TO_LOW -> models.sortedByDescending { it.promptPrice }
             ModelFilter.SortOption.CONTEXT_HIGH_TO_LOW -> models.sortedByDescending { it.contextLength }
+            ModelFilter.SortOption.MODERATED_FIRST -> models.sortedWith(
+                compareByDescending<ModelInfo> { it.isModerated }
+                    .thenBy { it.promptPrice }
+            )
         }
     }
 

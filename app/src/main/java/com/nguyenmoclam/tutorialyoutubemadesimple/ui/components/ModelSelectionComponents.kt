@@ -30,6 +30,9 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
@@ -109,7 +113,7 @@ fun FilterChipRow(
 }
 
 /**
- * Card displaying model information.
+ * Card displaying model information with improved UI/UX.
  */
 @SuppressLint("DefaultLocale")
 @Composable
@@ -123,25 +127,26 @@ fun ModelCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 1.dp
+            defaultElevation = if (isSelected) 3.dp else 1.dp
         ),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) 
-                MaterialTheme.colorScheme.primaryContainer 
-            else 
-                MaterialTheme.colorScheme.surface
+            containerColor = when {
+                isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                model.isModerated -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+                else -> MaterialTheme.colorScheme.surfaceContainer
+            }
         ),
-        border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
+        border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.Top
         ) {
-            // Provider Icon/Logo placeholder
             Box(
                 modifier = Modifier
+                    .padding(top = 4.dp)
                     .size(40.dp)
                     .background(
                         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -152,105 +157,146 @@ fun ModelCard(
                 Text(
                     text = model.providerName.take(1).uppercase(),
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
-            // Model information
+
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = model.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = model.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
-                // Provider name
+
                 Text(
                     text = model.providerName,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Feature badges row
+
+                Spacer(modifier = Modifier.height(10.dp))
+
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Context length badge
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.SwapVert,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.width(3.dp))
                         Text(
                             text = "${model.contextLength / 1000}K",
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            style = MaterialTheme.typography.labelMedium,
+                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
-                    // Free badge if applicable
+
                     if (model.isFree) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Filled.MoneyOff,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
+                            Spacer(Modifier.width(3.dp))
                             Text(
-                                text = "FREE",
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                text = stringResource(R.string.model_price_free),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
-                    
-                    // Input modality badges
-                    model.inputModalities.take(2).forEach { modality ->
+
+                    model.inputModalities.take(1).forEach { modality ->
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha=0.7f),
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         ) {
                             Text(
                                 text = modality.uppercase(),
                                 style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                             )
                         }
                     }
                 }
             }
-            
-            // Pricing information
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    text = if (model.isFree) {
-                        stringResource(R.string.model_price_free)
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            if (!model.isFree) {
+                 Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    val formattedPrice = if (model.promptPrice > 0.0 && model.promptPrice < 0.0001) {
+                        String.format("~%.6f", model.promptPrice)
                     } else {
-                        val formattedPrice = if (model.promptPrice > 0.0 && model.promptPrice < 0.0001) {
-                            String.format("~%.6f", model.promptPrice)
-                        } else {
-                            String.format("%.4f", model.promptPrice)
-                        }
-                        "$$formattedPrice"
-                    },
-                    style = MaterialTheme.typography.titleSmall,
-                    color = if (model.isFree) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-                
-                Text(
-                    text = stringResource(R.string.per_million_tokens),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                        String.format("%.4f", model.promptPrice)
+                    }
+                    Text(
+                        text = "$$formattedPrice",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = stringResource(R.string.per_million_tokens),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
+                }
             }
+        }
+    }
+}
+
+/**
+ * Displays the total count of models and additional information.
+ */
+@Composable
+fun ModelsCountHeader(
+    totalCount: Int,
+    moderatedCount: Int
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "$totalCount ${stringResource(R.string.models_available)}",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        
+        if (moderatedCount > 0) {
+            Text(
+                text = "$moderatedCount ${stringResource(R.string.moderated)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
@@ -325,6 +371,7 @@ fun ModelSelectionComponent(
                             ModelFilter.SortOption.PRICE_LOW_TO_HIGH -> stringResource(R.string.sort_price_low_high)
                             ModelFilter.SortOption.PRICE_HIGH_TO_LOW -> stringResource(R.string.sort_price_high_low)
                             ModelFilter.SortOption.CONTEXT_HIGH_TO_LOW -> stringResource(R.string.sort_context_high_low)
+                            ModelFilter.SortOption.MODERATED_FIRST -> stringResource(R.string.sort_moderated_first)
                         },
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -367,6 +414,13 @@ fun ModelSelectionComponent(
                         text = { Text(stringResource(R.string.sort_context_high_low)) },
                         onClick = {
                             onSetSortOption(ModelFilter.SortOption.CONTEXT_HIGH_TO_LOW)
+                            sortExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.sort_moderated_first)) },
+                        onClick = {
+                            onSetSortOption(ModelFilter.SortOption.MODERATED_FIRST)
                             sortExpanded = false
                         }
                     )
@@ -428,6 +482,18 @@ fun ModelSelectionComponent(
         }
         
         Spacer(modifier = Modifier.height(16.dp))
+        
+        // Add models count header
+        // Only show if not loading and there are models to display
+        if (!isLoading && models.isNotEmpty()) {
+            val moderatedCount = models.count { it.isModerated }
+            ModelsCountHeader(
+                totalCount = models.size,
+                moderatedCount = moderatedCount
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         
         // Model cards section
         // Show loading indicator if loading

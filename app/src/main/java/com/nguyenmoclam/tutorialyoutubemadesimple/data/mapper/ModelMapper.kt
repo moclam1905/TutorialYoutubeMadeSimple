@@ -33,6 +33,9 @@ object ModelMapper {
         // Check if model is free based on the parsed Double values
         val isFree = promptPriceDouble == 0.0 && completionPriceDouble == 0.0
         
+        // Check if model is moderated from the top_provider field
+        val isModerated = model.top_provider?.is_moderated ?: false
+        
         return ModelInfo(
             id = model.id,
             name = model.name,
@@ -43,7 +46,8 @@ object ModelMapper {
             inputModalities = inputModalities,
             outputModalities = outputModalities,
             providerName = providerName,
-            isFree = isFree // Use updated check
+            isFree = isFree, // Use updated check
+            isModerated = isModerated // Include moderation status
         )
     }
     

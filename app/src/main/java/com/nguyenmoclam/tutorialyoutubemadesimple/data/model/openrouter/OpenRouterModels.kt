@@ -80,6 +80,7 @@ data class OpenRouterRequest(
  * @property outputModalities List of output modalities supported by the model (e.g., text, code).
  * @property providerName Name of the model provider (e.g., Anthropic, OpenAI).
  * @property isFree Whether the model is available for free usage.
+ * @property isModerated Whether the model is moderated by the provider.
  */
 data class ModelInfo(
     val id: String,
@@ -91,7 +92,8 @@ data class ModelInfo(
     val inputModalities: List<String>,
     val outputModalities: List<String>,
     val providerName: String = "",
-    val isFree: Boolean = false
+    val isFree: Boolean = false,
+    val isModerated: Boolean = false
 )
 
 /**

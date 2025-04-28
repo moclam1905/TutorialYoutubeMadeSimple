@@ -373,7 +373,7 @@
     <string name="tag_selected_desc">Tag selected</string>
     <string name="model_not_selected">No model selected</string>
     <string name="selected_model_label">Selected Model</string>
-    <string name="search_models">Search models…</string>
+    <string name="search_models">Search models</string>
     <string name="input_modalities">Input Modalities</string>
     <string name="context_length">Context Length</string>
     <string name="pricing_tiers">Pricing Tiers</string>
@@ -382,14 +382,14 @@
     <string name="sort_price_low_high">Price: Low to High</string>
     <string name="sort_price_high_low">Price: High to Low</string>
     <string name="sort_context_high_low">Context: High to Low</string>
-    <string name="show_filters">Show Filters</string>
-    <string name="hide_filters">Hide Filters</string>
-    <string name="loading_models">Loading models…</string>
+    <string name="show_filters">Show filters</string>
+    <string name="hide_filters">Hide filters</string>
+    <string name="loading_models">Loading models...</string>
     <string name="no_models_found">No models found</string>
     <string name="refresh_models">Refresh Models</string>
     <string name="load_more_models">Load More Models</string>
     <string name="per_million_tokens">per million tokens</string>
-    <string name="enter_valid_api_key">Enter a valid API key to view available models</string>
+    <string name="enter_valid_api_key">Please enter a valid API key to view models</string>
     <string name="openrouter_help_title">How to Get an OpenRouter API Key</string>
     <string name="openrouter_instructions_title">Getting Started with OpenRouter</string>
     <string name="openrouter_step_1">1. Visit openrouter.ai and create an account</string>
@@ -465,7 +465,7 @@
     <string name="total_cost">Total Cost</string>
 
     <string name="click_refresh_to_load_models">Click refresh to load models</string>
-    <string name="no_matching_models">No matching models found</string>
+    <string name="no_matching_models">No matching models</string>
     <string name="api_key_needed_for_features">An API key is required to use these features</string>
     <string name="time_just_now">Just now</string>
     <string name="time_minutes_ago">%1$d minutes ago</string>
@@ -487,7 +487,12 @@
     <string name="model_required_message">Please select an AI model in Settings before using this feature.</string>
     <string name="go_to_settings">Go to Settings</string>
     <string name="ok">OK</string>
-    <string name="model_price_free">Free</string>
+    <string name="model_price_free">FREE</string>
 
+    <!-- Model selection strings -->
+    <string name="sort_moderated_first">Moderated First</string>
+    <string name="models_available">models available</string>
+    <string name="moderated">moderated</string>
+    <string name="moderated_label">MODERATED</string>
 
 </resources>

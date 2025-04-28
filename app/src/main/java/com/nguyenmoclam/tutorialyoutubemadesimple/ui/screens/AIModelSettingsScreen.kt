@@ -458,7 +458,7 @@ private fun AIModelSettingsContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(fraction = 0.95f)
+                    //.fillMaxHeight(fraction = 0.95f)
                     // Add padding inside the sheet
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     // Ensure content doesn't go under navigation bars inside the sheet

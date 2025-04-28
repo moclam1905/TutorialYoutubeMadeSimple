@@ -250,6 +250,12 @@ class ModelDataManager @Inject constructor(
             ModelFilter.SortOption.CONTEXT_HIGH_TO_LOW -> {
                 results.sortedByDescending { it.contextLength }
             }
+            ModelFilter.SortOption.MODERATED_FIRST -> {
+                results.sortedWith(
+                    compareByDescending<ModelInfo> { it.isModerated }
+                        .thenBy { it.promptPrice + it.completionPrice }
+                )
+            }
         }
     }
     
