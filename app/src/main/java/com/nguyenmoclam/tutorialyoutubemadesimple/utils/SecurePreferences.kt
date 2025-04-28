@@ -9,6 +9,7 @@ import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.content.edit
 
 /**
  * Utility class for securely storing and retrieving sensitive data such as API keys
@@ -60,7 +61,7 @@ class SecurePreferences @Inject constructor(
      * @param apiKey The API key to be stored
      */
     fun saveOpenRouterApiKey(apiKey: String) {
-        securePrefs.edit().putString(KEY_OPENROUTER_API_KEY, apiKey).apply()
+        securePrefs.edit { putString(KEY_OPENROUTER_API_KEY, apiKey) }
     }
 
     /**
@@ -76,7 +77,7 @@ class SecurePreferences @Inject constructor(
      * @param apiKey The API key to be stored
      */
     fun saveYouTubeApiKey(apiKey: String) {
-        securePrefs.edit().putString(KEY_YOUTUBE_API_KEY, apiKey).apply()
+        securePrefs.edit { putString(KEY_YOUTUBE_API_KEY, apiKey) }
     }
 
     /**
@@ -92,7 +93,7 @@ class SecurePreferences @Inject constructor(
      * @param modelId The model ID to be stored
      */
     fun saveSelectedModelId(modelId: String) {
-        securePrefs.edit().putString(KEY_SELECTED_MODEL_ID, modelId).apply()
+        securePrefs.edit { putString(KEY_SELECTED_MODEL_ID, modelId) }
     }
 
     /**
@@ -115,7 +116,7 @@ class SecurePreferences @Inject constructor(
      * Marks keys as migrated to prevent multiple migration attempts.
      */
     fun markKeysMigrated() {
-        securePrefs.edit().putBoolean(KEY_HAS_MIGRATED, true).apply()
+        securePrefs.edit { putBoolean(KEY_HAS_MIGRATED, true) }
     }
 
     /**
@@ -123,11 +124,11 @@ class SecurePreferences @Inject constructor(
      * Useful for logout or troubleshooting.
      */
     fun clearStoredKeys() {
-        securePrefs.edit()
-            .remove(KEY_OPENROUTER_API_KEY)
-            .remove(KEY_YOUTUBE_API_KEY)
-            .remove(KEY_SELECTED_MODEL_ID)
-            .remove(KEY_HAS_MIGRATED)
-            .apply()
+        securePrefs.edit {
+            remove(KEY_OPENROUTER_API_KEY)
+                .remove(KEY_YOUTUBE_API_KEY)
+                .remove(KEY_SELECTED_MODEL_ID)
+                .remove(KEY_HAS_MIGRATED)
+        }
     }
 } 
