@@ -77,9 +77,11 @@ fun AppNavigation(
         }
         // AI Model Settings Screen (New)
         composable(AppScreens.AIModelSettings.route) {
-            // ViewModels are typically scoped to the NavHost or provided via Hilt
-            // No need to explicitly pass them if using hiltViewModel() inside the screen
-            AIModelSettingsScreen(navController = navController)
+            // Pass the existing settingsViewModel instance down
+            AIModelSettingsScreen(
+                navController = navController,
+                settingsViewModel = settingsViewModel // Pass the instance here
+            )
         }
         // Quiz Detail Screen
         composable(
@@ -94,7 +96,8 @@ fun AppNavigation(
                 quizId = quizId.toString(),
                 navController = navController,
                 quizDetailViewModel = quizDetailViewModel,
-                quizViewModel = quizViewModel
+                quizViewModel = quizViewModel,
+                settingsViewModel = settingsViewModel
             )
         }
         // Quiz Setting Screen

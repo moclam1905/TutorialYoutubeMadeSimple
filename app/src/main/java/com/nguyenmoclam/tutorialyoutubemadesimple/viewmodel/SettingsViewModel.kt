@@ -41,6 +41,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -81,6 +82,10 @@ class SettingsViewModel @Inject constructor(
     // Settings state
     var settingsState by mutableStateOf(SettingsState())
         private set
+
+    // Add this state variable
+    private val _isInitialSettingsLoaded = MutableStateFlow(false)
+    val isInitialSettingsLoaded: StateFlow<Boolean> = _isInitialSettingsLoaded.asStateFlow() // Expose as StateFlow
 
     // --- Model List Management ---
 
@@ -153,40 +158,56 @@ class SettingsViewModel @Inject constructor(
 
         // Load stored API key and validate if exists
         viewModelScope.launch {
-            val storedApiKey = openRouterRepository.getStoredApiKey()
-            val storedModelId = securePreferences.getSelectedModelId()
-            
-            // Set selected model if stored
-            if (storedModelId.isNotEmpty()) {
-                settingsState = settingsState.copy(selectedModel = storedModelId)
-            }
-            
-            if (storedApiKey.isNotEmpty()) {
-                // Set the API key in state
-                settingsState = settingsState.copy(
-                    openRouterApiKey = storedApiKey
-                )
-                
-                // If we have a valid key, set validation state and load models
-                if (validateApiKeyFormat(storedApiKey) == ApiKeyValidationState.VALIDATING) {
-                    // Set initial state to validating
-                    settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.VALIDATING)
-                    
-                    try {
-                        // Validate the API key
-                        val validationState = openRouterRepository.validateApiKey(storedApiKey, false)
-                        settingsState = settingsState.copy(apiKeyValidationState = validationState)
-                        
-                        // If valid, fetch models and credits
-                        if (validationState == ApiKeyValidationState.VALID) {
-                            fetchModels()
-                            fetchCredits()
-                        }
-                    } catch (e: Exception) {
-                        // Handle error silently on startup
-                        settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.ERROR)
-                    }
+            try { // Add try-finally block
+                val storedApiKey = openRouterRepository.getStoredApiKey()
+                val storedModelId = securePreferences.getSelectedModelId()
+
+                var updatedState = settingsState // Create a temporary copy to batch updates
+
+                // Set selected model if stored
+                if (storedModelId.isNotEmpty()) {
+                    updatedState = updatedState.copy(selectedModel = storedModelId)
                 }
+
+                if (storedApiKey.isNotEmpty()) {
+                    updatedState = updatedState.copy(openRouterApiKey = storedApiKey)
+
+                    // Validate format first
+                    val formatValidation = validateApiKeyFormat(storedApiKey)
+                    if (formatValidation == ApiKeyValidationState.VALIDATING) { // Assuming VALIDATING means format is ok for now
+                        updatedState = updatedState.copy(apiKeyValidationState = ApiKeyValidationState.VALIDATING)
+                        // Update state *before* potential suspension point (network call)
+                        settingsState = updatedState
+
+                        // Now perform the actual validation network call
+                        val validationState = openRouterRepository.validateApiKey(storedApiKey, false)
+                        // Read the latest state again before copying, in case other flows updated it
+                        updatedState = settingsState.copy(apiKeyValidationState = validationState)
+
+                        if (validationState == ApiKeyValidationState.VALID) {
+                            // Fetch models and credits *after* API key is confirmed valid
+                            fetchModels() // Consider error handling/return values
+                            fetchCredits() // Consider error handling/return values
+                        }
+                    } else {
+                        // Handle case where format is invalid immediately
+                        updatedState = updatedState.copy(apiKeyValidationState = formatValidation) // Use the actual invalid state
+                    }
+                } else {
+                    // No API key stored
+                    updatedState = updatedState.copy(apiKeyValidationState = ApiKeyValidationState.NOT_VALIDATED)
+                }
+
+                // Update the final state once after all checks
+                settingsState = updatedState
+
+            } catch (e: Exception) {
+                // Handle potential errors during loading/validation
+                settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.ERROR) // Example error handling
+                // Log the exception, e.g., Log.e("SettingsViewModel", "Error loading initial settings", e)
+            } finally {
+                // Mark loading as complete regardless of success or failure
+                _isInitialSettingsLoaded.value = true
             }
         }
     }

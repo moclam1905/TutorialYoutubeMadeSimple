@@ -400,12 +400,12 @@ fun QuizDetailScreenContent(
     onShowFeedbackChange: (Boolean) -> Unit,
     isCorrect: Boolean,
     onIsCorrectChange: (Boolean) -> Unit,
-    answeredQuestions: Map<Int, String> // Pass down for QuizContent logic
+    answeredQuestions: Map<Int, String>, // Pass down for QuizContent logic
+    settingsViewModel: SettingsViewModel
 ) {
     val context = LocalContext.current
     val navController = LocalNavController.current // Get NavController from CompositionLocal
     val networkUtils = LocalNetworkUtils.current
-    val settingsVM = hiltViewModel<SettingsViewModel>()
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -588,13 +588,12 @@ fun QuizDetailScreenContent(
                                     }
                                 )
                             } else {
-                                // Sử dụng EmptyStateComponent cho Mind Map
                                 EmptyStateComponent(
                                     icon = Icons.Outlined.AccountTree,
                                     title = stringResource(R.string.mindmap_tab),
                                     description = stringResource(R.string.mindmap_generation_description),
                                     actionContent = {
-                                        Button(onClick = { 
+                                        Button(onClick = {
                                             // Check network connectivity first
                                             if (!networkUtils.isNetworkAvailable()) {
                                                 // Show network required dialog
@@ -606,7 +605,7 @@ fun QuizDetailScreenContent(
                                             }
                                             
                                             // Get settings from settings view model
-                                            val settingsState = settingsVM.settingsState
+                                            val settingsState = settingsViewModel.settingsState
                                             
                                             // Check for OpenRouter API key
                                             if (settingsState.apiKeyValidationState != ApiKeyValidationState.VALID) {
@@ -681,7 +680,8 @@ fun QuizDetailScreen(
     quizId: String,
     navController: NavHostController,
     quizDetailViewModel: QuizDetailViewModel = hiltViewModel(), // Use hiltViewModel here
-    quizViewModel: QuizCreationViewModel = hiltViewModel() // For creation flow state
+    quizViewModel: QuizCreationViewModel = hiltViewModel(), // For creation flow state,
+    settingsViewModel: SettingsViewModel
 ) {
     val quizIdLong = remember(quizId) { quizId.toLongOrNull() ?: -1L }
 
@@ -890,7 +890,8 @@ fun QuizDetailScreen(
                         onShowFeedbackChange = { showFeedback = it },
                         isCorrect = isCorrect,
                         onIsCorrectChange = { isCorrect = it },
-                        answeredQuestions = answeredQuestions // Pass down
+                        answeredQuestions = answeredQuestions, // Pass down
+                        settingsViewModel = settingsViewModel
                     )
                 }
             }

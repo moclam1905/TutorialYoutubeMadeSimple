@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch // Import launch
 @Composable
 fun AIModelSettingsScreen(
     navController: NavController,
-    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel,
     usageViewModel: UsageViewModel = hiltViewModel()
 ) {
     val state = settingsViewModel.settingsState

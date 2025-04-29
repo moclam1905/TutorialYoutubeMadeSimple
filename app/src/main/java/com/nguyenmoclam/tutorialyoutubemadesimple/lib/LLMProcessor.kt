@@ -11,6 +11,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoi
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -318,11 +319,20 @@ class LLMProcessor @Inject constructor(
                 // Handle the response
                 if (!response.isSuccessful) {
                     val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                    println("LLMProcessor: API Error ${response.code()}: $errorBody") // <-- Add logging
                     throw Exception("API error: ${response.code()} - $errorBody")
                 }
-                
-                val apiResponse = response.body() ?: throw Exception("Empty response body")
-                
+
+                val apiResponse = response.body() ?: run {
+                    println("LLMProcessor: API Error - Empty response body") // <-- Add logging
+                    throw Exception("Empty response body")
+                }
+
+                // Log the RAW successful response content BEFORE processing
+                val rawContent = apiResponse.choices.firstOrNull()?.message?.content ?: ""
+                println("LLMProcessor: Raw API Response Content: $rawContent") // <-- Add logging for raw content
+
+
                 // Reset unavailability status if the call succeeded
                 if (unavailableModels.containsKey(usedConfig.modelId)) {
                     unavailableModels.remove(usedConfig.modelId)
@@ -350,6 +360,8 @@ class LLMProcessor @Inject constructor(
                     }
                 } catch (e: Exception) {
                     // Log the error but don't fail the main operation
+                    println("LLMProcessor: Token Tracking Error: ${e.message}") // <-- Add logging
+
                     errorCallback?.invoke(LLMError.TrackingError("Failed to record token usage: ${e.message}"))
                 }
                 
@@ -357,6 +369,9 @@ class LLMProcessor @Inject constructor(
                 return apiResponse.choices.firstOrNull()?.message?.content ?: ""
             } catch (e: Exception) {
                 lastError = e
+                // Log the exception caught in this attempt
+                println("LLMProcessor: Exception during API call (Attempt ${retryCount + 1}): ${e::class.simpleName} - ${e.message}") // <-- Add logging
+
                 val errorType = classifyError(e)
                 
                 when (errorType) {
@@ -376,6 +391,9 @@ class LLMProcessor @Inject constructor(
                         }
                     }
                     ErrorType.TEMPORARY -> {
+                        // Log the retry attempt count correctly
+                        println("LLMProcessor: Temporary error. Retrying (${retryCount + 1}/$maxRetries)...") // <-- Add logging
+
                         // Decide whether to retry or break BEFORE incrementing count
                         if (retryCount < maxRetries) {
                             retryCount++ // Increment only if we are actually retrying
@@ -387,22 +405,17 @@ class LLMProcessor @Inject constructor(
                             
                             // Exponential backoff using the updated retryCount
                             val delayTime = 500L * (1 shl (retryCount - 1))
-                            kotlinx.coroutines.delay(delayTime)
+                            delay(delayTime)
                         } else {
-                            // Permanent error OR max retries reached
-                            if (errorType == ErrorType.PERMANENT) {
-                                // Log permanent error if it hasn't been thrown yet
-                                val permanentError = LLMError.PermanentError(
-                                    "Permanent error: ${lastError.message}. API call failed."
-                                )
-                                errorCallback?.invoke(permanentError)
-                                throw lastError // Throw the original error for permanent issues
-                            }
-                            // If it wasn't permanent, it means retries are exhausted
+                            // Max retries reached for temporary error
+                            println("LLMProcessor: Max retries reached for temporary error.") // <-- Add logging
                             break // Exit the loop
                         }
                     }
                     ErrorType.PERMANENT -> {
+                        // Permanent error, no point in retrying
+                        println("LLMProcessor: Permanent error encountered. Aborting.") // <-- Add logging
+
                         // Permanent error, no point in retrying
                         val permanentError = LLMError.PermanentError(
                             "Permanent error: ${e.message}. API call failed."
@@ -471,22 +484,41 @@ class LLMProcessor @Inject constructor(
      * @return A list of [Topic] objects, limited to 5 topics with 3 questions each
      */
     private fun parseTopicsFromJson(jsonResponse: String): List<Topic> {
+        println("LLMProcessor: JSON: $jsonResponse") // <-- Add logging here
         val cleanJson = if (jsonResponse.contains("```")) {
             jsonResponse.substringAfter("```json").substringBefore("```").trim()
         } else {
             jsonResponse.trim()
         }
 
+        // Log the cleaned JSON before parsing
+        println("LLMProcessor: Attempting to parse topics from JSON: $cleanJson") // <-- Add logging here
+
+
         return try {
             val json = Json.parseToJsonElement(cleanJson).jsonObject
             val topicsArray = json["topics"]?.jsonArray ?: return emptyList()
+
+            if (topicsArray == null) {
+                println("LLMProcessor: 'topics' array not found in JSON.") // <-- Add logging here
+                return emptyList()
+            }
+            if (topicsArray.isEmpty()) {
+                println("LLMProcessor: 'topics' array is empty.") // <-- Add logging here
+            }
 
             val limitedTopicsArray = if (topicsArray.size > 5) topicsArray.take(5) else topicsArray
 
             limitedTopicsArray.mapNotNull { topicElement ->
                 val topicObj = topicElement.jsonObject
-                val title = topicObj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
-                val questionsArray = topicObj["questions"]?.jsonArray ?: return@mapNotNull null
+                val title = topicObj["title"]?.jsonPrimitive?.content ?: run {
+                    println("LLMProcessor: Topic missing 'title'. Skipping.") // <-- Add logging here
+                    return@mapNotNull null
+                }
+                val questionsArray = topicObj["questions"]?.jsonArray ?: run {
+                    println("LLMProcessor: Topic '$title' missing 'questions'. Skipping.") // <-- Add logging here
+                    return@mapNotNull null
+                }
 
                 val limitedQuestionsArray =
                     if (questionsArray.size > 3) questionsArray.take(3) else questionsArray
@@ -495,9 +527,14 @@ class LLMProcessor @Inject constructor(
                     questionElement.jsonPrimitive.content.let { Question(it) }
                 }
                 Topic(title = title, questions = questions)
+            }.also {
+                if (it.isEmpty() && !topicsArray.isEmpty()) {
+                    println("LLMProcessor: Parsing resulted in empty list despite non-empty JSON array.") // <-- Add logging here
+                }
             }
         } catch (e: Exception) {
-            println("parseTopicsFromJson error: ${e.message}")
+            println("LLMProcessor: parseTopicsFromJson error: ${e.message}. Failed JSON: $cleanJson") // <-- Add logging here
+            errorCallback?.invoke(LLMError.PermanentError("Failed to parse topics JSON: ${e.message}")) // Optional: report error
             emptyList()
         }
     }

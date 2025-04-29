@@ -120,12 +120,12 @@ fun FilterChipRow(
 fun ModelCard(
     model: ModelInfo,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onModelSelected: (String) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable { onModelSelected(model.id) },
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isSelected) 3.dp else 1.dp
         ),
@@ -572,11 +572,11 @@ fun ModelSelectionComponent(
                     models
                 }
                 
-                items(filteredModels) { model ->
+                items(filteredModels, key = { it.id }) { model ->
                     ModelCard(
                         model = model,
-                        isSelected = selectedModelId == model.id,
-                        onClick = { onModelSelected(model.id) }
+                        isSelected = model.id == selectedModelId,
+                        onModelSelected = onModelSelected
                     )
                 }
                 

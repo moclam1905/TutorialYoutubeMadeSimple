@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -41,6 +42,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step1Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step2Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step3Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StepIndicator
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
@@ -57,6 +59,11 @@ fun CreateQuizScreen(
     settingsViewModel: SettingsViewModel
 ) {
     val settingsState = settingsViewModel.settingsState
+    // Collect the loading state
+    val isSettingsLoaded by settingsViewModel.isInitialSettingsLoaded.collectAsState()
+    // Get NetworkUtils from CompositionLocal
+    val networkUtils = LocalNetworkUtils.current
+
     // State for tracking the current step in the quiz creation process
     var currentStep by remember { mutableIntStateOf(1) }
 
@@ -105,10 +112,19 @@ fun CreateQuizScreen(
             }
 
             3 -> {
+                // Add this check: Only proceed if settings are loaded
+                if (!isSettingsLoaded) {
+                    coroutineScope.launch {
+                        // Consider showing a less intrusive message or a loading indicator
+                        snackbarHostState.showSnackbar("Settings are loading, please wait...")
+                    }
+                    return // Exit early if settings aren't ready
+                }
+
                 // Start quiz generation process
                 if (viewModel.generateSummary || viewModel.generateQuestions) {
-                    // Check network connectivity first
-                    if (!settingsState.isNetworkAvailable) {
+                    // Check network connectivity first using NetworkUtils directly
+                    if (!networkUtils.isNetworkAvailable()) {
                         // Show network required dialog
                         dialogTitle = dialogTitleNetwork
                         dialogMessage = dialogMessageNetwork
@@ -250,7 +266,8 @@ fun CreateQuizScreen(
                     currentStep = currentStep,
                     onBack = { moveToPreviousStep() },
                     onNext = { moveToNextStep() },
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    isSettingsLoaded = isSettingsLoaded
                 )
                 Spacer(
                     modifier = Modifier

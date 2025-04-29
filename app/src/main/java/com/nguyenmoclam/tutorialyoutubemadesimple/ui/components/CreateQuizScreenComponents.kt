@@ -524,7 +524,8 @@ fun NavigationButtons(
     currentStep: Int,
     onBack: () -> Unit,
     onNext: () -> Unit,
-    viewModel: QuizViewModel
+    viewModel: QuizViewModel,
+    isSettingsLoaded: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -542,18 +543,20 @@ fun NavigationButtons(
             Spacer(modifier = Modifier.weight(1f))
         }
 
+        val isNextEnabled = !viewModel.isLoading &&
+                when (currentStep) {
+                    1 -> viewModel.youtubeUrl.isNotBlank()
+                    2 -> viewModel.questionCountMode != "manual" ||
+                            (viewModel.manualQuestionCount.toIntOrNull() != null &&
+                                    viewModel.manualQuestionCount.toIntOrNull()!! in 1..20)
+
+                    3 -> (viewModel.generateSummary || viewModel.generateQuestions) && isSettingsLoaded
+                    else -> false
+                }
+
         Button(
             onClick = onNext,
-            enabled = !viewModel.isLoading &&
-                    when (currentStep) {
-                        1 -> viewModel.youtubeUrl.isNotBlank()
-                        2 -> viewModel.questionCountMode != "manual" ||
-                                (viewModel.manualQuestionCount.toIntOrNull() != null &&
-                                        viewModel.manualQuestionCount.toIntOrNull()!! in 1..20)
-
-                        3 -> viewModel.generateSummary || viewModel.generateQuestions
-                        else -> false
-                    }
+            enabled = isNextEnabled
         ) {
             Text(if (currentStep < 3) "Next" else "Create")
             if (currentStep < 3) {
