@@ -48,13 +48,25 @@ class GenerateQuizSummaryUseCase @Inject constructor(
         language: String = "English"
     ): SummaryResult = withContext(Dispatchers.IO) {
         try {
-            val topics = llmProcessor.extractTopicsAndQuestions(transcriptContent, title, language)
-                .takeIf { it.isNotEmpty() }
-                ?: return@withContext SummaryResult(
-                    content = "",
-                    error = "No topics could be extracted"
-                )
+            // --- LOGGING START ---
+            println("GenerateQuizSummaryUseCase: Attempting to extract topics for title: $title")
+            // --- LOGGING END ---
 
+            val topics = llmProcessor.extractTopicsAndQuestions(transcriptContent, title, language)
+
+            // --- LOGGING START ---
+            println("GenerateQuizSummaryUseCase: Extracted ${topics.size} topics.")
+            // --- LOGGING END ---
+
+            if (topics.isEmpty()) {
+                // --- LOGGING START ---
+                println("GenerateQuizSummaryUseCase: No topics extracted, returning error.")
+                // --- LOGGING END ---
+                return@withContext SummaryResult(
+                    content = "",
+                    error = "No topics could be extracted" // Giữ nguyên thông báo lỗi này
+                )
+            }
             val processedTopics = llmProcessor.processContent(topics, transcriptContent, language)
             // Store the processed topics for later retrieval
             lastProcessedTopics = processedTopics
@@ -85,6 +97,9 @@ class GenerateQuizSummaryUseCase @Inject constructor(
 
             SummaryResult(content = htmlContent)
         } catch (e: Exception) {
+            // --- LOGGING START ---
+            println("GenerateQuizSummaryUseCase: Exception occurred: ${e.message}")
+            // --- LOGGING END ---
             SummaryResult(content = "", error = e.message ?: "Unknown error generating summary")
         }
     }

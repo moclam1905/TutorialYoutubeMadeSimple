@@ -156,8 +156,10 @@ class LLMProcessor @Inject constructor(
             6. DO NOT include any markdown code blocks or additional text
             7. Ensure all strings are properly escaped
             8. All topics and questions MUST be in the specified language: $language
+            9. The response MUST be a valid JSON object following exactly this structure.
 
             Expected JSON format:
+            ```json
             {
                 "topics": [
                     {
@@ -170,11 +172,19 @@ class LLMProcessor @Inject constructor(
                     }
                 ]
             }
-
-            The response MUST be a valid JSON object following exactly this structure.
+            ```
+            
         """.trimIndent()
 
+        // --- LOGGING START ---
+        println("LLMProcessor: extractTopicsAndQuestions - Sending prompt:\n$prompt")
+        // --- LOGGING END ---
+
         val response = callLLM(prompt)
+
+        // --- LOGGING START ---
+        println("LLMProcessor: extractTopicsAndQuestions - Received raw response:\n$response")
+        // --- LOGGING END ---
         return parseTopicsFromJson(response)
     }
 
@@ -275,11 +285,23 @@ class LLMProcessor @Inject constructor(
         // Use the provided config or fall back to the current config
         var usedConfig = config ?: currentConfig
         
-        // Check if the selected model is unavailable and needs a fallback
+        // Check if the selected model is unavailable and needs a fallback (ONE attempt)
         if (isModelUnavailable(usedConfig.modelId)) {
-            val message = "Model ${usedConfig.modelId} is currently unavailable, falling back to default model"
+            val message = "Model ${usedConfig.modelId} is currently unavailable, falling back to default model IF NOT ALREADY DEFAULT"
             errorCallback?.invoke(LLMError.ModelUnavailable(usedConfig.modelId, message))
-            usedConfig = LLMConfig.DEFAULT
+            if (usedConfig.modelId != LLMConfig.DEFAULT.modelId) {
+                 println("LLMProcessor: Model ${usedConfig.modelId} unavailable, trying default ${LLMConfig.DEFAULT.modelId} once.")
+                usedConfig = LLMConfig.DEFAULT
+                // Check if the default is ALSO unavailable
+                if (isModelUnavailable(usedConfig.modelId)) {
+                     val defaultUnavailableMessage = "Default model ${usedConfig.modelId} is also currently unavailable."
+                     errorCallback?.invoke(LLMError.ModelUnavailable(usedConfig.modelId, defaultUnavailableMessage))
+                     throw Exception("Fallback model ${usedConfig.modelId} is also unavailable.")
+                }
+            } else {
+                 // Already using default, and it's unavailable
+                 throw Exception("Default model ${usedConfig.modelId} is unavailable.")
+            }
         }
         
         // Determine which API key to use
@@ -304,157 +326,122 @@ class LLMProcessor @Inject constructor(
         
         val authHeader = "Bearer $apiKey"
         
-        // Implement retry with exponential backoff
-        val maxRetries = 3
-        var retryCount = 0
-        var lastError: Throwable? = null
-        
-        while (retryCount <= maxRetries) {
-            try {
-                // Use withConnectionTimeout to apply user's timeout setting
-                val response = networkUtils.withConnectionTimeout {
-                    openRouterApi.createCompletion(authHeader, request)
-                }
-                
-                // Handle the response
-                if (!response.isSuccessful) {
-                    val errorBody = response.errorBody()?.string() ?: "Unknown error"
-                    println("LLMProcessor: API Error ${response.code()}: $errorBody") // <-- Add logging
-                    throw Exception("API error: ${response.code()} - $errorBody")
-                }
-
-                val apiResponse = response.body() ?: run {
-                    println("LLMProcessor: API Error - Empty response body") // <-- Add logging
-                    throw Exception("Empty response body")
-                }
-
-                // Check for error field in response body (even when HTTP status is 200)
-                apiResponse.error?.let { error ->
-                    val errorMessage = "API returned error: ${error.code} - ${error.message}"
-                    println("LLMProcessor: $errorMessage") // <-- Add logging
-                    
-                    // Determine error type based on error code
-                    val errorType = when (error.code) {
-                        429 -> ErrorType.TEMPORARY  // Rate limit error
-                        400, 401, 403, 404 -> ErrorType.PERMANENT
-                        else -> ErrorType.TEMPORARY
-                    }
-                    
-                    // Handle the error appropriately
-                    when (errorType) {
-                        ErrorType.MODEL_UNAVAILABLE -> {
-                            markModelUnavailable(usedConfig.modelId)
-                            throw Exception("model_not_found: ${error.message}")
-                        }
-                        ErrorType.TEMPORARY -> throw Exception("timeout: ${error.message}")
-                        ErrorType.PERMANENT -> throw Exception("${error.code}: ${error.message}")
-                    }
-                }
-
-                // Log the RAW successful response content BEFORE processing
-                val rawContent = apiResponse.choices.firstOrNull()?.message?.content ?: ""
-                println("LLMProcessor: Raw API Response Content: $rawContent") // <-- Add logging
-
-                // Reset unavailability status if the call succeeded
-                if (unavailableModels.containsKey(usedConfig.modelId)) {
-                    unavailableModels.remove(usedConfig.modelId)
-                }
-                
-                // Record token usage for successful responses
-                try {
-                    val usageInfo = apiResponse.usage
-                    if (usageInfo != null) {
-                        // Get model pricing information (you may need to implement a model price lookup function)
-                        val promptPrice = 0.0 // Default or get from a pricing service
-                        val completionPrice = 0.0 // Default or get from a pricing service
-                        
-                        // Create TokenUsage object first
-                        val tokenUsage = usageRepository.createTokenUsage(
-                            modelId = usedConfig.modelId,
-                            modelName = apiResponse.model ?: usedConfig.modelId, // Use actual model from response
-                            promptTokens = usageInfo.prompt_tokens ?: 0,
-                            completionTokens = usageInfo.completion_tokens ?: 0,
-                            promptPrice = promptPrice,
-                            completionPrice = completionPrice
-                        )
-                        // Then record it
-                        usageRepository.recordTokenUsage(tokenUsage)
-                    }
-                } catch (e: Exception) {
-                    // Log the error but don't fail the main operation
-                    println("LLMProcessor: Token Tracking Error: ${e.message}") // <-- Add logging
-
-                    errorCallback?.invoke(LLMError.TrackingError("Failed to record token usage: ${e.message}"))
-                }
-                
-                // Now apiResponse is OpenRouterResponse
-                return apiResponse.choices.firstOrNull()?.message?.content ?: ""
-            } catch (e: Exception) {
-                lastError = e
-                // Log the exception caught in this attempt
-                println("LLMProcessor: Exception during API call (Attempt ${retryCount + 1}): ${e::class.simpleName} - ${e.message}") // <-- Add logging
-
-                val errorType = classifyError(e)
-                
-                when (errorType) {
-                    ErrorType.MODEL_UNAVAILABLE -> {
-                        // Mark model as unavailable and try again with default model
-                        markModelUnavailable(usedConfig.modelId)
-                        val fallbackError = LLMError.ModelUnavailable(
-                            usedConfig.modelId,
-                            "Model unavailable: ${e.message}. Falling back to default model."
-                        )
-                        errorCallback?.invoke(fallbackError)
-                        
-                        // Only fallback if we're not already using the default model
-                        if (usedConfig.modelId != LLMConfig.DEFAULT.modelId) {
-                            usedConfig = LLMConfig.DEFAULT
-                            continue  // Skip the retry delay and retry immediately with fallback
-                        }
-                    }
-                    ErrorType.TEMPORARY -> {
-                        // Log the retry attempt count correctly
-                        println("LLMProcessor: Temporary error. Retrying (${retryCount + 1}/$maxRetries)...") // <-- Add logging
-
-                        // Decide whether to retry or break BEFORE incrementing count
-                        if (retryCount < maxRetries) {
-                            retryCount++ // Increment only if we are actually retrying
-                            // Log the retry attempt count correctly
-                            val retryError = LLMError.TemporaryError(
-                                "Temporary error: ${lastError.message}. Retrying ($retryCount/$maxRetries)"
-                            )
-                            errorCallback?.invoke(retryError)
-                            
-                            // Exponential backoff using the updated retryCount
-                            val delayTime = 500L * (1 shl (retryCount - 1))
-                            delay(delayTime)
-                        } else {
-                            // Max retries reached for temporary error
-                            println("LLMProcessor: Max retries reached for temporary error.") // <-- Add logging
-                            break // Exit the loop
-                        }
-                    }
-                    ErrorType.PERMANENT -> {
-                        // Permanent error, no point in retrying
-                        println("LLMProcessor: Permanent error encountered. Aborting.") // <-- Add logging
-
-                        // Permanent error, no point in retrying
-                        val permanentError = LLMError.PermanentError(
-                            "Permanent error: ${e.message}. API call failed."
-                        )
-                        errorCallback?.invoke(permanentError)
-                        throw e
-                    }
-                }
+        // Remove retry logic: Perform only one attempt
+        try {
+            // Use withConnectionTimeout to apply user's timeout setting
+            val response = networkUtils.withConnectionTimeout {
+                openRouterApi.createCompletion(authHeader, request)
             }
+            
+            // Handle the response
+            if (!response.isSuccessful) {
+                val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                println("LLMProcessor: API Error ${response.code()}: $errorBody") // <-- Add logging
+                // Throw exception immediately on unsuccessful response
+                throw Exception("API error: ${response.code()} - $errorBody")
+            }
+
+            val apiResponse = response.body() ?: run {
+                println("LLMProcessor: API Error - Empty response body") // <-- Add logging
+                 errorCallback?.invoke(LLMError.PermanentError("Empty response body")) // Report error
+                // Throw exception immediately on empty body
+                throw Exception("Empty response body")
+            }
+
+            // Check for error field in response body (even when HTTP status is 200)
+            apiResponse.error?.let { error ->
+                val errorMessage = "API returned error: ${error.code} - ${error.message}"
+                println("LLMProcessor: $errorMessage") // <-- Add logging
+
+                // Classify based on the error code in the response body
+                val errorType = when (error.code?.toString()?.lowercase()) {
+                    // Add specific codes that indicate model unavailability if known
+                    "model_not_found", "invalid_model" -> ErrorType.MODEL_UNAVAILABLE
+                    // Add specific codes indicating temporary issues if known
+                    "rate_limit_exceeded", "server_error" -> ErrorType.TEMPORARY
+                    // Treat most other API-reported errors as permanent
+                    else -> ErrorType.PERMANENT // Default to permanent for unknown body errors
+                }
+
+                 val llmError = when(errorType) {
+                     ErrorType.MODEL_UNAVAILABLE -> {
+                         markModelUnavailable(usedConfig.modelId) // Mark unavailable on error
+                         LLMError.ModelUnavailable(usedConfig.modelId, "Model unavailable reported by API: ${error.message}")
+                     }
+                     ErrorType.TEMPORARY -> LLMError.TemporaryError("Temporary error reported by API: ${error.message}")
+                     ErrorType.PERMANENT -> LLMError.PermanentError("Permanent error reported by API: ${error.code} - ${error.message}")
+                 }
+                 errorCallback?.invoke(llmError) // Report the classified error
+
+                // Throw exception immediately based on error field in response body
+                throw Exception(errorMessage)
+            }
+
+            // Log the RAW successful response content BEFORE processing
+            val rawContent = apiResponse.choices.firstOrNull()?.message?.content ?: ""
+            println("LLMProcessor: Raw API Response Content: $rawContent") // <-- Add logging
+
+            // Reset unavailability status if the call succeeded for this model
+            if (unavailableModels.containsKey(usedConfig.modelId)) {
+                 println("LLMProcessor: Model ${usedConfig.modelId} call successful, removing from unavailable list.")
+                unavailableModels.remove(usedConfig.modelId)
+            }
+            
+            // Record token usage for successful responses
+            try {
+                val usageInfo = apiResponse.usage
+                if (usageInfo != null) {
+                    // Get model pricing information (you may need to implement a model price lookup function)
+                    val promptPrice = 0.0 // Default or get from a pricing service
+                    val completionPrice = 0.0 // Default or get from a pricing service
+                    
+                    // Create TokenUsage object first
+                    val tokenUsage = usageRepository.createTokenUsage(
+                        modelId = usedConfig.modelId,
+                        modelName = apiResponse.model ?: usedConfig.modelId, // Use actual model from response
+                        promptTokens = usageInfo.prompt_tokens ?: 0,
+                        completionTokens = usageInfo.completion_tokens ?: 0,
+                        promptPrice = promptPrice,
+                        completionPrice = completionPrice
+                    )
+                    // Then record it
+                    usageRepository.recordTokenUsage(tokenUsage)
+                }
+            } catch (e: Exception) {
+                // Log the error but don't fail the main operation
+                println("LLMProcessor: Token Tracking Error: ${e.message}") // <-- Add logging
+                errorCallback?.invoke(LLMError.TrackingError("Failed to record token usage: ${e.message}"))
+            }
+            
+            // Now apiResponse is OpenRouterResponse
+            return rawContent
+        } catch (e: Exception) {
+            // Catch exceptions from network, timeout, API errors, empty body, body errors, or token tracking issues.
+            println("LLMProcessor: Exception during API call/processing: ${e::class.simpleName} - ${e.message}") // <-- Log the caught exception
+
+            // Classify the caught exception (could be network error, timeout, or exceptions thrown above)
+            val errorType = classifyError(e)
+
+            // Create the specific LLMError instance based on the classified error
+            val llmError = when(errorType) {
+                ErrorType.MODEL_UNAVAILABLE -> {
+                    markModelUnavailable(usedConfig.modelId) // Mark unavailable on error
+                    LLMError.ModelUnavailable(usedConfig.modelId, "Model unavailable: ${e.message}")
+                }
+                ErrorType.TEMPORARY -> LLMError.TemporaryError("Temporary error: ${e.message}")
+                ErrorType.PERMANENT -> LLMError.PermanentError("Permanent error: ${e.message}")
+                // Don't report TrackingError again if it was the cause
+                 else -> LLMError.PermanentError("Unhandled error: ${e.message}") // Fallback
+            }
+
+            // Avoid double-reporting specific errors already reported before throwing
+             if (e.message != "Empty response body" && e.message?.startsWith("API error:") != true && e.message?.startsWith("API returned error:") != true && llmError !is LLMError.TrackingError) {
+                 errorCallback?.invoke(llmError)
+             }
+
+            // Always re-throw the original exception to propagate the failure
+            throw e
         }
-        
-        // If we've reached here, all retries failed
-        val exhaustedError = LLMError.RetriesExhausted(
-            "Failed after $maxRetries retries: ${lastError?.message}"
-        )
-        errorCallback?.invoke(exhaustedError)
-        throw lastError ?: IllegalStateException("API call failed after retries")
     }
     
     /**
@@ -519,14 +506,14 @@ class LLMProcessor @Inject constructor(
 
         return try {
             val json = Json.parseToJsonElement(cleanJson).jsonObject
-            val topicsArray = json["topics"]?.jsonArray ?: return emptyList()
+            val topicsArray = json["topics"]?.jsonArray ?: json["topic"]?.jsonArray ?: return emptyList()
 
             if (topicsArray == null) {
-                println("LLMProcessor: 'topics' array not found in JSON.") // <-- Add logging here
+                println("LLMProcessor: 'topics' or 'topic' array not found in JSON.") // <-- Add logging here
                 return emptyList()
             }
             if (topicsArray.isEmpty()) {
-                println("LLMProcessor: 'topics' array is empty.") // <-- Add logging here
+                println("LLMProcessor: 'topics' or 'topic' array is empty.") // <-- Add logging here
             }
 
             val limitedTopicsArray = if (topicsArray.size > 5) topicsArray.take(5) else topicsArray
@@ -537,8 +524,8 @@ class LLMProcessor @Inject constructor(
                     println("LLMProcessor: Topic missing 'title'. Skipping.") // <-- Add logging here
                     return@mapNotNull null
                 }
-                val questionsArray = topicObj["questions"]?.jsonArray ?: run {
-                    println("LLMProcessor: Topic '$title' missing 'questions'. Skipping.") // <-- Add logging here
+                val questionsArray = topicObj["questions"]?.jsonArray ?: topicObj["question"]?.jsonArray ?: run {
+                    println("LLMProcessor: Topic '$title' missing 'questions' or 'question' key. Skipping.") // Updated log message
                     return@mapNotNull null
                 }
 
@@ -579,14 +566,14 @@ class LLMProcessor @Inject constructor(
 
         return try {
             val json = Json.parseToJsonElement(cleanJson).jsonObject
-            val topicsArray = json["topics"]?.jsonArray ?: return originalTopics
+            val topicsArray = json["topics"]?.jsonArray ?: json["topic"]?.jsonArray ?: return originalTopics
 
             val processedTopicsMap = topicsArray.associate { topicElement ->
                 val topicObj = topicElement.jsonObject
                 val originalTitle = topicObj["original_title"]?.jsonPrimitive?.content ?: ""
                 val rephrasedTitle =
                     topicObj["rephrased_title"]?.jsonPrimitive?.content ?: originalTitle
-                val questionsArray = topicObj["questions"]?.jsonArray
+                val questionsArray = topicObj["questions"]?.jsonArray ?: topicObj["question"]?.jsonArray
 
                 originalTitle to Pair(rephrasedTitle, questionsArray)
             }
@@ -596,7 +583,7 @@ class LLMProcessor @Inject constructor(
                     ?: return@map originalTopic
 
                 val processedQuestions = originalTopic.questions.map { originalQuestion ->
-                    val processedQuestion = questionsArray
+                    val processedQuestionObject = questionsArray
                         ?.find {
                             it.jsonObject["original"]?.jsonPrimitive?.content == originalQuestion.original
                         }
@@ -604,9 +591,10 @@ class LLMProcessor @Inject constructor(
 
                     Question(
                         original = originalQuestion.original,
-                        rephrased = processedQuestion?.get("rephrased")?.jsonPrimitive?.content
+                        rephrased = processedQuestionObject?.get("rephrased")?.jsonPrimitive?.content
                             ?: originalQuestion.original,
-                        answer = processedQuestion?.get("answer")?.jsonPrimitive?.content ?: ""
+                        answer = processedQuestionObject?.get("answer")?.jsonPrimitive?.content
+                            ?: ""
                     )
                 }
 
@@ -616,17 +604,24 @@ class LLMProcessor @Inject constructor(
                 )
             }
         } catch (e: Exception) {
-            println("parseBatchProcessedContent error: ${e.message}")
-            originalTopics
+            println("LLMProcessor: parseBatchProcessedContent error: ${e.message}. Failed JSON: $cleanJson") // <-- Add logging
+            errorCallback?.invoke(LLMError.PermanentError("Failed to parse batch processed content JSON: ${e.message}"))
+            originalTopics // Return original topics on failure
         }
     }
 
     private fun parseKeyPointsFromJson(jsonStr: String): List<String> {
+        // --- LOGGING START ---
+        println("LLMProcessor: Attempting to parse key points from JSON: $jsonStr")
+        // --- LOGGING END ---
         return try {
             val json = Json.parseToJsonElement(jsonStr).jsonObject
-            json["key_points"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
+            // Check for "key_points" or "key_point" key
+            val keyPointsArray = json["key_points"]?.jsonArray ?: json["key_point"]?.jsonArray
+            keyPointsArray?.map { it.jsonPrimitive.content } ?: emptyList()
         } catch (e: Exception) {
-            println("parseKeyPointsFromJson error: ${e.message}")
+            println("LLMProcessor: parseKeyPointsFromJson error: ${e.message}. Failed JSON: $jsonStr") // <-- Add logging
+            errorCallback?.invoke(LLMError.PermanentError("Failed to parse key points JSON: ${e.message}"))
             emptyList()
         }
     }
@@ -747,8 +742,12 @@ class LLMProcessor @Inject constructor(
     }
 
     private fun parseQuestionsFromJson(jsonStr: String): Pair<List<MultipleChoiceQuestion>, List<TrueFalseQuestion>> {
+        // --- LOGGING START ---
+        println("LLMProcessor: Attempting to parse quiz questions from JSON: $jsonStr")
+        // --- LOGGING END ---
         val json = Json.parseToJsonElement(jsonStr).jsonObject
-        val questionsArray = json["questions"]?.jsonArray ?: return Pair(emptyList(), emptyList())
+        // Check for "questions" or "question" key
+        val questionsArray = json["questions"]?.jsonArray ?: json["question"]?.jsonArray ?: return Pair(emptyList(), emptyList())
 
         val multipleChoiceQuestions = mutableListOf<MultipleChoiceQuestion>()
         val trueFalseQuestions = mutableListOf<TrueFalseQuestion>()
@@ -760,9 +759,13 @@ class LLMProcessor @Inject constructor(
                 // Multiple-choice
                 questionObj.containsKey("options") -> {
                     val question = questionObj["question"]?.jsonPrimitive?.content ?: return@forEach
-                    val optionsObj = questionObj["options"]?.jsonObject ?: return@forEach
-                    val correctAnswersArray =
-                        questionObj["correct_answers"]?.jsonArray ?: return@forEach
+                    // Check for "options" or "option" key
+                    val optionsObj = questionObj["options"]?.jsonObject ?: questionObj["option"]?.jsonObject ?: return@forEach
+                    // Check for "correct_answers" (plural array), "correct_answer" (singular array), or "correct_answer" (single string)
+                    val correctAnswersArray = questionObj["correct_answers"]?.jsonArray
+                        ?: questionObj["correct_answer"]?.jsonArray
+                        ?: questionObj["correct_answer"]?.jsonPrimitive?.content?.let { Json.parseToJsonElement("[\"$it\"]").jsonArray } // Handle single string answer
+                        ?: return@forEach
 
                     val options = optionsObj.entries.associate {
                         it.key to it.value.jsonPrimitive.content
@@ -833,8 +836,10 @@ class LLMProcessor @Inject constructor(
         8. DO NOT include any markdown code blocks or additional text.
         9. Ensure all strings are properly escaped.
         10. All key points MUST be in the specified language: $language
-
+        11. The response MUST be a valid JSON object following exactly this structure.
+        
         Expected JSON format:
+        ```json
         {
             "key_points": [
                 "First key point or main idea...",
@@ -843,8 +848,8 @@ class LLMProcessor @Inject constructor(
                 "And so on based on content complexity..."
             ]
         }
-
-        The response MUST be a valid JSON object following exactly this structure.
+        ```
+        
     """.trimIndent()
 
         val response = callLLM(prompt)
@@ -1018,17 +1023,24 @@ class LLMProcessor @Inject constructor(
         } else {
             jsonResponse.trim()
         }
+        // --- LOGGING START ---
+        println("LLMProcessor: Attempting to parse key points list from JSON: $cleanJson")
+        // --- LOGGING END ---
 
         return try {
             val json = Json.parseToJsonElement(cleanJson).jsonObject
-            val pointsArray = json["key_points"]?.jsonArray ?: return emptyList()
-            // Limit to at most 5 key points
-            val limitedPointsArray = if (pointsArray.size > 5) pointsArray.take(5) else pointsArray
+            // Check for "key_points" or "key_point" key
+            val pointsArray = json["key_points"]?.jsonArray ?: json["key_point"]?.jsonArray ?: return emptyList()
+
+            // Limit to at most 5 key points (consider if this limit is still desired or should be adjusted based on the prompt)
+            val limitedPointsArray = if (pointsArray.size > 10) pointsArray.take(10) else pointsArray // Adjusted limit based on extractKeyPointsForMindMap prompt
+
             limitedPointsArray.mapNotNull { pointElement ->
                 pointElement.jsonPrimitive.content.trim().takeIf { it.isNotEmpty() }
             }
         } catch (e: Exception) {
-            println("parseKeyPointsFromJson error: ${e.message}")
+            println("LLMProcessor: parseKeyPointsFromJsonToListString error: ${e.message}. Failed JSON: $cleanJson") // <-- Add logging
+            errorCallback?.invoke(LLMError.PermanentError("Failed to parse key points list JSON: ${e.message}"))
             emptyList()
         }
     }
