@@ -1,6 +1,5 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
@@ -41,13 +40,28 @@ data class UsageInfo(
 )
 
 @Serializable
+data class ErrorMetadata(
+    val headers: Map<String, String>? = null,
+    val provider_name: String? = null
+)
+
+@Serializable
+data class ErrorInfo(
+    val message: String,
+    val code: Int,
+    val metadata: ErrorMetadata? = null
+)
+
+@Serializable
 data class OpenRouterResponse(
     val id: String? = null,
     val provider: String? = null,
     val model: String? = null,
     val created: Long? = null,
-    val choices: List<Choice>,
-    val usage: UsageInfo? = null
+    val choices: List<Choice> = emptyList(),
+    val usage: UsageInfo? = null,
+    val error: ErrorInfo? = null,
+    val user_id: String? = null
 )
 
 /**

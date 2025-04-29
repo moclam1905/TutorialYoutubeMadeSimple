@@ -90,8 +90,8 @@ data class CreditStatus(
          */
         fun fromCreditsResponse(response: OpenRouterCreditsResponse): CreditStatus {
             // Access credits through the nested data object
-            val currentCredits = response.data.totalCredits ?: 0.0
-            val totalUsage = response.data.totalUsage ?: 0.0
+            val currentCredits = response.data.total_credits ?: 0.0
+            val totalUsage = response.data.total_usage ?: 0.0
             
             val status = when {
                 currentCredits <= CRITICAL_BALANCE_THRESHOLD -> BalanceStatus.CRITICAL
@@ -102,10 +102,10 @@ data class CreditStatus(
             return CreditStatus(
                 // Access all fields through the nested data object and provide defaults for missing fields
                 credits = currentCredits,
-                creditGranted = response.data.creditGranted ?: 0.0,
+                creditGranted = response.data.credit_granted ?: 0.0,
                 creditUsed = totalUsage,
                 currency = response.data.currency ?: "USD",
-                userId = response.data.userId ?: "",
+                userId = response.data.user_id ?: "",
                 status = status
             )
         }

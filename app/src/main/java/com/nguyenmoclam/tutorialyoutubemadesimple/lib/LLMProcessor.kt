@@ -328,10 +328,32 @@ class LLMProcessor @Inject constructor(
                     throw Exception("Empty response body")
                 }
 
+                // Check for error field in response body (even when HTTP status is 200)
+                apiResponse.error?.let { error ->
+                    val errorMessage = "API returned error: ${error.code} - ${error.message}"
+                    println("LLMProcessor: $errorMessage") // <-- Add logging
+                    
+                    // Determine error type based on error code
+                    val errorType = when (error.code) {
+                        429 -> ErrorType.TEMPORARY  // Rate limit error
+                        400, 401, 403, 404 -> ErrorType.PERMANENT
+                        else -> ErrorType.TEMPORARY
+                    }
+                    
+                    // Handle the error appropriately
+                    when (errorType) {
+                        ErrorType.MODEL_UNAVAILABLE -> {
+                            markModelUnavailable(usedConfig.modelId)
+                            throw Exception("model_not_found: ${error.message}")
+                        }
+                        ErrorType.TEMPORARY -> throw Exception("timeout: ${error.message}")
+                        ErrorType.PERMANENT -> throw Exception("${error.code}: ${error.message}")
+                    }
+                }
+
                 // Log the RAW successful response content BEFORE processing
                 val rawContent = apiResponse.choices.firstOrNull()?.message?.content ?: ""
-                println("LLMProcessor: Raw API Response Content: $rawContent") // <-- Add logging for raw content
-
+                println("LLMProcessor: Raw API Response Content: $rawContent") // <-- Add logging
 
                 // Reset unavailability status if the call succeeded
                 if (unavailableModels.containsKey(usedConfig.modelId)) {

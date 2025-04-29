@@ -5,26 +5,26 @@ import kotlinx.serialization.Serializable
 
 /**
  * Represents the inner data structure for the credits response.
- * 
- * @property totalCredits Total available credits.
- * @property totalUsage Total credits used.
- * @property creditGranted The amount of credit granted.
+ *
+ * @property total_credits Total available credits.
+ * @property total_usage Total credits used.
+ * @property credit_granted The amount of credit granted.
  * @property currency The currency of the credit.
- * @property userId The user ID associated with the credit.
+ * @property user_id The user ID associated with the credit.
  */
 @Serializable
 data class CreditsData(
-    @SerialName("total_credits") val totalCredits: Double? = null,
-    @SerialName("total_usage") val totalUsage: Double? = null,
-    @SerialName("credit_granted") val creditGranted: Double? = null,
-    @SerialName("currency") val currency: String? = null,
-    @SerialName("user_id") val userId: String? = null
+    val total_credits: Double? = null,
+    val total_usage: Double? = null,
+    val credit_granted: Double? = null,
+    val currency: String? = null,
+    val user_id: String? = null
 )
 
 /**
  * Represents the main response from the OpenRouter API's credits endpoint.
  * Contains the nested credit data.
- * 
+ *
  * @property data The nested object containing credit details.
  */
 @Serializable
@@ -34,14 +34,14 @@ data class OpenRouterCreditsResponse(
     companion object {
         /**
          * Creates a credits response from a generic map returned by the API.
-         * 
+         *
          * @param map The map containing the credits information.
          * @return A parsed OpenRouterCreditsResponse object.
          */
         fun fromMap(map: Map<String, Any>): OpenRouterCreditsResponse {
             // Ensure the nested 'data' map exists and is a Map
             val dataMap = map["data"] as? Map<*, *> ?: emptyMap<Any, Any>()
-            
+
             // Helper to safely extract values
             fun <T> getValue(key: String, default: T): T {
                 @Suppress("UNCHECKED_CAST")
@@ -54,11 +54,11 @@ data class OpenRouterCreditsResponse(
 
             return OpenRouterCreditsResponse(
                 data = CreditsData(
-                    totalCredits = getValue("total_credits", 0.0),
-                    totalUsage = getValue("total_usage", 0.0),
-                    creditGranted = getValue("credit_granted", 0.0),
+                    total_credits = getValue("total_credits", 0.0),
+                    total_usage = getValue("total_usage", 0.0),
+                    credit_granted = getValue("credit_granted", 0.0),
                     currency = getValue("currency", "USD"), // Default currency if missing
-                    userId = getValue("user_id", "")       // Default user ID if missing
+                    user_id = getValue("user_id", "")       // Default user ID if missing
                 )
             )
         }
