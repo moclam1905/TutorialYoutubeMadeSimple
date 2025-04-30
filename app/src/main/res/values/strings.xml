@@ -277,6 +277,7 @@
     <string name="transcript">Transcript</string>
     <string name="chapters">Chapters</string>
     <string name="search_in_transcript">Search in transcript…</string>
+    <string name="search_in_transcript_short">Search…</string>
     <string name="results_found">%1$d results found</string>
     <string name="no_results_found">No results found for &quot;%1$s&quot;</string>
     <string name="transcript_not_found">Transcript not found for this quiz</string>

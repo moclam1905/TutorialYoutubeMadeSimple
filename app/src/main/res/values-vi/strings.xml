@@ -489,5 +489,6 @@
     <string name="models_available">mô hình khả dụng</string>
     <string name="moderated">đã kiểm duyệt</string>
     <string name="moderated_label">ĐÃ KIỂM DUYỆT</string>
+    <string name="search_in_transcript_short">Tìm kiếm…</string>
 
 </resources>
