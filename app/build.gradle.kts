@@ -7,6 +7,7 @@ plugins {
     kotlin("plugin.serialization") version "2.0.0"
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    id("com.google.gms.google-services")
 }
 
 private val bytecodeVersion = JavaVersion.toVersion(libs.versions.jvmBytecode.get())
@@ -16,7 +17,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nguyenmoclam.tutorialyoutubemadesimple"
+        applicationId = "com.nguyenmoclam.InsightTube"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -133,6 +134,9 @@ dependencies {
 
     // Android SVG
     implementation (libs.androidsvg)
+
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation("com.google.firebase:firebase-analytics")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
