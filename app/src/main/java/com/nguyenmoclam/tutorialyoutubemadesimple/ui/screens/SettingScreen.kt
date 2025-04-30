@@ -45,19 +45,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.google.android.gms.auth.api.signin.GoogleSignIn
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.navigation.NavController
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
+import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.AppInfoSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.DataManagementSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.GoogleAccountSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.LanguageSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkSettings
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.SettingsItem
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.navigation.NavController
-import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
+import androidx.compose.runtime.collectAsState
 
 /**
  * SettingScreen composable that displays all app settings organized by category.
@@ -66,18 +67,24 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 @Composable
 fun SettingScreen(
     viewModel: SettingsViewModel,
+    authViewModel: AuthViewModel,
     navController: NavController
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
+    // Collect free calls state
+    val freeCallsRemaining by viewModel.freeCallsState.collectAsState()
+
     // Set up the Google Sign-In activity result launcher
     val signInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-        viewModel.handleSignInResult(task)
+        // Let AuthViewModel handle the sign-in result
+        val signInIntent = result.data ?: return@rememberLauncherForActivityResult
+        val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(signInIntent)
+        authViewModel.handleSignInResult(task)
     }
 
     Scaffold(
@@ -121,10 +128,11 @@ fun SettingScreen(
             ) {
                 GoogleAccountSettings(
                     state = state,
-                    onGoogleSignInChanged = viewModel::setGoogleSignIn,
+                    freeCallsRemaining = freeCallsRemaining,
                     onTranscriptModeChanged = viewModel::setTranscriptMode,
                     onClearAccountDataClick = viewModel::clearAccountData,
-                    onSignInClick = { signInLauncher.launch(viewModel.getSignInIntent()) }
+                    onSignInClick = { authViewModel.signIn()?.let { signInLauncher.launch(it) } },
+                    onSignOutClick = { authViewModel.signOut() }
                 )
             }
 

@@ -15,6 +15,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UserDataRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -142,6 +143,12 @@ abstract class RepositoryModule {
             networkUtils: NetworkUtils
         ): ApiKeyValidator {
             return ApiKeyValidator(openRouterApi, networkUtils)
+        }
+
+        @Provides
+        @Singleton
+        fun provideUserDataRepository(): UserDataRepository {
+            return UserDataRepository()
         }
     }
 }

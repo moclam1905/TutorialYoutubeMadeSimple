@@ -1,7 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.quiz
 
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
-import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
+// import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils // Remove NetworkUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -11,8 +11,8 @@ import javax.inject.Inject
  * This follows the Clean Architecture principle of having use cases represent business logic.
  */
 class GenerateQuestionsUseCase @Inject constructor(
-    private val llmProcessor: LLMProcessor,
-    private val networkUtils: NetworkUtils
+    private val llmProcessor: LLMProcessor
+    // private val networkUtils: NetworkUtils // Remove NetworkUtils
 ) {
     // Store the last extracted key points for later retrieval
     private var lastExtractedKeyPoints: List<String> = emptyList()
@@ -23,10 +23,11 @@ class GenerateQuestionsUseCase @Inject constructor(
     fun getLastExtractedKeyPoints(): List<String> = lastExtractedKeyPoints
 
     /**
-     * Data class to hold question generation results
+     * Data class to hold question generation results including free call usage
      */
     data class QuestionsResult(
         val content: String,
+        val wasFreeCallUsed: Boolean = false, // Add boolean flag
         val error: String? = null
     )
 
@@ -37,7 +38,7 @@ class GenerateQuestionsUseCase @Inject constructor(
      * @param language The language to generate questions in
      * @param questionType The type of questions to generate (multiple choice, true/false)
      * @param numberOfQuestions The number of questions to generate
-     * @return QuestionsResult containing the generated questions JSON or error message
+     * @return QuestionsResult containing the generated questions JSON, free call usage flag, or error message
      */
     suspend operator fun invoke(
         transcriptContent: String,
@@ -45,27 +46,40 @@ class GenerateQuestionsUseCase @Inject constructor(
         questionType: String,
         numberOfQuestions: Int
     ): QuestionsResult = withContext(Dispatchers.IO) {
+        var finalWasFreeCallUsed = false // Track if any step used a free call
         try {
-            // Check data saver settings before calling LLMProcessor
-            if (!networkUtils.shouldLoadContent(highQuality = true)) {
-                return@withContext QuestionsResult(
-                    content = "",
-                    error = "Network restricted by data saver settings"
-                )
-            }
-            val keyPoints = llmProcessor.extractKeyPoints(transcriptContent, language)
-            // Store the extracted key points for later retrieval
+            // Extract key points
+            val (keyPoints, keyPointsUsedFreeCall) = llmProcessor.extractKeyPoints(transcriptContent, language)
             lastExtractedKeyPoints = keyPoints
+            if (keyPointsUsedFreeCall) finalWasFreeCallUsed = true
 
-            val questionsJson = llmProcessor.generateQuestionsFromKeyPoints(
+            if (keyPoints.isEmpty()) {
+                // Return error or empty result depending on requirements
+                return@withContext QuestionsResult(content = "", error = "Could not extract key points.", wasFreeCallUsed = finalWasFreeCallUsed)
+            }
+
+            // Generate questions
+            val (questionsJson, questionsUsedFreeCall) = llmProcessor.generateQuestionsFromKeyPoints(
                 keyPoints = keyPoints,
                 language = language,
                 questionType = questionType,
                 numberOfQuestions = numberOfQuestions
             )
-            QuestionsResult(content = questionsJson)
+            if (questionsUsedFreeCall) finalWasFreeCallUsed = true
+
+            QuestionsResult(content = questionsJson, wasFreeCallUsed = finalWasFreeCallUsed)
+
         } catch (e: Exception) {
-            QuestionsResult(content = "", error = e.message ?: "Unknown error generating questions")
+            // Ensure wasFreeCallUsed is false on error? Or keep its value if keypoints succeeded?
+            // Let's reset to false on error for simplicity.
+            QuestionsResult(content = "", error = e.message ?: "Unknown error generating questions", wasFreeCallUsed = false)
         }
     }
+
+    // Helper to recreate prompt locally if needed (Alternative to exposing callLLM or prompt generation)
+    // private fun generateQuestionsPrompt(...) : String { ... }
 }
+
+// Need to add callLLMInternal or expose prompt generation in LLMProcessor, OR
+// Properly modify public methods in LLMProcessor to return the Pair.
+// Let's choose the latter: Edit LLMProcessor.generateQuestionsFromKeyPoints next.

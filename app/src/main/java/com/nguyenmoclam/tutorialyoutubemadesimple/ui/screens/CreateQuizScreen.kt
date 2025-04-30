@@ -48,6 +48,12 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.TrialRemainingWarning
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,13 +62,19 @@ fun CreateQuizScreen(
     viewModel: QuizViewModel,
     navController: NavHostController,
     quizViewModel: QuizCreationViewModel,
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    authViewModel: AuthViewModel
 ) {
     val settingsState = settingsViewModel.settingsState
     // Collect the loading state
     val isSettingsLoaded by settingsViewModel.isInitialSettingsLoaded.collectAsState()
     // Get NetworkUtils from CompositionLocal
     val networkUtils = LocalNetworkUtils.current
+    val context = LocalContext.current
+
+    // Collect user and free calls state from AuthViewModel (which exposes from UserDataRepository)
+    val user by authViewModel.userStateFlow.collectAsStateWithLifecycle()
+    val freeCallsRemaining by authViewModel.freeCallsStateFlow.collectAsStateWithLifecycle()
 
     // State for tracking the current step in the quiz creation process
     var currentStep by remember { mutableIntStateOf(1) }
@@ -220,6 +232,19 @@ fun CreateQuizScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
+                // Hiển thị cảnh báo số cuộc gọi miễn phí còn lại
+                if (user != null && (freeCallsRemaining ?: 0) in 0..3) {
+                    TrialRemainingWarning(
+                        callsRemaining = freeCallsRemaining ?: 0,
+                        onGetApiKey = {
+                            // Mở OpenRouter keys page
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://openrouter.ai/keys"))
+                            context.startActivity(intent)
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 StepIndicator(currentStep = currentStep, totalSteps = 3)
                 Spacer(modifier = Modifier.height(16.dp))
                 ErrorMessage(

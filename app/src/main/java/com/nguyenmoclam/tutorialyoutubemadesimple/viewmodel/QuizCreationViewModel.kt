@@ -29,10 +29,14 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.transcript.Save
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.TimeUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.state.QuizStateManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UserDataRepository
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.FirestoreRepository
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.FirestoreState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
@@ -105,7 +109,9 @@ class QuizCreationViewModel @Inject constructor(
     private val saveTopicsUseCase: SaveTopicsUseCase,
     private val saveKeyPointsUseCase: SaveKeyPointsUseCase,
     private val networkUtils: NetworkUtils,
-    private val quizStateManager: QuizStateManager
+    private val quizStateManager: QuizStateManager,
+    private val userDataRepository: UserDataRepository,
+    private val firestoreRepository: FirestoreRepository
 ) : ViewModel() {
 
     data class QuizState(
@@ -383,6 +389,22 @@ class QuizCreationViewModel @Inject constructor(
                         if (result.error != null) {
                             throw IllegalStateException(result.error)
                         }
+                        // Decrement free call if needed
+                        if (result.wasFreeCallUsed) {
+                            // Get userId from UserDataRepository
+                            val userId = userDataRepository.userStateFlow.first()?.uid
+                            if (userId != null) {
+                                // Call Firestore directly
+                                val decrementResult = firestoreRepository.decrementFreeCall(userId)
+                                // Update central state if successful
+                                if (decrementResult is FirestoreState.Success) {
+                                    userDataRepository.updateFreeCalls(decrementResult.data)
+                                } else if (decrementResult is FirestoreState.Error) {
+                                    // Handle error if needed (e.g., log, show message)
+                                    Log.e("QuizCreationVM", "Error decrementing free call: ${decrementResult.message}")
+                                }
+                            }
+                        }
                         state =
                             state.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_PROCESSING_75)
                         // Save key points extracted during question generation
@@ -469,6 +491,22 @@ class QuizCreationViewModel @Inject constructor(
 
                 if (questionsResult.error != null) {
                     throw IllegalStateException(questionsResult.error)
+                }
+                // Decrement free call if needed
+                if (questionsResult.wasFreeCallUsed) {
+                    // Get userId from UserDataRepository
+                    val userId = userDataRepository.userStateFlow.first()?.uid
+                    if (userId != null) {
+                        // Call Firestore directly
+                        val decrementResult = firestoreRepository.decrementFreeCall(userId)
+                        // Update central state if successful
+                        if (decrementResult is FirestoreState.Success) {
+                            userDataRepository.updateFreeCalls(decrementResult.data)
+                        } else if (decrementResult is FirestoreState.Error) {
+                            // Handle error if needed (e.g., log, show message)
+                            Log.e("QuizCreationVM", "Error decrementing free call: ${decrementResult.message}")
+                        }
+                    }
                 }
 
                 val questionsJson = questionsResult.content

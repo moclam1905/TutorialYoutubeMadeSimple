@@ -496,4 +496,23 @@
     <string name="moderated">moderated</string>
     <string name="moderated_label">MODERATED</string>
 
+    <!-- Login Screen -->
+    <string name="signing_in">Signing in…</string>
+    <string name="login_welcome_message">Welcome to YouTube Tutorial Made Simple - your personalized learning companion</string>
+    <string name="free_trial_offer">FREE TRIAL: 10 AI Calls</string>
+    <string name="free_trial_details">Sign in with Google to get 10 free AI API calls. Your trial is linked to your account and won\'t reset on app reinstall.</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+
+    <!-- Trial Exhausted Dialog -->
+    <string name="trial_exhausted_title">Free Trial Exhausted</string>
+    <string name="trial_exhausted_message">Your 10 free API calls have been used. To continue using the app\'s advanced features, please enter your OpenRouter API key.</string>
+    <string name="trial_exhausted_api_key_prompt">Get your free API key from openrouter.ai</string>
+    <string name="get_api_key_button">Get API Key</string>
+    <string name="open_settings_button">Open Settings</string>
+    <string name="trial_0_remaining">0/10 free calls remaining</string>
+    <string name="trial_remaining_low">%1$d/10 free calls remaining</string>
+    <string name="trial_remaining_normal">%1$d/10 free calls remaining</string>
+    <string name="trial_get_own_key">Get your own API key when trial ends</string>
+    <string name="free_calls_remaining">%1$d free calls remaining</string>
+
 </resources>

@@ -491,4 +491,22 @@
     <string name="moderated_label">ĐÃ KIỂM DUYỆT</string>
     <string name="search_in_transcript_short">Tìm kiếm…</string>
 
+    <string name="signing_in">Đang đăng nhập…</string>
+    <string name="login_welcome_message">Chào mừng đến với YouTube Tutorial Made Simple – người bạn đồng hành học tập cá nhân hóa của bạn</string>
+    <string name="free_trial_offer">DÙNG THỬ MIỄN PHÍ: 10 lần gọi AI</string>
+    <string name="free_trial_details">Đăng nhập bằng Google để nhận 10 lần gọi API AI miễn phí. Phiên dùng thử được liên kết với tài khoản của bạn và sẽ không bị đặt lại khi cài lại ứng dụng.</string>
+    <string name="sign_in_with_google">Đăng nhập bằng Google</string>
+
+    <!-- Trial Exhausted Dialog -->
+    <string name="trial_exhausted_title">Hết lượt dùng thử miễn phí</string>
+    <string name="trial_exhausted_message">Bạn đã sử dụng hết 10 lượt gọi API miễn phí. Để tiếp tục sử dụng các tính năng nâng cao của ứng dụng, vui lòng nhập khóa API OpenRouter của bạn.</string>
+    <string name="trial_exhausted_api_key_prompt">Lấy khóa API miễn phí từ openrouter.ai</string>
+    <string name="get_api_key_button">Lấy khóa API</string>
+    <string name="open_settings_button">Mở cài đặt</string>
+    <string name="trial_0_remaining">Còn lại 0/10 lượt miễn phí</string>
+    <string name="trial_remaining_low">Còn lại %1$d/10 lượt miễn phí</string>
+    <string name="trial_remaining_normal">Còn lại %1$d/10 lượt miễn phí</string>
+    <string name="trial_get_own_key">Khi hết lượt dùng thử, hãy sử dụng khóa API của riêng bạn</string>
+    <string name="free_calls_remaining">Còn lại %1$d lượt gọi miễn phí</string>
+
 </resources>

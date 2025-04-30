@@ -1,8 +1,9 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.di
 
+import android.content.Context
 import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.LLMConfig
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UsageRepository
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UserDataRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.LLMProcessor
 import com.nguyenmoclam.tutorialyoutubemadesimple.lib.YouTubeTranscriptLight
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
@@ -10,6 +11,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -29,6 +31,8 @@ object ServiceModule {
      * @param openRouterApi The OpenRouterApi instance for making API calls
      * @param securePreferences The SecurePreferences instance for secure API key storage
      * @param usageRepository The UsageRepository instance for managing usage data
+     * @param userDataRepository The UserDataRepository instance for shared user state
+     * @param context The application context for error handling
      * @return The LLMProcessor instance
      */
     @Provides
@@ -37,9 +41,19 @@ object ServiceModule {
         networkUtils: NetworkUtils,
         openRouterApi: OpenRouterApi,
         securePreferences: SecurePreferences,
-        usageRepository: UsageRepository
+        usageRepository: UsageRepository,
+        userDataRepository: UserDataRepository,
+        @ApplicationContext context: Context
     ): LLMProcessor {
-        return LLMProcessor(networkUtils, openRouterApi, securePreferences, usageRepository, null)
+        return LLMProcessor(
+            networkUtils = networkUtils, 
+            openRouterApi = openRouterApi, 
+            securePreferences = securePreferences, 
+            usageRepository = usageRepository, 
+            userDataRepository = userDataRepository,
+            initialConfig = null, 
+            context = context
+        )
     }
 
     /**

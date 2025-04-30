@@ -1,22 +1,28 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.lib
 
+import android.content.Context
+import com.nguyenmoclam.tutorialyoutubemadesimple.BuildConfig
 import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.LLMConfig
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.Message
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterRequest
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UsageRepository
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UserDataRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Question
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.content.Topic
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.MultipleChoiceQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQuestion
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
+
+/** Custom exception for trial exhaustion */
+class TrialExhaustedException(message: String) : Exception(message)
 
 /**
  * Processes YouTube video content using Language Learning Models (LLM) to extract and simplify topics and questions.
@@ -33,7 +39,9 @@ class LLMProcessor @Inject constructor(
     private val openRouterApi: OpenRouterApi,
     private val securePreferences: SecurePreferences,
     private val usageRepository: UsageRepository,
-    initialConfig: LLMConfig? = null
+    private val userDataRepository: UserDataRepository,
+    initialConfig: LLMConfig? = null,
+    private val context: Context
 ) {
     /**
      * The current LLM configuration being used for API calls.
@@ -180,12 +188,12 @@ class LLMProcessor @Inject constructor(
         println("LLMProcessor: extractTopicsAndQuestions - Sending prompt:\n$prompt")
         // --- LOGGING END ---
 
-        val response = callLLM(prompt)
+        val (responseContent, _) = callLLM(prompt, null) // Deconstruct Pair, ignore Boolean for now
 
         // --- LOGGING START ---
-        println("LLMProcessor: extractTopicsAndQuestions - Received raw response:\n$response")
+        println("LLMProcessor: extractTopicsAndQuestions - Received raw response:\n$responseContent")
         // --- LOGGING END ---
-        return parseTopicsFromJson(response)
+        return parseTopicsFromJson(responseContent)
     }
 
     /**
@@ -261,30 +269,79 @@ class LLMProcessor @Inject constructor(
             ```
         """.trimIndent()
 
-        val response = callLLM(prompt)
-        return parseBatchProcessedContent(topics, response)
+        val (responseContent, _) = callLLM(prompt, null) // Deconstruct Pair
+        return parseBatchProcessedContent(topics, responseContent)
+    }
+
+    /**
+     * Checks API key status and free trial availability.
+     * Returns the API key to use (app's shared key or user's key).
+     * Throws TrialExhaustedException if trial is over and no user key is provided.
+     * Throws Exception for other missing key scenarios.
+     * Sets the shouldDecrementFreeTrial flag.
+     */
+    private suspend fun checkApiKeyAndTrial(
+        config: LLMConfig
+    ): Pair<String, Boolean> {
+        // Get user state from repository
+        val user = userDataRepository.userStateFlow.first() // Use .first() to get current value in suspend fun
+        val freeCallsRemaining = userDataRepository.freeCallsStateFlow.first()
+        
+        var shouldDecrementFreeTrial = false
+
+        val apiKey = if (user != null) {
+            // User is logged in, check free calls remaining
+            val callsLeft = freeCallsRemaining ?: 0
+
+            if (callsLeft > 0) {
+                // Use app's shared key for free trial
+                shouldDecrementFreeTrial = true
+                BuildConfig.OPENROUTER_API_KEY
+            } else {
+                // No free calls remaining, check for user key
+                val userApiKey = securePreferences.getOpenRouterApiKey()
+                if (userApiKey.isBlank()) {
+                    // No user API key provided - throw specific exception
+                    throw TrialExhaustedException("Free trial exhausted and no API key provided. Please enter your OpenRouter API key in settings.")
+                }
+                userApiKey // Use user's key
+            }
+        } else if (config.apiKey.isNotBlank()) {
+            // Use config-provided key if no user logged in
+            config.apiKey
+        } else {
+            // Fall back to stored user key if no user logged in and no config key
+            val userApiKey = securePreferences.getOpenRouterApiKey()
+            if (userApiKey.isBlank()) {
+                throw Exception("No API key available. Please sign in for free trial or provide your OpenRouter API key.")
+            }
+            userApiKey
+        }
+        return Pair(apiKey, shouldDecrementFreeTrial)
     }
 
     /**
      * Processes a prompt through the configured LLM to get a response.
-     * Handles retries, error classification, and model fallback.
-     * 
+     * Handles retries, error classification, model fallback, and free trial tracking.
+     *
      * @param prompt The prompt to send to the LLM.
      * @param config Optional configuration override for this specific call.
-     * @return The LLM's response as a string.
+     * @return A Pair containing the LLM's response content (String) and a Boolean indicating if a free trial call was successfully used.
+     * @throws TrialExhaustedException If the free trial is exhausted and no user key is provided.
+     * @throws Exception For other API errors or configuration issues.
      */
     private suspend fun callLLM(
         prompt: String,
         config: LLMConfig? = null
-    ): String {
+    ): Pair<String, Boolean> {
         // Check if content should not be loaded based on data saver settings
         if (!networkUtils.shouldLoadContent(highQuality = true)) {
             throw IllegalStateException("Network restricted by data saver settings")
         }
-        
+
         // Use the provided config or fall back to the current config
         var usedConfig = config ?: currentConfig
-        
+
         // Check if the selected model is unavailable and needs a fallback (ONE attempt)
         if (isModelUnavailable(usedConfig.modelId)) {
             val message = "Model ${usedConfig.modelId} is currently unavailable, falling back to default model IF NOT ALREADY DEFAULT"
@@ -303,19 +360,14 @@ class LLMProcessor @Inject constructor(
                  throw Exception("Default model ${usedConfig.modelId} is unavailable.")
             }
         }
-        
-        // Determine which API key to use
-        val apiKey = if (usedConfig.apiKey.isNotBlank()) {
-            usedConfig.apiKey
-        } else {
-            // Get API key from secure storage
-            securePreferences.getOpenRouterApiKey()
-        }
-        
+
+        // Check API key and trial status - This might throw TrialExhaustedException or other Exceptions
+        val (apiKey, shouldDecrementFreeTrial) = checkApiKeyAndTrial(usedConfig)
+
         val messages = listOf(
             Message(role = "user", content = prompt)
         )
-        
+
         val request = OpenRouterRequest(
             model = usedConfig.modelId,
             messages = messages,
@@ -323,16 +375,15 @@ class LLMProcessor @Inject constructor(
             temperature = usedConfig.temperature,
             top_p = usedConfig.topP
         )
-        
+
         val authHeader = "Bearer $apiKey"
-        
-        // Remove retry logic: Perform only one attempt
+
         try {
             // Use withConnectionTimeout to apply user's timeout setting
             val response = networkUtils.withConnectionTimeout {
                 openRouterApi.createCompletion(authHeader, request)
             }
-            
+
             // Handle the response
             if (!response.isSuccessful) {
                 val errorBody = response.errorBody()?.string() ?: "Unknown error"
@@ -386,7 +437,7 @@ class LLMProcessor @Inject constructor(
                  println("LLMProcessor: Model ${usedConfig.modelId} call successful, removing from unavailable list.")
                 unavailableModels.remove(usedConfig.modelId)
             }
-            
+
             // Record token usage for successful responses
             try {
                 val usageInfo = apiResponse.usage
@@ -394,7 +445,7 @@ class LLMProcessor @Inject constructor(
                     // Get model pricing information (you may need to implement a model price lookup function)
                     val promptPrice = 0.0 // Default or get from a pricing service
                     val completionPrice = 0.0 // Default or get from a pricing service
-                    
+
                     // Create TokenUsage object first
                     val tokenUsage = usageRepository.createTokenUsage(
                         modelId = usedConfig.modelId,
@@ -412,11 +463,15 @@ class LLMProcessor @Inject constructor(
                 println("LLMProcessor: Token Tracking Error: ${e.message}") // <-- Add logging
                 errorCallback?.invoke(LLMError.TrackingError("Failed to record token usage: ${e.message}"))
             }
-            
-            // Now apiResponse is OpenRouterResponse
-            return rawContent
+
+            // Return content and whether a free call was used
+            return Pair(rawContent, shouldDecrementFreeTrial)
+        } catch (e: TrialExhaustedException) {
+            // Re-throw the specific exception for the caller to handle
+            println("LLMProcessor: Trial Exhausted: ${e.message}")
+            throw e
         } catch (e: Exception) {
-            // Catch exceptions from network, timeout, API errors, empty body, body errors, or token tracking issues.
+            // Catch other exceptions from network, timeout, API errors, empty body, body errors, or token tracking issues.
             println("LLMProcessor: Exception during API call/processing: ${e::class.simpleName} - ${e.message}") // <-- Log the caught exception
 
             // Classify the caught exception (could be network error, timeout, or exceptions thrown above)
@@ -626,7 +681,10 @@ class LLMProcessor @Inject constructor(
         }
     }
 
-    suspend fun extractKeyPoints(transcript: String, language: String): List<String> {
+    suspend fun extractKeyPoints(
+        transcript: String,
+        language: String
+    ): Pair<List<String>, Boolean> {
         val prompt = """
             You are an expert content analyzer. Given a YouTube video transcript, identify the key points or important facts discussed in the video. These key points will be used to generate questions later.
 
@@ -649,14 +707,15 @@ class LLMProcessor @Inject constructor(
             Ensure the response is a valid JSON object following the specified structure.
         """.trimIndent()
 
-        val response = callLLM(prompt)
-        val cleanJson = if (response.contains("```")) {
-            response.substringAfter("```json").substringBefore("```").trim()
+        val (responseContent, wasFreeCallUsed) = callLLM(prompt, null)
+        val cleanJson = if (responseContent.contains("```")) {
+            responseContent.substringAfter("```json").substringBefore("```").trim()
         } else {
-            response.trim()
+            responseContent.trim()
         }
 
-        return parseKeyPointsFromJson(cleanJson)
+        val keyPoints = parseKeyPointsFromJson(cleanJson)
+        return Pair(keyPoints, wasFreeCallUsed)
     }
 
     suspend fun generateQuestionsFromKeyPoints(
@@ -664,7 +723,7 @@ class LLMProcessor @Inject constructor(
         language: String,
         questionType: String,
         numberOfQuestions: Int
-    ): String {
+    ): Pair<String, Boolean> {
         val keyPointsText = keyPoints.joinToString("\n")
         val prompt = """
             You are an expert in creating educational questions. Given a list of key points from a YouTube video transcript, generate questions based on these key points. The questions should be in the specified language, of the specified type, and limited to the specified number.
@@ -723,7 +782,8 @@ class LLMProcessor @Inject constructor(
             Ensure the response is a valid JSON object following the specified structure.
         """.trimIndent()
 
-        return callLLM(prompt)
+        // Call callLLM and return its result directly
+        return callLLM(prompt, null)
     }
 
     fun parseQuizQuestions(jsonResponse: String): Pair<List<MultipleChoiceQuestion>, List<TrueFalseQuestion>> {
@@ -852,8 +912,8 @@ class LLMProcessor @Inject constructor(
         
     """.trimIndent()
 
-        val response = callLLM(prompt)
-        return parseKeyPointsFromJsonToListString(response)
+        val (responseContent, _) = callLLM(prompt, null)
+        return parseKeyPointsFromJsonToListString(responseContent)
     }
 
     /**
@@ -914,16 +974,16 @@ class LLMProcessor @Inject constructor(
         The response MUST contain only the Mermaid mind map code in the format above without any styling, class definitions, or node IDs.
     """.trimIndent()
 
-        val response = callLLM(prompt)
+        val (responseContent, _) = callLLM(prompt, null)
         // Extract the Mermaid code block content from the LLM response
-        val code = if (response.contains("```")) {
-            if (response.contains("```mermaid")) {
-                response.substringAfter("```mermaid").substringBefore("```").trim()
+        val code = if (responseContent.contains("```")) {
+            if (responseContent.contains("```mermaid")) {
+                responseContent.substringAfter("```mermaid").substringBefore("```").trim()
             } else {
-                response.substringAfter("```").substringBefore("```").trim()
+                responseContent.substringAfter("```").substringBefore("```").trim()
             }
         } else {
-            response.trim()
+            responseContent.trim()
         }
         return code
     }
@@ -967,16 +1027,16 @@ class LLMProcessor @Inject constructor(
         The response should contain only the corrected Mermaid mindmap code.
         """.trimIndent()
 
-        val response = callLLM(prompt)
+        val (responseContent, _) = callLLM(prompt, null)
         // Extract the Mermaid code from the LLM response
-        val fixedCode = if (response.contains("```")) {
-            if (response.contains("```mermaid")) {
-                response.substringAfter("```mermaid").substringBefore("```").trim()
+        val fixedCode = if (responseContent.contains("```")) {
+            if (responseContent.contains("```mermaid")) {
+                responseContent.substringAfter("```mermaid").substringBefore("```").trim()
             } else {
-                response.substringAfter("```").substringBefore("```").trim()
+                responseContent.substringAfter("```").substringBefore("```").trim()
             }
         } else {
-            response.trim()
+            responseContent.trim()
         }
         return fixedCode
     }

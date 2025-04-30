@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -43,48 +42,14 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsState
 import kotlin.math.log10
 import kotlin.math.pow
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ContactSupport
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material.icons.filled.SmartToy
-import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.TextField
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.CreditStatus
-import androidx.compose.ui.text.style.TextAlign
-import java.util.*
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.SearchOff
-import androidx.compose.material3.FilterChip
 
 /**
  * Theme settings component that allows selecting between light, dark, and system theme modes
@@ -164,111 +129,17 @@ fun ThemeSettings(
 }
 
 /**
- * Quiz configuration settings component
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun QuizConfigSettings(
-    state: SettingsState,
-    onQuestionOrderChanged: (String) -> Unit,
-    onMaxRetryCountChanged: (Int) -> Unit,
-    onShowAnswerAfterWrongChanged: (Boolean) -> Unit,
-    onAutoNextQuestionChanged: (Boolean) -> Unit
-) {
-    Column {
-        // Question order setting
-        Text(stringResource(R.string.question_order), fontWeight = FontWeight.Medium)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Column(modifier = Modifier.selectableGroup()) {
-            val orderOptions = listOf(
-                "sequential" to stringResource(R.string.sequential),
-                "shuffle" to stringResource(R.string.random_shuffle)
-            )
-
-            orderOptions.forEach { (value, label) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = state.questionOrder == value,
-                            onClick = { onQuestionOrderChanged(value) }
-                        )
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = state.questionOrder == value,
-                        onClick = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(label)
-                }
-            }
-        }
-
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Max retry count setting
-        Text(
-            stringResource(R.string.maximum_retry_count, state.maxRetryCount),
-            fontWeight = FontWeight.Medium
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Slider(
-            value = state.maxRetryCount.toFloat(),
-            onValueChange = { onMaxRetryCountChanged(it.toInt()) },
-            valueRange = 0f..3f,
-            steps = 2,
-            colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary)
-        )
-
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Show answer after wrong setting
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(stringResource(R.string.show_answer_after_wrong))
-            Switch(
-                checked = state.showAnswerAfterWrong,
-                onCheckedChange = onShowAnswerAfterWrongChanged
-            )
-        }
-
-        // Auto next question setting
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(stringResource(R.string.auto_next_question))
-            Switch(
-                checked = state.autoNextQuestion,
-                onCheckedChange = onAutoNextQuestionChanged
-            )
-        }
-    }
-}
-
-/**
  * Google account settings component
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoogleAccountSettings(
     state: SettingsState,
-    onGoogleSignInChanged: (Boolean) -> Unit,
+    freeCallsRemaining: Int?,
     onTranscriptModeChanged: (String) -> Unit,
     onClearAccountDataClick: () -> Unit,
-    onSignInClick: () -> Unit = {}
+    onSignInClick: () -> Unit = {},
+    onSignOutClick: () -> Unit = {}
 ) {
     Column {
         // Google account status and sign-in/out buttons
@@ -291,12 +162,30 @@ fun GoogleAccountSettings(
                     else
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
+                
+                if (state.isGoogleSignedIn) {
+                    Text(
+                        text = stringResource(R.string.free_trial_offer),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    // Display remaining calls if available
+                    val callsText = when (freeCallsRemaining) {
+                        null -> "..."
+                        else -> "$freeCallsRemaining"
+                    }
+                    Text(
+                        text = stringResource(R.string.free_calls_remaining, callsText),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             TextButton(
                 onClick = {
                     if (state.isGoogleSignedIn) {
-                        onGoogleSignInChanged(false) // Sign out
+                        onSignOutClick() // Use new sign out method from AuthViewModel
                     } else {
                         onSignInClick() // Launch sign-in flow
                     }

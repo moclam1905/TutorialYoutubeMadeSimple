@@ -10,15 +10,14 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.FirebaseUser
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
 import com.nguyenmoclam.tutorialyoutubemadesimple.auth.AuthManager
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.manager.ModelDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.OpenRouterRepository
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.UserDataRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.repository.GetQuizRepositoryUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.GetSettingsUseCase
 import com.nguyenmoclam.tutorialyoutubemadesimple.domain.usecase.settings.SetAllowContentOnMeteredUseCase
@@ -75,17 +74,29 @@ class SettingsViewModel @Inject constructor(
     private val authManager: AuthManager,
     private var networkUtils: NetworkUtils,
     private val openRouterRepository: OpenRouterRepository,
-    private val modelDataManager: ModelDataManager,
-    private val securePreferences: SecurePreferences
+    private val securePreferences: SecurePreferences,
+    private val userDataRepository: UserDataRepository
 ) : ViewModel() {
 
     // Settings state
     var settingsState by mutableStateOf(SettingsState())
         private set
 
+    // Current Firebase user from AuthManager
+    private val _currentUser = MutableStateFlow<FirebaseUser?>(null)
+    val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
+
     // Add this state variable
     private val _isInitialSettingsLoaded = MutableStateFlow(false)
     val isInitialSettingsLoaded: StateFlow<Boolean> = _isInitialSettingsLoaded.asStateFlow() // Expose as StateFlow
+
+    // Expose free calls state from UserDataRepository
+    val freeCallsState: StateFlow<Int?> = userDataRepository.freeCallsStateFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null // Or fetch initial value if needed
+        )
 
     // --- Model List Management ---
 
@@ -96,32 +107,24 @@ class SettingsViewModel @Inject constructor(
     private val _isLoadingModels = mutableStateOf(false)
     val isLoadingModels: Boolean get() = _isLoadingModels.value
 
-    // Loading state for loading MORE models (for pagination - implement later)
-    // private val _isLoadingMoreModels = mutableStateOf(false)
-    // val isLoadingMoreModels: Boolean get() = _isLoadingMoreModels.value
-
-    // Indicator if more models can be loaded (for pagination - implement later)
-    // private val _hasMoreModels = mutableStateOf(true)
-    // val hasMoreModels: Boolean get() = _hasMoreModels.value
-
     // **Public StateFlow for the DISPLAYED (filtered and sorted) models**
-    val displayedModels: StateFlow<List<ModelInfo>> = combine(
-        _allModels,
-        // Need to observe changes in settingsState for filters and sort
-        snapshotFlow { settingsState } // Observe changes in the entire state object
-    ) { allModels, currentState ->
-        // Apply filtering
-        val filteredModels = applyAllFilters(allModels, currentState.modelFilters)
-        // Apply sorting
-        sortModels(filteredModels, currentState.modelSortOption)
-        // Apply pagination later if needed
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // Keep active 5s after last subscriber
-        initialValue = emptyList() // Initial value
-    )
+    private val _displayedModels = MutableStateFlow<List<ModelInfo>>(emptyList())
+    val displayedModels: StateFlow<List<ModelInfo>> = _displayedModels.asStateFlow()
 
     init {
+        // Combine flows to update displayed models
+        combine(
+            _allModels,
+            snapshotFlow { settingsState } // Observe changes in filters and sort
+        ) { allModels, currentState ->
+            // Apply filtering
+            val filteredModels = applyAllFilters(allModels, currentState.modelFilters)
+            // Apply sorting
+            sortModels(filteredModels, currentState.modelSortOption)
+        }.onEach { updatedList ->
+            _displayedModels.value = updatedList
+        }.launchIn(viewModelScope)
+
         // Load settings using the use case
         getSettingsUseCase().onEach { settings ->
             settingsState = settingsState.copy(
@@ -151,6 +154,15 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             networkUtils.observeNetworkConnectivity().collect { isAvailable ->
                 settingsState = settingsState.copy(isNetworkAvailable = isAvailable)
+            }
+        }
+        
+        // Observe Firebase user from UserDataRepository
+        viewModelScope.launch {
+            userDataRepository.userStateFlow.collect { user ->
+                _currentUser.value = user
+                // Update Google sign-in status based on Firebase auth
+                settingsState = settingsState.copy(isGoogleSignedIn = user != null)
             }
         }
 
@@ -250,6 +262,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     // Google account settings
+    /*
     fun setGoogleSignIn(signedIn: Boolean) {
         viewModelScope.launch {
             if (signedIn) {
@@ -263,10 +276,12 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
+    */
 
     /**
      * Process the Google Sign-In result
      */
+    /*
     fun handleSignInResult(task: Task<GoogleSignInAccount>) {
         val account = authManager.handleSignInResult(task)
         viewModelScope.launch {
@@ -282,13 +297,16 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
+    */
 
     /**
      * Get sign-in intent for launching Google Sign-In
      */
-    fun getSignInIntent(): Intent {
-        return authManager.getSignInIntent()
+    /*
+    fun getSignInIntent(): Intent? {
+        return authViewModel.signIn()
     }
+    */
 
     fun setTranscriptMode(mode: String) {
         viewModelScope.launch {
@@ -299,14 +317,7 @@ class SettingsViewModel @Inject constructor(
 
     fun clearAccountData() {
         viewModelScope.launch {
-            // Sign out from Google
-            authManager.signOut()
-            setGoogleSignInUseCase(false)
-            setTranscriptModeUseCase("anonymous")
-            settingsState = settingsState.copy(
-                isGoogleSignedIn = false,
-                transcriptMode = "anonymous"
-            )
+            signOut() // Use our new method that delegates to AuthViewModel
         }
     }
 
@@ -470,6 +481,22 @@ class SettingsViewModel @Inject constructor(
             
             // If format is valid, validate with server
             if (settingsState.apiKeyValidationState == ApiKeyValidationState.VALIDATING) {
+                validateApiKeyWithServer(key)
+            }
+        }
+    }
+    
+    /**
+     * Public method to validate API key - can be called from UI components
+     */
+    fun validateApiKey(key: String) {
+        viewModelScope.launch {
+            val formatState = validateApiKeyFormat(key)
+            settingsState = settingsState.copy(
+                apiKeyValidationState = formatState
+            )
+            
+            if (formatState == ApiKeyValidationState.VALIDATING) {
                 validateApiKeyWithServer(key)
             }
         }
@@ -714,6 +741,19 @@ class SettingsViewModel @Inject constructor(
     //         }
     //     }
     // }
+
+    /**
+     * Sign out from Firebase and Google
+     * This method delegates to AuthViewModel
+     */
+    fun signOut() {
+        viewModelScope.launch {
+            authManager.signOut()
+            // Update transcript mode to anonymous after sign-out
+            setTranscriptModeUseCase("anonymous")
+            settingsState = settingsState.copy(transcriptMode = "anonymous")
+        }
+    }
 
 }
 

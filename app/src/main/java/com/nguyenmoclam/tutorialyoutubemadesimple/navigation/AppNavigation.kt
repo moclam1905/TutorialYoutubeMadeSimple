@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -11,14 +12,17 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.google.firebase.auth.FirebaseUser
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.AIModelSettingsScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.CreateQuizScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.DetailedModelUsageScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.HomeScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.LoginScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizSettingScreen // Add import
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizSettingScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.VideoPlayerWithTranscriptScreen
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.AIModelSettingsScreen // Import the new screen
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
@@ -33,16 +37,34 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
 @Composable
 fun AppNavigation(
     navController: NavHostController,
-    homeScreenLazyListState: LazyListState, // Add parameter for HomeScreen state
+    homeScreenLazyListState: LazyListState,
     viewModel: QuizViewModel,
     quizViewModel: QuizCreationViewModel,
     settingsViewModel: SettingsViewModel,
+    user: FirebaseUser?,
     modifier: Modifier = Modifier
 ) {
+    // Get AuthViewModel to check authentication state
+    val authViewModel: AuthViewModel = hiltViewModel()
+    
+    // Determine start destination based on auth state
+    val startDestination = if (user == null) {
+        AppScreens.Login.route
+    } else {
+        AppScreens.Home.route
+    }
+    
     NavHost(
         navController = navController,
-        startDestination = AppScreens.Home.route
+        startDestination = startDestination
     ) {
+        // Login Screen (New)
+        composable(AppScreens.Login.route) {
+            LoginScreen(
+                navController = navController
+            )
+        }
+        
         // Home Screen - Pass the LazyListState
         composable(AppScreens.Home.route) {
             HomeScreen(
@@ -56,14 +78,15 @@ fun AppNavigation(
                 viewModel = viewModel,
                 navController = navController,
                 quizViewModel = quizViewModel,
-                settingsViewModel = settingsViewModel
+                settingsViewModel = settingsViewModel,
+                authViewModel = authViewModel
             )
         }
         // Settings Screen
         composable(AppScreens.Settings.route) {
-            val usageViewModel: UsageViewModel = hiltViewModel()
             SettingScreen(
                 viewModel = settingsViewModel,
+                authViewModel = authViewModel,
                 navController = navController
             )
         }
@@ -131,14 +154,15 @@ fun AppNavigation(
  * This provides type-safe screen navigation and route management.
  */
 sealed class AppScreens(val route: String) {
+    object Login : AppScreens("login")
     object Home : AppScreens("home")
     object CreateQuiz : AppScreens("create_quiz")
     object Settings : AppScreens("settings")
     object QuizDetail : AppScreens("quiz_detail")
-    object QuizSetting : AppScreens("quiz_setting") // Add QuizSetting screen
+    object QuizSetting : AppScreens("quiz_setting")
     object VideoPlayer : AppScreens("video_player")
     object DetailedModelUsage : AppScreens("detailed_model_usage")
-    object AIModelSettings : AppScreens("ai_model_settings") // Add new screen route
+    object AIModelSettings : AppScreens("ai_model_settings")
 
     fun withArgs(vararg args: String): String {
         return buildString {
