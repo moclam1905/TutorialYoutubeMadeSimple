@@ -51,8 +51,7 @@ object ServiceModule {
             securePreferences = securePreferences, 
             usageRepository = usageRepository, 
             userDataRepository = userDataRepository,
-            initialConfig = null, 
-            context = context
+            initialConfig = null
         )
     }
 
