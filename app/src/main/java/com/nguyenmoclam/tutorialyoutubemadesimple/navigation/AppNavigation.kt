@@ -12,15 +12,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.CreateQuizScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.DetailedModelUsageScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.HomeScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizDetailScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.QuizSettingScreen // Add import
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.SettingScreen
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.VideoPlayerWithTranscriptScreen
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens.AIModelSettingsScreen // Import the new screen
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
 
 /**
  * Main navigation component for the app.
@@ -58,7 +61,27 @@ fun AppNavigation(
         }
         // Settings Screen
         composable(AppScreens.Settings.route) {
-            SettingScreen(viewModel = settingsViewModel)
+            val usageViewModel: UsageViewModel = hiltViewModel()
+            SettingScreen(
+                viewModel = settingsViewModel,
+                navController = navController
+            )
+        }
+        // Detailed Model Usage Screen
+        composable(AppScreens.DetailedModelUsage.route) {
+            val usageViewModel: UsageViewModel = hiltViewModel()
+            DetailedModelUsageScreen(
+                navController = navController,
+                usageViewModel = usageViewModel
+            )
+        }
+        // AI Model Settings Screen (New)
+        composable(AppScreens.AIModelSettings.route) {
+            // Pass the existing settingsViewModel instance down
+            AIModelSettingsScreen(
+                navController = navController,
+                settingsViewModel = settingsViewModel // Pass the instance here
+            )
         }
         // Quiz Detail Screen
         composable(
@@ -73,7 +96,8 @@ fun AppNavigation(
                 quizId = quizId.toString(),
                 navController = navController,
                 quizDetailViewModel = quizDetailViewModel,
-                quizViewModel = quizViewModel
+                quizViewModel = quizViewModel,
+                settingsViewModel = settingsViewModel
             )
         }
         // Quiz Setting Screen
@@ -113,6 +137,8 @@ sealed class AppScreens(val route: String) {
     object QuizDetail : AppScreens("quiz_detail")
     object QuizSetting : AppScreens("quiz_setting") // Add QuizSetting screen
     object VideoPlayer : AppScreens("video_player")
+    object DetailedModelUsage : AppScreens("detailed_model_usage")
+    object AIModelSettings : AppScreens("ai_model_settings") // Add new screen route
 
     fun withArgs(vararg args: String): String {
         return buildString {

@@ -12,6 +12,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizResultDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.SummaryDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TagDao // Import TagDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TokenUsageDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TopicDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptSegmentDao
@@ -44,7 +45,8 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
-        ).build()
+        )
+        .build()
     }
 
     /**
@@ -159,5 +161,16 @@ object DatabaseModule {
     @Provides
     fun provideTagDao(database: AppDatabase): TagDao {
         return database.tagDao()
+    }
+    
+    /**
+     * Provides the TokenUsageDao instance for tracking API usage.
+     *
+     * @param database The AppDatabase instance
+     * @return The TokenUsageDao instance
+     */
+    @Provides
+    fun provideTokenUsageDao(database: AppDatabase): TokenUsageDao {
+        return database.tokenUsageDao()
     }
 }

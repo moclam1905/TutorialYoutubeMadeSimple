@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.utils
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -23,6 +24,9 @@ class NetworkUtils(context: Context) {
 
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    
+    private val preferences: SharedPreferences = 
+        context.getSharedPreferences(NETWORK_PREFERENCES, Context.MODE_PRIVATE)
 
     // Data saver mode settings
     private var dataSaverEnabled = false
@@ -68,6 +72,35 @@ class NetworkUtils(context: Context) {
         } catch (e: SecurityException) {
             false
         }
+    }
+
+    /**
+     * Check if the current active network is metered.
+     */
+    fun isMeteredNetwork(): Boolean {
+        return try {
+            connectivityManager.isActiveNetworkMetered
+        } catch (e: SecurityException) {
+            // Assume metered if we can't check due to permissions
+            true 
+        }
+    }
+
+    /**
+     * Determines if content should be loaded when on a metered network.
+     * Uses user preferences to decide whether to allow content loading on metered networks.
+     */
+    fun shouldLoadContentOnMetered(): Boolean {
+        return preferences.getBoolean(KEY_ALLOW_METERED_NETWORK, DEFAULT_ALLOW_METERED_NETWORK)
+    }
+
+    /**
+     * Sets whether content should be loaded on metered networks
+     * 
+     * @param allowed true to allow loading on metered networks, false otherwise
+     */
+    fun setAllowContentOnMetered(allowed: Boolean) {
+        preferences.edit().putBoolean(KEY_ALLOW_METERED_NETWORK, allowed).apply()
     }
 
     /**
@@ -232,23 +265,20 @@ class NetworkUtils(context: Context) {
     }
 
     /**
-     * Apply connection timeout to a network request
-     * This method should be used when making network requests to apply the user's timeout setting
+     * Execute a network operation with a timeout.
+     * Applies the configured timeout value to the operation.
      *
      * @param block The suspend function to execute with timeout
-     * @return Result of the network operation
+     * @return The result of the operation
      */
-    suspend fun <T> withConnectionTimeout(block: suspend () -> T): Result<T> {
+    suspend fun <T> withConnectionTimeout(block: suspend () -> T): T {
         return try {
-            // withTimeout to apply the timeout
-            val result = withTimeout(connectionTimeout * 1000L) {
+            // Use the configured timeout value from settings (in seconds)
+            withTimeout(connectionTimeout * 1000L) {
                 block()
             }
-            Result.success(result)
         } catch (e: TimeoutCancellationException) {
-            Result.failure(SocketTimeoutException("Connection timed out after $connectionTimeout seconds"))
-        } catch (e: Exception) {
-            Result.failure(e)
+            throw SocketTimeoutException("Connection timed out after $connectionTimeout seconds")
         }
     }
 
@@ -351,5 +381,14 @@ class NetworkUtils(context: Context) {
      */
     fun getRetryPolicy(): String {
         return retryPolicy
+    }
+
+    companion object {
+        // Preference keys
+        private const val NETWORK_PREFERENCES = "network_preferences"
+        private const val KEY_ALLOW_METERED_NETWORK = "allow_metered_network"
+        
+        // Default values
+        private const val DEFAULT_ALLOW_METERED_NETWORK = false
     }
 }

@@ -1,14 +1,20 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.di
 
 import android.content.Context
+import com.nguyenmoclam.tutorialyoutubemadesimple.OpenRouterApi
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.manager.ModelDataManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.OpenRouterRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.QuizRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.QuizRepositoryImpl
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.SettingsRepository
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.SettingsRepositoryImpl
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.service.OpenRouterService
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.ApiKeyValidator
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkStateListener
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -22,6 +28,7 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
+@Suppress("TooManyFunctions")
 abstract class RepositoryModule {
 
     /**
@@ -96,6 +103,45 @@ abstract class RepositoryModule {
             offlineSyncManager: OfflineSyncManager
         ): NetworkStateListener {
             return NetworkStateListener(context, offlineSyncManager)
+        }
+
+        /**
+         * Provides the OpenRouterService instance.
+         */
+        @Provides
+        @Singleton
+        fun provideOpenRouterService(
+            openRouterApi: OpenRouterApi,
+            networkUtils: NetworkUtils,
+            securePreferences: SecurePreferences
+        ): OpenRouterService {
+            return OpenRouterService(openRouterApi, networkUtils, securePreferences)
+        }
+
+        /**
+         * Provides the OpenRouterRepository instance.
+         */
+        @Provides
+        @Singleton
+        fun provideOpenRouterRepository(
+            openRouterService: OpenRouterService,
+            securePreferences: SecurePreferences,
+            apiKeyValidator: ApiKeyValidator,
+            modelDataManager: ModelDataManager
+        ): OpenRouterRepository {
+            return OpenRouterRepository(openRouterService, securePreferences, apiKeyValidator, modelDataManager)
+        }
+
+        /**
+         * Provides the ApiKeyValidator instance.
+         */
+        @Provides
+        @Singleton
+        fun provideApiKeyValidator(
+            openRouterApi: OpenRouterApi,
+            networkUtils: NetworkUtils
+        ): ApiKeyValidator {
+            return ApiKeyValidator(openRouterApi, networkUtils)
         }
     }
 }

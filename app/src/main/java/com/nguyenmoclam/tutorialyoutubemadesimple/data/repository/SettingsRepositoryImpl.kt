@@ -42,6 +42,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val CONNECTION_TIMEOUT = intPreferencesKey("connection_timeout")
         val RETRY_POLICY = stringPreferencesKey("retry_policy")
         val APP_LANGUAGE = stringPreferencesKey("app_language")
+        val ALLOW_CONTENT_ON_METERED = booleanPreferencesKey("allow_content_on_metered")
     }
     
     override fun getSettings(): Flow<Settings> {
@@ -59,7 +60,8 @@ class SettingsRepositoryImpl @Inject constructor(
                 connectionTimeout = preferences[PreferenceKeys.CONNECTION_TIMEOUT] ?: 120,
                 retryPolicy = preferences[PreferenceKeys.RETRY_POLICY] ?: "exponential",
                 appLanguage = preferences[PreferenceKeys.APP_LANGUAGE] ?: "system",
-                isNetworkAvailable = networkUtils.isNetworkAvailable()
+                isNetworkAvailable = networkUtils.isNetworkAvailable(),
+                allowMeteredNetworks = preferences[PreferenceKeys.ALLOW_CONTENT_ON_METERED] ?: false
             )
         }
     }
@@ -133,6 +135,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setAppLanguage(language: String) {
         context.dataStore.edit { preferences ->
             preferences[PreferenceKeys.APP_LANGUAGE] = language
+        }
+    }
+
+    override suspend fun setAllowContentOnMetered(allowed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferenceKeys.ALLOW_CONTENT_ON_METERED] = allowed
         }
     }
 }

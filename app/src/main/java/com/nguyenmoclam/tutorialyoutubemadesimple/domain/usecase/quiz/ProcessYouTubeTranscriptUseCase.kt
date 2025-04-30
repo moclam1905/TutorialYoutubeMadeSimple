@@ -58,25 +58,22 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
             }
 
             if (authManager.isUserSignedIn() && transcriptMode == "google") {
-                // Apply connection timeout to Google API request
-                val result = networkUtils.withConnectionTimeout {
-                    fetchTranscriptFromGoogleApi(videoId)
-                }
-
-                result.fold(
-                    onSuccess = { transcriptText -> 
-                        // For Google API, we don't have segments with timestamps yet
-                        // This would need to be implemented separately
-                        TranscriptResult(text = transcriptText, segments = emptyList()) 
-                    },
-                    onFailure = { e ->
-                        TranscriptResult(
-                            text = "",
-                            segments = emptyList(),
-                            error = e.message ?: "Connection timeout or error"
-                        )
+                try {
+                    // Apply connection timeout to Google API request
+                    val transcriptText = networkUtils.withConnectionTimeout {
+                        fetchTranscriptFromGoogleApi(videoId)
                     }
-                )
+                    
+                    // For Google API, we don't have segments with timestamps yet
+                    // This would need to be implemented separately
+                    TranscriptResult(text = transcriptText, segments = emptyList())
+                } catch (e: Exception) {
+                    TranscriptResult(
+                        text = "",
+                        segments = emptyList(),
+                        error = e.message ?: "Connection timeout or error"
+                    )
+                }
             } else {
                 // YouTubeTranscriptLight already uses the timeout settings via OkHttpClient
                 val transcripts = youTubeTranscriptLight.getTranscript(videoId, languages)

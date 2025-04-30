@@ -28,7 +28,7 @@ class SetConnectionTypeUseCase @Inject constructor(
     /**
      * Execute the use case to update connection type.
      *
-     * @param type The connection type ("wifi_only" or "any")
+     * @param type The connection type ("wifi_only", "mobile_only", or "any")
      */
     suspend operator fun invoke(type: String) {
         settingsRepository.setConnectionType(type)
@@ -64,5 +64,21 @@ class SetRetryPolicyUseCase @Inject constructor(
      */
     suspend operator fun invoke(policy: String) {
         settingsRepository.setRetryPolicy(policy)
+    }
+}
+
+/**
+ * Use case for updating allow content on metered networks setting.
+ */
+class SetAllowContentOnMeteredUseCase @Inject constructor(
+    private val settingsRepository: SettingsRepository
+) {
+    /**
+     * Execute the use case to update allow content on metered networks setting.
+     *
+     * @param allowed Whether to allow loading content on metered networks
+     */
+    suspend operator fun invoke(allowed: Boolean) {
+        settingsRepository.setAllowContentOnMetered(allowed)
     }
 }

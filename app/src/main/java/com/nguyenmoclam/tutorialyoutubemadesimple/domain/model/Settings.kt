@@ -27,6 +27,7 @@ data class Settings(
     val connectionType: String = "any", // "wifi_only" or "any"
     val connectionTimeout: Int = 120, // in seconds
     val retryPolicy: String = "exponential", // "none", "linear", or "exponential"
+    val allowMeteredNetworks: Boolean = false, // Whether to allow loading content on metered networks
     
     // Language
     val appLanguage: String = "system", // "en", "vi", or "system"

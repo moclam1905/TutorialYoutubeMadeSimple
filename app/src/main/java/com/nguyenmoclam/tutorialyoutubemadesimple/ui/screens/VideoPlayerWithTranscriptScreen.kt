@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -19,13 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ChapterNavigationSection
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ContentArea
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.SearchBarComponent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.TabAndSearchComponent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.VideoPlayerComponent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.extractVideoId
@@ -33,11 +27,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.TranscriptViewModel
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.utils.YouTubePlayerTracker
 import kotlinx.coroutines.delay
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 
 /**
  * Screen for displaying a video player with transcript and chapter navigation,
@@ -57,9 +46,6 @@ fun VideoPlayerWithTranscriptScreen(
 
     // Tab selection state
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-
-    // Search state
-    var isSearchVisible by remember { mutableStateOf(false) }
 
     // Player position tracking (update from tracker)
     var currentPosition by remember { mutableLongStateOf(0L) }
@@ -159,57 +145,16 @@ fun VideoPlayerWithTranscriptScreen(
                 )
             }
 
-            // --- Tabs and Search Toggle ---
+            // --- Tabs and Integrated Search ---
             TabAndSearchComponent(
                 selectedTabIndex = selectedTabIndex,
-                isSearchVisible = isSearchVisible,
+                searchQuery = searchQuery,
                 onTabSelected = { selectedTabIndex = it },
-                onToggleSearch = {
-                    isSearchVisible = !isSearchVisible
-                    if (!isSearchVisible) {
-                        viewModel.clearSearchQuery() // Clear search when hiding
-                        focusManager.clearFocus() // Clear focus
-                    }
-                },
+                onQueryChange = viewModel::updateSearchQuery,
+                onClearQuery = viewModel::clearSearchQuery,
+                onSearchAction = { focusManager.clearFocus() },
                 modifier = Modifier.fillMaxWidth()
             )
-
-            // --- Search Bar ---
-            // Use AnimatedVisibility for smoother appearance/disappearance
-            AnimatedVisibility(
-                visible = isSearchVisible,
-                enter = slideInVertically { fullHeight -> -fullHeight / 10 } + fadeIn(),
-                exit = slideOutVertically { fullHeight -> -fullHeight / 10 } + fadeOut()
-            ) {
-                Column {
-                    SearchBarComponent(
-                        searchQuery = searchQuery,
-                        onQueryChange = { viewModel.updateSearchQuery(it) },
-                        onClearQuery = { viewModel.clearSearchQuery() },
-                        onSearchAction = { focusManager.clearFocus() },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    // Show result count only when search bar is visible and query is not empty
-                    if (searchQuery.isNotEmpty()) {
-                        val resultText = if (filteredSegments.isNotEmpty()) {
-                            stringResource(R.string.results_found, filteredSegments.size)
-                        } else {
-                            // Optionally, show a different message or nothing when no results
-                            // stringResource(R.string.no_results_brief)
-                            "" // Show nothing if no results while searching
-                        }
-                        if (resultText.isNotEmpty()) {
-                            Text(
-                                text = resultText,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .padding(bottom = 4.dp) // Add some bottom padding
-                            )
-                        }
-                    }
-                }
-            }
 
             // --- Content Area (Transcript/Chapters/Search Results) ---
             ContentArea(

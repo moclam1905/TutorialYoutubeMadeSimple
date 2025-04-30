@@ -14,6 +14,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizProgressDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.QuizResultDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.SummaryDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TagDao
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TokenUsageDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TopicDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptDao
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.dao.TranscriptSegmentDao
@@ -27,6 +28,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizResultEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.QuizTagCrossRef
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.SummaryEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TagEntity
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TokenUsageEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TopicEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TranscriptEntity
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TranscriptSegmentEntity
@@ -49,7 +51,8 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.data.entity.TranscriptSegmentE
         MindMapEntity::class,
         TranscriptSegmentEntity::class,
         TagEntity::class,
-        QuizTagCrossRef::class
+        QuizTagCrossRef::class,
+        TokenUsageEntity::class
     ],
     version = 1,
     exportSchema = true
@@ -68,6 +71,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun mindMapDao(): MindMapDao
     abstract fun transcriptSegmentDao(): TranscriptSegmentDao
     abstract fun tagDao(): TagDao
+    abstract fun tokenUsageDao(): TokenUsageDao
 
     companion object {
         const val DATABASE_NAME = "youtube_tutorial_app_db"

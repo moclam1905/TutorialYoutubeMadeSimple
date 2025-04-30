@@ -126,6 +126,22 @@
     <string name="privacy_policy">Privacy Policy</string>
     <string name="contact_information">Contact Information</string>
     <string name="license_information">License Information</string>
+    <string name="ai_model_settings">AI Model Settings</string>
+    <string name="api_key_label">OpenRouter API Key</string>
+    <string name="api_key_description">Enter your OpenRouter API key to access additional AI models beyond the default model. You can get a free API key at openrouter.ai.</string>
+    <string name="api_key_hint">Enter your OpenRouter API key</string>
+    <string name="api_key_helper">Paste your OpenRouter API key to use custom AI models</string>
+    <string name="api_key_toggle_visibility">Toggle API key visibility</string>
+    <string name="api_key_paste">Paste API key from clipboard</string>
+    <string name="api_key_validation_success">API key is valid</string>
+    <string name="api_key_validation_error">API key is invalid or expired</string>
+    <string name="api_key_format_error">API key format is incorrect</string>
+    <string name="api_key_validating">Validating API key…</string>
+    <string name="available_credits">Available Credits</string>
+    <string name="loading_credits">Loading credits…</string>
+    <string name="credits_not_available">Not available</string>
+    <string name="select_ai_model">Select AI Model</string>
+    <string name="model_search_hint">Search models</string>
 
     <!-- Quiz Results -->
     <string name="quiz_results_title">Quiz Results</string>
@@ -261,6 +277,7 @@
     <string name="transcript">Transcript</string>
     <string name="chapters">Chapters</string>
     <string name="search_in_transcript">Search in transcript…</string>
+    <string name="search_in_transcript_short">Search…</string>
     <string name="results_found">%1$d results found</string>
     <string name="no_results_found">No results found for &quot;%1$s&quot;</string>
     <string name="transcript_not_found">Transcript not found for this quiz</string>
@@ -292,7 +309,7 @@
     <string name="continue_using_app">Continue Using App</string>
     <string name="next_chapter">Next Chapter</string>
     <string name="toggle_search">Toggle Search</string>
-    <string name="clear_search">Clear Search</string>
+    <string name="clear_search">Clear search</string>
     <string name="previous_chapter">Previous Chapter</string>
 
     <string name="watch_video">Watch Video</string>
@@ -355,6 +372,128 @@
     <string name="mindmap_generation_description">Visualize the key ideas of your video content with an automatically generated mind map.</string>
     <string name="clear_tag_filters_short">Clear</string>
     <string name="tag_selected_desc">Tag selected</string>
+    <string name="model_not_selected">No model selected</string>
+    <string name="selected_model_label">Selected Model</string>
+    <string name="search_models">Search models</string>
+    <string name="input_modalities">Input Modalities</string>
+    <string name="context_length">Context Length</string>
+    <string name="pricing_tiers">Pricing Tiers</string>
+    <string name="sort_top_weekly">Top Weekly</string>
+    <string name="sort_newest">Newest</string>
+    <string name="sort_price_low_high">Price: Low to High</string>
+    <string name="sort_price_high_low">Price: High to Low</string>
+    <string name="sort_context_high_low">Context: High to Low</string>
+    <string name="show_filters">Show filters</string>
+    <string name="hide_filters">Hide filters</string>
+    <string name="loading_models">Loading models...</string>
+    <string name="no_models_found">No models found</string>
+    <string name="refresh_models">Refresh Models</string>
+    <string name="load_more_models">Load More Models</string>
+    <string name="per_million_tokens">per million tokens</string>
+    <string name="enter_valid_api_key">Please enter a valid API key to view models</string>
+    <string name="openrouter_help_title">How to Get an OpenRouter API Key</string>
+    <string name="openrouter_instructions_title">Getting Started with OpenRouter</string>
+    <string name="openrouter_step_1">1. Visit openrouter.ai and create an account</string>
+    <string name="openrouter_step_2">2. Navigate to your account settings to generate an API key</string>
+    <string name="openrouter_step_3">3. Copy and paste the key above and get access to top AI models</string>
+    <string name="open_openrouter_docs">Open Documentation</string>
+    <string name="popular_models">Popular Models</string>
+    <string name="all_models">All Models</string>
 
+    <!-- OpenRouter Help & Troubleshooting -->
+    <string name="troubleshooting_guide">Troubleshooting Guide</string>
+    <string name="troubleshooting_button">Troubleshooting</string>
+    <string name="openrouter_connection_available">Internet Connection: Available</string>
+    <string name="openrouter_connection_unavailable">Internet Connection: Unavailable</string>
+    <string name="openrouter_services_available">You can access OpenRouter services when API key is valid</string>
+    <string name="openrouter_services_unavailable">Check your internet connection to use OpenRouter services</string>
+    <string name="openrouter_visit">Visit openrouter.ai</string>
+    <string name="openrouter_create_account">Create a free account or sign in with Google/GitHub</string>
+    <string name="openrouter_generate_key">Generate API Key</string>
+    <string name="openrouter_key_instructions">Go to Settings → API Keys and create a new key</string>
+    <string name="openrouter_copy_key">Copy API Key</string>
+    <string name="openrouter_paste_instructions">Paste it in the field above to access 100+ AI models</string>
+    <string name="openrouter_trouble_1_title">API Key Not Working</string>
+    <string name="openrouter_trouble_1_desc">Ensure your key is typed correctly with no trailing spaces. API keys typically start with \'sk-or-\' and contain exactly 40 characters after that prefix.</string>
+    <string name="openrouter_trouble_2_title">No Models Showing</string>
+    <string name="openrouter_trouble_2_desc">Check that your account has sufficient credits. Free accounts start with $1 in credits. You may need to add a payment method for full access.</string>
+    <string name="openrouter_trouble_3_title">Connection Issues</string>
+    <string name="openrouter_trouble_3_desc">Ensure you have a stable internet connection. Try disabling VPNs or proxies which might interfere with API connectivity.</string>
+    <string name="openrouter_trouble_4_title">Billing or Credit Issues</string>
+    <string name="openrouter_trouble_4_desc">Visit your OpenRouter dashboard to check your usage and add more credits if needed. Credits are consumed based on the models you use.</string>
+    <string name="openrouter_discord_help">Still having problems? Visit the OpenRouter Discord community for help.</string>
+    <string name="no_browser_available">No browser available to open link</string>
+
+    <!-- Credits and Usage Monitoring -->
+    <string name="credits_and_usage">Credits and Usage Monitoring</string>
+    <string name="refresh_credits">Refresh credits information</string>
+    <string name="credit_balance_status">Your credit balance is $%1$s</string>
+    <string name="low_balance_warning">Your credit balance is low ($%1$s)</string>
+    <string name="critical_balance_warning">Your credit balance is critically low ($%1$s)</string>
+    <string name="credit_granted">Total Granted</string>
+    <string name="credit_used">Total Used</string>
+    <string name="last_updated">Last updated: %1$s</string>
+    <string name="credit_fetch_error">Failed to fetch credit information</string>
+    <string name="token_usage">Token Usage</string>
+    <string name="last_7_days">Last 7 Days</string>
+    <string name="last_30_days">Last 30 Days</string>
+    <string name="all_time">All Time</string>
+    <string name="loading_usage_data">Loading usage data…</string>
+    <string name="total_tokens">Total Tokens</string>
+    <string name="prompt_tokens">Prompt Tokens</string>
+    <string name="completion_tokens">Completion Tokens</string>
+    <string name="estimated_cost">Estimated Cost</string>
+    <string name="usage_by_model">Usage by Model</string>
+    <string name="view_all_models">View All Models</string>
+    <string name="no_usage_data">No usage data available for this period</string>
+    <string name="usage_data_error">Error loading usage data</string>
+
+    <string name="allow_metered_networks">Allow Content on Metered Networks</string>
+    <string name="allow_metered_description">Allow loading content when using mobile data or other metered connections</string>
+
+    <string name="detailed_model_usage">Detailed Model Usage</string>
+    <string name="back">Back</string>
+    <string name="refresh">Refresh</string>
+    <string name="usage_summary_title">Usage Summary</string>
+    <string name="last_7_days_stats">Last 7 Days Statistics</string>
+    <string name="last_30_days_stats">Last 30 Days Statistics</string>
+    <string name="all_time_stats">All-Time Statistics</string>
+    <string name="usage_by_model_title">Usage by Model</string>
+    <string name="cost">Cost</string>
+    <string name="no_usage_data_available">No usage data available</string>
+    <string name="usage_data_description">View your token consumption and cost statistics for each AI model over time.</string>
+    <string name="error_loading_usage">Error loading usage data</string>
+    <string name="total_cost">Total Cost</string>
+
+    <string name="click_refresh_to_load_models">Click refresh to load models</string>
+    <string name="no_matching_models">No matching models</string>
+    <string name="api_key_needed_for_features">An API key is required to use these features</string>
+    <string name="time_just_now">Just now</string>
+    <string name="time_minutes_ago">%1$d minutes ago</string>
+    <string name="time_hours_ago">%1$d hours ago</string>
+    <string name="time_days_ago">%1$d days ago</string>
+    <string name="time_weeks_ago">%1$d weeks ago</string>
+    <string name="configure_ai_api_title">Configure AI API</string>
+    <string name="configure_ai_api_subtitle">Set up your API key and model preferences to start using AI features</string>
+    <string name="no_model_selected">No model selected</string>
+    <string name="selected_model">Selected Model</string>
+    <string name="change_model">Change Model</string>
+
+    <!-- API Requirement Dialog -->
+    <string name="network_required">Network Connection Required</string>
+    <string name="network_required_message">A network connection is required to use this feature. Please check your network settings and try again.</string>
+    <string name="api_key_required">AI Service API Key Required</string>
+    <string name="api_key_required_message">An OpenRouter API key is required to use this feature. Please set your API key in Settings.</string>
+    <string name="model_required">AI Model Selection Required</string>
+    <string name="model_required_message">Please select an AI model in Settings before using this feature.</string>
+    <string name="go_to_settings">Go to Settings</string>
+    <string name="ok">OK</string>
+    <string name="model_price_free">FREE</string>
+
+    <!-- Model selection strings -->
+    <string name="sort_moderated_first">Moderated First</string>
+    <string name="models_available">models available</string>
+    <string name="moderated">moderated</string>
+    <string name="moderated_label">MODERATED</string>
 
 </resources>

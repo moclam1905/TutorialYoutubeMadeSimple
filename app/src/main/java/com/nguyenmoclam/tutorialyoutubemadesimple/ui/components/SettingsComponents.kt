@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -51,10 +52,44 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.CreditStatus
+import androidx.compose.ui.text.style.TextAlign
+import java.util.*
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material3.FilterChip
 
 /**
  * Theme settings component that allows selecting between light, dark, and system theme modes
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSettings(
     state: SettingsState,
@@ -131,6 +166,7 @@ fun ThemeSettings(
 /**
  * Quiz configuration settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizConfigSettings(
     state: SettingsState,
@@ -225,6 +261,7 @@ fun QuizConfigSettings(
 /**
  * Google account settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoogleAccountSettings(
     state: SettingsState,
@@ -327,6 +364,7 @@ fun GoogleAccountSettings(
 /**
  * Data management settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataManagementSettings(
     state: SettingsState,
@@ -403,13 +441,15 @@ fun DataManagementSettings(
 /**
  * Network settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NetworkSettings(
     state: SettingsState,
     onDataSaverModeChanged: (Boolean) -> Unit,
     onConnectionTypeChanged: (String) -> Unit,
     onConnectionTimeoutChanged: (Int) -> Unit,
-    onRetryPolicyChanged: (String) -> Unit
+    onRetryPolicyChanged: (String) -> Unit,
+    onAllowMeteredNetworksChanged: (Boolean) -> Unit
 ) {
     Column {
         // Network status indicator
@@ -464,6 +504,33 @@ fun NetworkSettings(
             Switch(
                 checked = state.dataSaverMode,
                 onCheckedChange = onDataSaverModeChanged,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
+        
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        
+        // Allow content on metered networks toggle
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(stringResource(R.string.allow_metered_networks))
+                Text(
+                    stringResource(R.string.allow_metered_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(
+                checked = state.allowMeteredNetworks,
+                onCheckedChange = onAllowMeteredNetworksChanged,
                 modifier = Modifier.padding(start = 16.dp)
             )
         }
@@ -582,6 +649,7 @@ fun NetworkSettings(
 /**
  * Language settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageSettings(
     state: SettingsState,
@@ -651,6 +719,7 @@ fun LanguageSettings(
 /**
  * App information settings component
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppInfoSettings(
     appVersion: String,
@@ -747,6 +816,7 @@ private fun formatBytes(bytes: Long): String {
 /**
  * Reusable settings item with consistent styling for clickable settings
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsItem(
     title: String,

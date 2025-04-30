@@ -18,9 +18,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.NetworkWifi
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.SignalWifiStatusbar4Bar
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,8 +53,11 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.GoogleAccountSet
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.LanguageSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NetworkSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.SettingsItem
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.navigation.NavController
+import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 
 /**
  * SettingScreen composable that displays all app settings organized by category.
@@ -61,7 +65,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingScreen(
-    viewModel: SettingsViewModel
+    viewModel: SettingsViewModel,
+    navController: NavController
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
@@ -219,14 +224,15 @@ fun SettingScreen(
             // Network Settings Section
             SettingsSection(
                 title = stringResource(R.string.network_settings),
-                icon = Icons.Default.NetworkWifi
+                icon = Icons.Default.SignalWifiStatusbar4Bar
             ) {
                 NetworkSettings(
                     state = state,
                     onDataSaverModeChanged = viewModel::setDataSaverMode,
                     onConnectionTypeChanged = viewModel::setConnectionType,
                     onConnectionTimeoutChanged = viewModel::setConnectionTimeout,
-                    onRetryPolicyChanged = viewModel::setRetryPolicy
+                    onRetryPolicyChanged = viewModel::setRetryPolicy,
+                    onAllowMeteredNetworksChanged = viewModel::setAllowMeteredNetworks
                 )
             }
 
@@ -240,6 +246,22 @@ fun SettingScreen(
                 LanguageSettings(
                     state = state,
                     onAppLanguageChanged = viewModel::setAppLanguage
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // AI Model Settings Section - Changed to SettingsItem for navigation
+            SettingsSection(
+                title = stringResource(R.string.ai_model_settings),
+                icon = Icons.Default.SmartToy
+            ) {
+                SettingsItem(
+                    title = stringResource(R.string.configure_ai_api_title),
+                    subtitle = stringResource(R.string.configure_ai_api_subtitle),
+                    onClick = { navController.navigate(AppScreens.AIModelSettings.route) },
+                    leadingIcon = { /* Keep the icon implicitly from SettingsSection */ },
+                    showArrow = true
                 )
             }
 
