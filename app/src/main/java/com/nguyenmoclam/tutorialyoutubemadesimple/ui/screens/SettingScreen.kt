@@ -268,13 +268,36 @@ fun SettingScreen(
                 title = stringResource(R.string.ai_model_settings),
                 icon = Icons.Default.SmartToy
             ) {
-                SettingsItem(
-                    title = stringResource(R.string.configure_ai_api_title),
-                    subtitle = stringResource(R.string.configure_ai_api_subtitle),
-                    onClick = { navController.navigate(AppScreens.AIModelSettings.route) },
-                    leadingIcon = { /* Keep the icon implicitly from SettingsSection */ },
-                    showArrow = true
-                )
+                // Simplify logic assuming user is always logged in here
+                when (freeCallsRemaining) {
+                    null -> {
+                        // Loading or error state for free calls
+                        SettingsItem(
+                            title = stringResource(R.string.configure_ai_api_title),
+                            subtitle = stringResource(R.string.loading_status), // Loading status
+                            onClick = { /* No action */ },
+                            showArrow = false
+                        )
+                    }
+                    0 -> {
+                        // Trial exhausted, allow configuration
+                        SettingsItem(
+                            title = stringResource(R.string.configure_ai_api_title),
+                            subtitle = stringResource(R.string.configure_ai_api_subtitle),
+                            onClick = { navController.navigate(AppScreens.AIModelSettings.route) },
+                            showArrow = true
+                        )
+                    }
+                    else -> {
+                        // Trial active (freeCallsRemaining > 0)
+                        SettingsItem(
+                            title = stringResource(R.string.configure_ai_api_title),
+                            subtitle = stringResource(R.string.api_config_disabled_during_trial),
+                            onClick = { /* No action */ },
+                            showArrow = false
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

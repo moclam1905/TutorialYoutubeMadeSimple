@@ -511,5 +511,7 @@
     <string name="signed_in_as">Đăng nhập với tư cách %1$s</string>
     <string name="free_trial_status">Trạng thái dùng thử miễn phí</string>
     <string name="loading_calls">Đang tải thông tin lượt sử dụng...</string>
+    <string name="loading_status">Đang tải trạng thái...</string>
+    <string name="api_config_disabled_during_trial">Cấu hình API bị vô hiệu hóa trong thời gian dùng thử miễn phí</string>
 
 </resources>

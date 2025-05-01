@@ -517,5 +517,7 @@
     <string name="signed_in_as">Signed in as %1$s</string>
     <string name="free_trial_status">Free Trial Status</string>
     <string name="loading_calls">Loading call usage...</string>
+    <string name="loading_status">Loading status...</string>
+    <string name="api_config_disabled_during_trial">API configuration is disabled during the free trial</string>
 
 </resources>

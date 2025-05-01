@@ -205,18 +205,18 @@ class ModelDataManager @Inject constructor(
             if (matchingIds == null) {
                 matchingIds = categoryMatches
             } else {
-                matchingIds!!.retainAll(categoryMatches)
+                matchingIds.retainAll(categoryMatches)
             }
             
             // Early exit if no matches
-            if (matchingIds?.isEmpty() == true) {
+            if (matchingIds.isEmpty() == true) {
                 return emptyList()
             }
         }
         
         // Get full model objects
         val results = if (matchingIds != null) {
-            matchingIds!!.mapNotNull { modelsCache[it] }
+            matchingIds.mapNotNull { modelsCache[it] }
         } else {
             modelsCache.values.toList()
         }
