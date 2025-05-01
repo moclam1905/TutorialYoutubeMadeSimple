@@ -10,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.content.edit
+import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.LLMConfig
 
 /**
  * Utility class for securely storing and retrieving sensitive data such as API keys
@@ -101,7 +102,8 @@ class SecurePreferences @Inject constructor(
      * @return The stored model ID or empty string if not found
      */
     fun getSelectedModelId(): String {
-        return securePrefs.getString(KEY_SELECTED_MODEL_ID, "") ?: ""
+        val modelIdDefault = LLMConfig.DEFAULT.modelId
+        return securePrefs.getString(KEY_SELECTED_MODEL_ID, modelIdDefault) ?: modelIdDefault
     }
 
     /**

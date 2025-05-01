@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.manager.ModelDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
-import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.LLMConfig
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.ModelInfo
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.openrouter.OpenRouterCreditsResponse
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.repository.OpenRouterRepository
@@ -243,27 +242,7 @@ class ModelSettingsViewModel @Inject constructor(
         refreshModels(true)
         refreshCredits(true)
     }
-    
-    /**
-     * Selects a model and updates the LLMProcessor configuration.
-     * 
-     * @param model The model to select.
-     */
-    fun selectModel(model: ModelInfo) {
-        _selectedModel.value = model
-        
-        // Update LLMProcessor configuration
-        val config = LLMConfig(
-            modelId = model.id,
-            apiKey = _apiKey.value,
-            maxTokens = (model.contextLength / 2).coerceAtMost(8192), // Default to half of context length, max 8192
-            temperature = 0.7,
-            topP = 0.95
-        )
-        
-        llmProcessor.setConfig(config)
-    }
-    
+
     /**
      * Updates the filters for model listing.
      * 

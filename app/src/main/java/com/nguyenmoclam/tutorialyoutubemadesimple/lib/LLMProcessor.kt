@@ -13,6 +13,8 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.domain.model.quiz.TrueFalseQue
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.SecurePreferences
 import kotlinx.coroutines.flow.first
+import java.io.IOException
+import java.net.SocketTimeoutException
 import javax.inject.Inject
 
 /** Custom exception for trial exhaustion */
@@ -39,6 +41,7 @@ class LLMProcessor @Inject constructor(
     /**
      * The current LLM configuration being used for API calls.
      * Defaults to the predefined default configuration.
+     * NOTE: The modelId within this config might be overridden by SecurePreferences during the call.
      */
     private var currentConfig: LLMConfig = initialConfig ?: LLMConfig.DEFAULT
 
@@ -61,28 +64,12 @@ class LLMProcessor @Inject constructor(
     private val MODEL_UNAVAILABILITY_COOLDOWN = 5 * 60 * 1000L
 
     /**
-     * Sets a new configuration for the LLM processor.
-     *
-     * @param config The new configuration to use for future API calls.
-     */
-    fun setConfig(config: LLMConfig) {
-        currentConfig = config
-    }
-
-    /**
      * Returns the current LLM configuration.
      *
      * @return The current configuration being used.
      */
     fun getConfig(): LLMConfig {
         return currentConfig
-    }
-
-    /**
-     * Resets the configuration to the default values.
-     */
-    fun resetConfig() {
-        currentConfig = LLMConfig.DEFAULT
     }
 
     /**
@@ -212,53 +199,71 @@ class LLMProcessor @Inject constructor(
             throw IllegalStateException("Network restricted by data saver settings")
         }
 
-        // Use the provided config or fall back to the current config
-        var usedConfig = config ?: currentConfig
+        // Use the provided config or fall back to the current config as a base
+        val baseConfig = config ?: currentConfig
 
-        // Check if the selected model is unavailable and needs a fallback (ONE attempt)
-        if (isModelUnavailable(usedConfig.modelId)) {
-            val message =
-                "Model ${usedConfig.modelId} is currently unavailable, falling back to default model IF NOT ALREADY DEFAULT"
-            errorCallback?.invoke(LLMError.ModelUnavailable(usedConfig.modelId, message))
-            if (usedConfig.modelId != LLMConfig.DEFAULT.modelId) {
-                usedConfig = LLMConfig.DEFAULT
-                // Check if the default is ALSO unavailable
-                if (isModelUnavailable(usedConfig.modelId)) {
+        // Get the latest selected model ID from SecurePreferences ---
+        val selectedModelId = securePreferences.getSelectedModelId()
+        // Ensure selectedModelId is not blank, fallback to default if it is (shouldn't happen due to screen checks, but safe)
+        val targetModelId =
+            if (selectedModelId.isNotBlank()) selectedModelId else LLMConfig.DEFAULT.modelId
+        // Determine the actual model to use, starting with the user's preference
+        var modelToUse = targetModelId
+
+        // Check if the *target* model is unavailable and needs a fallback
+        if (isModelUnavailable(modelToUse)) {
+            val unavailableMessage =
+                "Model $modelToUse (user preference or default) is currently unavailable, attempting fallback to application default."
+            errorCallback?.invoke(LLMError.ModelUnavailable(modelToUse, unavailableMessage))
+
+            // Fallback to the application's default model ONLY if it's different
+            if (modelToUse != LLMConfig.DEFAULT.modelId) {
+                modelToUse = LLMConfig.DEFAULT.modelId
+                // Check if the application default is ALSO unavailable
+                if (isModelUnavailable(modelToUse)) {
                     val defaultUnavailableMessage =
-                        "Default model ${usedConfig.modelId} is also currently unavailable."
+                        "Fallback model $modelToUse (application default) is also currently unavailable."
                     errorCallback?.invoke(
                         LLMError.ModelUnavailable(
-                            usedConfig.modelId,
+                            modelToUse,
                             defaultUnavailableMessage
                         )
                     )
-                    throw Exception("Fallback model ${usedConfig.modelId} is also unavailable.")
+                    throw Exception("Primary model ($targetModelId) and fallback model ($modelToUse) are both unavailable.")
                 }
+                errorCallback?.invoke(
+                    LLMError.ModelUnavailable(
+                        modelToUse,
+                        "Fell back to application default model: $modelToUse"
+                    )
+                )
             } else {
-                // Already using default, and it's unavailable
-                throw Exception("Default model ${usedConfig.modelId} is unavailable.")
+                // Already using the application default, and it's unavailable
+                throw Exception("Default model $modelToUse is unavailable.")
             }
         }
 
-        // Check API key and trial status - This might throw TrialExhaustedException or other Exceptions
-        val (apiKey, shouldDecrementFreeTrial) = checkApiKeyAndTrial(usedConfig)
+        // Create the final config to use for the API call, overriding the modelId
+        val finalConfig = baseConfig.copy(modelId = modelToUse)
+
+        // Pass finalConfig here to ensure checkApiKeyAndTrial uses the potentially updated model context if needed
+        val (apiKey, shouldDecrementFreeTrial) = checkApiKeyAndTrial(finalConfig)
 
         val messages = listOf(
             Message(role = "user", content = prompt)
         )
 
         val request = OpenRouterRequest(
-            model = usedConfig.modelId,
+            model = finalConfig.modelId, // Use the final model ID
             messages = messages,
-            max_tokens = usedConfig.maxTokens,
-            temperature = usedConfig.temperature,
-            top_p = usedConfig.topP
+            max_tokens = finalConfig.maxTokens,
+            temperature = finalConfig.temperature,
+            top_p = finalConfig.topP
         )
 
         val authHeader = "Bearer $apiKey"
 
         try {
-            // Use withConnectionTimeout to apply user's timeout setting
             val response = networkUtils.withConnectionTimeout {
                 openRouterApi.createCompletion(authHeader, request)
             }
@@ -292,9 +297,9 @@ class LLMProcessor @Inject constructor(
 
                 val llmError = when (errorType) {
                     ErrorType.MODEL_UNAVAILABLE -> {
-                        markModelUnavailable(usedConfig.modelId) // Mark unavailable on error
+                        markModelUnavailable(finalConfig.modelId) // Mark unavailable on error using the attempted model
                         LLMError.ModelUnavailable(
-                            usedConfig.modelId,
+                            finalConfig.modelId, // Keep original model ID for error reporting
                             "Model unavailable reported by API: ${error.message}"
                         )
                     }
@@ -312,8 +317,8 @@ class LLMProcessor @Inject constructor(
             val rawContent = apiResponse.choices.firstOrNull()?.message?.content ?: ""
 
             // Reset unavailability status if the call succeeded for this model
-            if (unavailableModels.containsKey(usedConfig.modelId)) {
-                unavailableModels.remove(usedConfig.modelId)
+            if (unavailableModels.containsKey(finalConfig.modelId)) { // Check using the model actually used
+                unavailableModels.remove(finalConfig.modelId) // Remove using the model actually used
             }
 
             // Record token usage for successful responses
@@ -326,9 +331,9 @@ class LLMProcessor @Inject constructor(
 
                     // Create TokenUsage object first
                     val tokenUsage = usageRepository.createTokenUsage(
-                        modelId = usedConfig.modelId,
+                        modelId = finalConfig.modelId, // Log the model actually used
                         modelName = apiResponse.model
-                            ?: usedConfig.modelId, // Use actual model from response
+                            ?: finalConfig.modelId, // Use actual model from response or the one we sent
                         promptTokens = usageInfo.prompt_tokens ?: 0,
                         completionTokens = usageInfo.completion_tokens ?: 0,
                         promptPrice = promptPrice,
@@ -352,8 +357,11 @@ class LLMProcessor @Inject constructor(
             // Create the specific LLMError instance based on the classified error
             val llmError = when (errorType) {
                 ErrorType.MODEL_UNAVAILABLE -> {
-                    markModelUnavailable(usedConfig.modelId) // Mark unavailable on error
-                    LLMError.ModelUnavailable(usedConfig.modelId, "Model unavailable: ${e.message}")
+                    markModelUnavailable(finalConfig.modelId) // Mark unavailable on error using the attempted model
+                    LLMError.ModelUnavailable(
+                        finalConfig.modelId,
+                        "Model unavailable: ${e.message}"
+                    )
                 }
 
                 ErrorType.TEMPORARY -> LLMError.TemporaryError("Temporary error: ${e.message}")
@@ -388,8 +396,8 @@ class LLMProcessor @Inject constructor(
             error.message?.contains("not available") == true -> ErrorType.MODEL_UNAVAILABLE
 
             // Temporary errors
-            error is java.net.SocketTimeoutException -> ErrorType.TEMPORARY
-            error is java.io.IOException -> ErrorType.TEMPORARY
+            error is SocketTimeoutException -> ErrorType.TEMPORARY
+            error is IOException -> ErrorType.TEMPORARY
             error.message?.contains("timeout") == true -> ErrorType.TEMPORARY
             error.message?.contains("429") == true -> ErrorType.TEMPORARY  // Too many requests
             error.message?.contains("503") == true -> ErrorType.TEMPORARY  // Service unavailable
