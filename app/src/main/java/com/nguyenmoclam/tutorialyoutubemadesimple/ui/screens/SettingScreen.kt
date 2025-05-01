@@ -75,7 +75,11 @@ fun SettingScreen(
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
     // Collect free calls state
-    val freeCallsRemaining by viewModel.freeCallsState.collectAsState()
+    //val freeCallsRemaining by viewModel.freeCallsState.collectAsState()
+    val freeCallsRemaining by authViewModel.freeCallsStateFlow.collectAsState()
+
+    // Collect user state
+    val user by authViewModel.userStateFlow.collectAsState()
 
     // Set up the Google Sign-In activity result launcher
     val signInLauncher = rememberLauncherForActivityResult(
@@ -127,7 +131,7 @@ fun SettingScreen(
                 icon = Icons.Default.AccountCircle
             ) {
                 GoogleAccountSettings(
-                    state = state,
+                    user = user,
                     freeCallsRemaining = freeCallsRemaining,
                     onTranscriptModeChanged = viewModel::setTranscriptMode,
                     onClearAccountDataClick = viewModel::clearAccountData,

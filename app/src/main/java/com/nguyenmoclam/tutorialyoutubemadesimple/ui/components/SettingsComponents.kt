@@ -134,7 +134,7 @@ fun ThemeSettings(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoogleAccountSettings(
-    state: SettingsState,
+    user: com.google.firebase.auth.FirebaseUser?,
     freeCallsRemaining: Int?,
     onTranscriptModeChanged: (String) -> Unit,
     onClearAccountDataClick: () -> Unit,
@@ -150,32 +150,31 @@ fun GoogleAccountSettings(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.google_account), fontWeight = FontWeight.Medium)
+                val isSignedIn = user != null
                 Text(
-                    text = if (state.isGoogleSignedIn) stringResource(R.string.signed_in) else stringResource(
-                        R.string.not_signed_in
-                    ),
+                    text = if (isSignedIn) stringResource(R.string.signed_in_as, user.email ?: "...") else stringResource(R.string.not_signed_in),
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (state.isGoogleSignedIn)
+                    color = if (isSignedIn)
                         MaterialTheme.colorScheme.primary
                     else
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
                 
-                if (state.isGoogleSignedIn) {
+                if (isSignedIn) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = stringResource(R.string.free_trial_offer),
+                        text = stringResource(R.string.free_trial_status),
                         style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.tertiary
                     )
-                    // Display remaining calls if available
-                    val callsText = when (freeCallsRemaining) {
-                        null -> "..."
-                        else -> "$freeCallsRemaining"
-                    }
+                    val callsText = freeCallsRemaining?.let {
+                        stringResource(R.string.free_calls_remaining, it)
+                    } ?: stringResource(R.string.loading_calls)
                     Text(
-                        text = stringResource(R.string.free_calls_remaining, callsText),
+                        text = callsText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -184,68 +183,66 @@ fun GoogleAccountSettings(
 
             TextButton(
                 onClick = {
-                    if (state.isGoogleSignedIn) {
-                        onSignOutClick() // Use new sign out method from AuthViewModel
+                    if (user != null) {
+                        onSignOutClick()
                     } else {
-                        onSignInClick() // Launch sign-in flow
+                        onSignInClick()
                     }
                 }
             ) {
                 Text(
-                    if (state.isGoogleSignedIn) stringResource(R.string.sign_out) else stringResource(
-                        R.string.sign_in
-                    )
+                    if (user != null) stringResource(R.string.sign_out) else stringResource(R.string.sign_in)
                 )
             }
         }
 
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        if (user != null) {
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-        // Transcript mode setting
-        Text(stringResource(R.string.transcript_mode), fontWeight = FontWeight.Medium)
-        Spacer(modifier = Modifier.height(8.dp))
+            Text(stringResource(R.string.transcript_mode), fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Column(modifier = Modifier.selectableGroup()) {
-            val modeOptions = listOf(
-                "google" to stringResource(R.string.use_google_account),
-                "anonymous" to stringResource(R.string.anonymous_mode)
-            )
+            Column(modifier = Modifier.selectableGroup()) {
+                val modeOptions = listOf(
+                    "google" to stringResource(R.string.use_google_account),
+                    "anonymous" to stringResource(R.string.anonymous_mode)
+                )
 
-            modeOptions.forEach { (value, label) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = state.transcriptMode == value,
-                            onClick = { onTranscriptModeChanged(value) }
+                modeOptions.forEach { (value, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = value == "google",
+                                onClick = { onTranscriptModeChanged(value) }
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = value == "google",
+                            onClick = null
                         )
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = state.transcriptMode == value,
-                        onClick = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(label)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(label)
+                    }
                 }
             }
-        }
 
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-        // Clear account data button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClearAccountDataClick)
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.clear_account_data),
-                color = MaterialTheme.colorScheme.error
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onClearAccountDataClick)
+                    .padding(vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.clear_account_data),
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 }

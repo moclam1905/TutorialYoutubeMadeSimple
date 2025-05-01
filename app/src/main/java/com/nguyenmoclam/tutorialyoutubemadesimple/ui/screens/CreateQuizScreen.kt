@@ -54,6 +54,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -232,13 +233,13 @@ fun CreateQuizScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                // Hiển thị cảnh báo số cuộc gọi miễn phí còn lại
                 if (user != null && (freeCallsRemaining ?: 0) in 0..3) {
                     TrialRemainingWarning(
                         callsRemaining = freeCallsRemaining ?: 0,
                         onGetApiKey = {
                             // Mở OpenRouter keys page
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://openrouter.ai/keys"))
+                            val intent = Intent(Intent.ACTION_VIEW,
+                                "https://openrouter.ai/keys".toUri())
                             context.startActivity(intent)
                         }
                     )

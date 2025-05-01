@@ -50,6 +50,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -81,16 +82,19 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.CreditAndUsageMo
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ModelSelectionComponent
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.OpenRouterHelpSection
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.TrialRemainingWarning
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIModelSettingsScreen(
     navController: NavController,
     settingsViewModel: SettingsViewModel,
-    usageViewModel: UsageViewModel = hiltViewModel()
+    usageViewModel: UsageViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel
 ) {
     val state = settingsViewModel.settingsState
     val creditStatusState by usageViewModel.creditStatusState.collectAsStateWithLifecycle()
@@ -100,12 +104,13 @@ fun AIModelSettingsScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     // Add current user state
     val currentUser by settingsViewModel.currentUser.collectAsStateWithLifecycle()
-    // Add free calls remaining state if the user is logged in
-    val freeCallsRemaining by if (currentUser != null) {
-        settingsViewModel.freeCallsState.collectAsStateWithLifecycle()
-    } else {
-        remember { mutableStateOf<Int?>(null) }
-    }
+//    // Add free calls remaining state if the user is logged in
+//    val freeCallsRemaining by if (currentUser != null) {
+//        settingsViewModel.freeCallsState.collectAsStateWithLifecycle()
+//    } else {
+//        remember { mutableStateOf<Int?>(null) }
+//    }
+    val freeCallsRemaining by authViewModel.freeCallsStateFlow.collectAsState()
     val context = LocalContext.current
 
     Scaffold(
@@ -147,7 +152,7 @@ fun AIModelSettingsScreen(
                     onGetApiKey = {
                         // Open OpenRouter keys page in browser
                         val intent =
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://openrouter.ai/keys"))
+                            Intent(Intent.ACTION_VIEW, "https://openrouter.ai/keys".toUri())
                         context.startActivity(intent)
                     }
                 )

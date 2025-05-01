@@ -514,5 +514,8 @@
     <string name="trial_remaining_normal">%1$d/10 free calls remaining</string>
     <string name="trial_get_own_key">Get your own API key when trial ends</string>
     <string name="free_calls_remaining">%1$d free calls remaining</string>
+    <string name="signed_in_as">Signed in as %1$s</string>
+    <string name="free_trial_status">Free Trial Status</string>
+    <string name="loading_calls">Loading call usage...</string>
 
 </resources>

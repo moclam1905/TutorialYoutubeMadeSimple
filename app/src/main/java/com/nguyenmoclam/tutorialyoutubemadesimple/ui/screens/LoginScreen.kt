@@ -25,6 +25,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.LoadingState
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
+import kotlinx.coroutines.delay
 
 /**
  * Login screen that displays a welcome message and Google Sign-In button.
@@ -66,7 +67,7 @@ fun LoginScreen(
     // Clear Firestore errors after 5 seconds
     LaunchedEffect(processStateValue.firestoreError) {
         if (processStateValue.firestoreError != null) {
-            kotlinx.coroutines.delay(5000)
+            delay(5000)
             viewModel.clearFirestoreError()
         }
     }

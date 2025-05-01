@@ -9,6 +9,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Task
+import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
@@ -32,13 +33,16 @@ class AuthManager @Inject constructor(
      * Initialize Google Sign-In client
      */
     private fun initGoogleSignIn() {
+        val serverClientId = context.getString(R.string.default_web_client_id) // IMPORTANT!
+
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(serverClientId)
             .requestEmail()
-            .requestScopes(
-                Scope("https://www.googleapis.com/auth/youtube.readonly"),
-                Scope("https://www.googleapis.com/auth/youtube.force-ssl"),
-                Scope("https://www.googleapis.com/auth/youtubepartner")
-            )
+//            .requestScopes(
+//                Scope("https://www.googleapis.com/auth/youtube.readonly"),
+//                Scope("https://www.googleapis.com/auth/youtube.force-ssl"),
+//                Scope("https://www.googleapis.com/auth/youtubepartner")
+//            )
             .build()
 
         googleSignInClient = GoogleSignIn.getClient(context, gso)

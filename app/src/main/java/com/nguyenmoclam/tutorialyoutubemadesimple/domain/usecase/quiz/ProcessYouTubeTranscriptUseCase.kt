@@ -57,24 +57,24 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
                 )
             }
 
-            if (authManager.isUserSignedIn() && transcriptMode == "google") {
-                try {
-                    // Apply connection timeout to Google API request
-                    val transcriptText = networkUtils.withConnectionTimeout {
-                        fetchTranscriptFromGoogleApi(videoId)
-                    }
-                    
-                    // For Google API, we don't have segments with timestamps yet
-                    // This would need to be implemented separately
-                    TranscriptResult(text = transcriptText, segments = emptyList())
-                } catch (e: Exception) {
-                    TranscriptResult(
-                        text = "",
-                        segments = emptyList(),
-                        error = e.message ?: "Connection timeout or error"
-                    )
-                }
-            } else {
+//            if (authManager.isUserSignedIn() && transcriptMode == "google") {
+//                try {
+//                    // Apply connection timeout to Google API request
+//                    val transcriptText = networkUtils.withConnectionTimeout {
+//                        fetchTranscriptFromGoogleApi(videoId)
+//                    }
+//
+//                    // For Google API, we don't have segments with timestamps yet
+//                    // This would need to be implemented separately
+//                    TranscriptResult(text = transcriptText, segments = emptyList())
+//                } catch (e: Exception) {
+//                    TranscriptResult(
+//                        text = "",
+//                        segments = emptyList(),
+//                        error = e.message ?: "Connection timeout or error"
+//                    )
+//                }
+//            } else {
                 // YouTubeTranscriptLight already uses the timeout settings via OkHttpClient
                 val transcripts = youTubeTranscriptLight.getTranscript(videoId, languages)
                 val transcriptContent = transcripts.joinToString(" ") { it.text }
@@ -83,7 +83,7 @@ class ProcessYouTubeTranscriptUseCase @Inject constructor(
                 Log.d("ProcessYouTubeTranscriptUseCase", "Chapters: $chapterList")
 
                 TranscriptResult(text = transcriptContent, segments = transcripts, chapters = chapterList)
-            }
+            //}
         } catch (e: YouTubeTranscriptLight.TranscriptError) {
             TranscriptResult(text = "", segments = emptyList(), error = e.javaClass.simpleName)
         } catch (e: Exception) {

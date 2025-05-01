@@ -508,5 +508,8 @@
     <string name="trial_remaining_normal">Còn lại %1$d/10 lượt miễn phí</string>
     <string name="trial_get_own_key">Khi hết lượt dùng thử, hãy sử dụng khóa API của riêng bạn</string>
     <string name="free_calls_remaining">Còn lại %1$d lượt gọi miễn phí</string>
+    <string name="signed_in_as">Đăng nhập với tư cách %1$s</string>
+    <string name="free_trial_status">Trạng thái dùng thử miễn phí</string>
+    <string name="loading_calls">Đang tải thông tin lượt sử dụng...</string>
 
 </resources>

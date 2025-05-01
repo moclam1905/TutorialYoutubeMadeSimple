@@ -103,7 +103,8 @@ fun AppNavigation(
             // Pass the existing settingsViewModel instance down
             AIModelSettingsScreen(
                 navController = navController,
-                settingsViewModel = settingsViewModel // Pass the instance here
+                settingsViewModel = settingsViewModel,
+                authViewModel =  authViewModel
             )
         }
         // Quiz Detail Screen
