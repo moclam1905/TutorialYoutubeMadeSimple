@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">InsightTube</string>
-    
+
     <!-- Error messages -->
     <string name="error_invalid_url">Invalid video URL/ID.</string>
     <string name="error_no_summary">No summary results received.</string>
@@ -11,17 +11,17 @@
     <string name="error_transcripts_disabled">Transcripts are disabled for this video.</string>
     <string name="error_network">Network error. Please check your connection.</string>
     <string name="error_language_not_found">No transcript available in the supported language.</string>
-    
+
     <!-- Default values -->
     <string name="default_no_title">(No title)</string>
-    
+
     <!-- Share dialog -->
     <string name="share_dialog_title">Share summary via…</string>
 
     <!-- Input labels -->
     <string name="input_url_label">Enter YouTube URL or ID</string>
     <string name="input_url_placeholder">Example: https://youtu.be/VIDEO_ID</string>
-    
+
     <!-- Button labels -->
     <string name="summarize_button">Summarize Video</string>
     <string name="back_button">Back</string>
@@ -37,23 +37,23 @@
     <string name="next_question_button">Next Question</string>
     <string name="skip_question_button">Skip Question</string>
     <string name="submit_answer_button">Submit Answer</string>
-    
+
     <!-- Loading states -->
     <string name="loading_summary">Summarizing…</string>
-    
+
     <!-- Processing steps -->
     <string name="step_fetch_metadata">Fetching video metadata from YouTube API…</string>
     <string name="step_process_transcript">Retrieving and processing video transcript…</string>
     <string name="step_summary">Extracting and processing topics using LLM…</string>
     <string name="step_questions">Processing questions content…</string>
     <string name="step_create_quiz">Processing quiz content…</string>
-    
+
     <!-- Exit Dialog -->
     <string name="exit_dialog_title">Exit Summary</string>
     <string name="exit_dialog_message">Are you sure you want to exit? Your progress will be lost.</string>
     <string name="exit_dialog_confirm">Yes, Exit</string>
     <string name="exit_dialog_cancel">Cancel</string>
-    
+
     <!-- Quiz Dialog -->
     <string name="exit_quiz_dialog_title">Exit Quiz?</string>
     <string name="exit_quiz_dialog_message">If you exit now, your progress will be saved but your timer will be reset when you return.</string>
@@ -62,7 +62,7 @@
     <string name="theme_change_dialog_title">Theme Change Confirmation</string>
     <string name="theme_change_dialog_message">Do you want to change the theme? The changes will be applied immediately.</string>
 
-    
+
     <!-- Screen Titles -->
     <string name="settings_title">Settings</string>
     <string name="learning_hub_title">Learning Hub</string>
@@ -70,13 +70,13 @@
     <string name="quiz_details_title">Quiz Details</string>
     <string name="reset_settings_title">Reset All Settings</string>
     <string name="reset_settings_message">Are you sure you want to reset all settings to default values? This action cannot be undone.</string>
-    
+
     <!-- Input Fields -->
     <string name="search_placeholder">Search challenges…</string>
     <string name="enter_youtube_url">Enter YouTube Video URL</string>
     <string name="youtube_url_example">Example: https://youtu.be/VIDEO_ID</string>
     <string name="number_of_questions_label">Number of questions (1–50)</string>
-    
+
     <!-- Tag Filter -->
     <string name="filter_by_tags">Filter by tags</string>
     <string name="clear_tag_filters">Clear tag filters</string>
@@ -88,14 +88,14 @@
     <string name="tag_filter_selected_count">%1$d tags selected</string>
     <string name="tag_filter_no_results">No matching tags found</string>
     <string name="search_tags_placeholder">Search tags…</string>
-    
+
     <!-- Tab Labels -->
     <string name="dashboard_tab">Dashboard</string>
     <string name="materials_tab">Materials</string>
     <string name="summary_tab">Summary</string>
     <string name="questions_tab">Questions</string>
     <string name="settings_tab">Settings</string>
-    
+
     <!-- Content Labels -->
     <string name="select_language">Select Language:</string>
     <string name="select_output_content">Select Output Content:</string>
@@ -103,7 +103,7 @@
     <string name="generate_questions">Generate Questions</string>
     <string name="no_summary_available">No summary available</string>
     <string name="no_questions_available">No questions available</string>
-    
+
     <!-- Settings Labels -->
     <string name="question_order">Question Order</string>
     <string name="maximum_retry_count">Maximum Retry Count: %1$d</string>
@@ -519,5 +519,13 @@
     <string name="loading_calls">Loading call usage...</string>
     <string name="loading_status">Loading status...</string>
     <string name="api_config_disabled_during_trial">API configuration is disabled during the free trial</string>
+    <string name="unknown_user">Unknown User</string>
+    <string name="sign_in_description">Sign in to personalize your experience and track progress</string>
+    <string name="user_avatar">User Avatar</string>
+    <string name="confirm_sign_out_title">Sign Out</string>
+    <string name="confirm_sign_out_message">Are you sure you want to sign out?</string>
+    <string name="sign_out_data_deletion_warning">
+All your in-app account data (quiz history, learning progress, etc.) will be permanently deleted.
+</string>
 
 </resources>

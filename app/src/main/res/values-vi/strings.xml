@@ -513,5 +513,10 @@
     <string name="loading_calls">Đang tải thông tin lượt sử dụng...</string>
     <string name="loading_status">Đang tải trạng thái...</string>
     <string name="api_config_disabled_during_trial">Cấu hình API bị vô hiệu hóa trong thời gian dùng thử miễn phí</string>
-
+    <string name="unknown_user">Người dùng không xác định</string>
+    <string name="sign_in_description">Đăng nhập để cá nhân hóa trải nghiệm và theo dõi tiến độ</string>
+    <string name="user_avatar">Ảnh đại diện người dùng</string>
+    <string name="confirm_sign_out_title">Đăng xuất</string>
+    <string name="confirm_sign_out_message">Bạn có chắc chắn muốn đăng xuất không?</string>
+    <string name="sign_out_data_deletion_warning">Toàn bộ dữ liệu tài khoản của bạn trong ứng dụng (lịch sử bài kiểm tra, tiến độ học tập,...) sẽ bị xóa vĩnh viễn.</string>
 </resources>

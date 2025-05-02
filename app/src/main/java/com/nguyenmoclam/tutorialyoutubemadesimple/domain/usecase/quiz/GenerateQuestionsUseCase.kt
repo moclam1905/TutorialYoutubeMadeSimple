@@ -12,7 +12,6 @@ import javax.inject.Inject
  */
 class GenerateQuestionsUseCase @Inject constructor(
     private val llmProcessor: LLMProcessor
-    // private val networkUtils: NetworkUtils // Remove NetworkUtils
 ) {
     // Store the last extracted key points for later retrieval
     private var lastExtractedKeyPoints: List<String> = emptyList()
@@ -75,11 +74,4 @@ class GenerateQuestionsUseCase @Inject constructor(
             QuestionsResult(content = "", error = e.message ?: "Unknown error generating questions", wasFreeCallUsed = false)
         }
     }
-
-    // Helper to recreate prompt locally if needed (Alternative to exposing callLLM or prompt generation)
-    // private fun generateQuestionsPrompt(...) : String { ... }
 }
-
-// Need to add callLLMInternal or expose prompt generation in LLMProcessor, OR
-// Properly modify public methods in LLMProcessor to return the Pair.
-// Let's choose the latter: Edit LLMProcessor.generateQuestionsFromKeyPoints next.

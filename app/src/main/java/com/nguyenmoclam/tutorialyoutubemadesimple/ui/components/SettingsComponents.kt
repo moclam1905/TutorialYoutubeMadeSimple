@@ -1,6 +1,7 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.components
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,17 +11,30 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.ClearAll
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.ContactSupport
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -34,22 +48,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.rememberAsyncImagePainter
+import com.google.firebase.auth.FirebaseUser
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsState
 import kotlin.math.log10
 import kotlin.math.pow
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ContactSupport
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ClearAll
-import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material3.ExperimentalMaterial3Api
 
 /**
  * Theme settings component that allows selecting between light, dark, and system theme modes
@@ -134,113 +144,108 @@ fun ThemeSettings(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoogleAccountSettings(
-    user: com.google.firebase.auth.FirebaseUser?,
+    user: FirebaseUser?,
     freeCallsRemaining: Int?,
-    onTranscriptModeChanged: (String) -> Unit,
-    onClearAccountDataClick: () -> Unit,
     onSignInClick: () -> Unit = {},
     onSignOutClick: () -> Unit = {}
 ) {
+    val isSignedIn = user != null
+
     Column {
-        // Google account status and sign-in/out buttons
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        // User Info / Sign In Button Section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                    alpha = 0.3f
+                )
+            )
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.google_account), fontWeight = FontWeight.Medium)
-                val isSignedIn = user != null
-                Text(
-                    text = if (isSignedIn) stringResource(R.string.signed_in_as, user.email ?: "...") else stringResource(R.string.not_signed_in),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isSignedIn)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                
-                if (isSignedIn) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.free_trial_status),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                    val callsText = freeCallsRemaining?.let {
-                        stringResource(R.string.free_calls_remaining, it)
-                    } ?: stringResource(R.string.loading_calls)
-                    Text(
-                        text = callsText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            TextButton(
-                onClick = {
-                    if (user != null) {
-                        onSignOutClick()
-                    } else {
-                        onSignInClick()
-                    }
-                }
-            ) {
-                Text(
-                    if (user != null) stringResource(R.string.sign_out) else stringResource(R.string.sign_in)
-                )
-            }
-        }
-
-        if (user != null) {
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-            Text(stringResource(R.string.transcript_mode), fontWeight = FontWeight.Medium)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Column(modifier = Modifier.selectableGroup()) {
-                val modeOptions = listOf(
-                    "google" to stringResource(R.string.use_google_account),
-                    "anonymous" to stringResource(R.string.anonymous_mode)
-                )
-
-                modeOptions.forEach { (value, label) ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectable(
-                                selected = value == "google",
-                                onClick = { onTranscriptModeChanged(value) }
-                            )
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = value == "google",
-                            onClick = null
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(label)
-                    }
-                }
-            }
-
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onClearAccountDataClick)
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                if (isSignedIn) {
+                    // Signed In State
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        // User Avatar (Add Coil dependency if not already present)
+                        val painter = rememberAsyncImagePainter(
+                            model = user.photoUrl,
+                            placeholder = painterResource(id = R.drawable.ic_launcher_foreground), // Replace with your placeholder
+                            error = painterResource(id = R.drawable.ic_launcher_foreground) // Replace with your error placeholder
+                        )
+                        Image(
+                            painter = painter,
+                            contentDescription = stringResource(R.string.user_avatar),
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = user.displayName ?: stringResource(R.string.unknown_user),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = user.email ?: "...", // Linter fix: Safe call
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    OutlinedButton(onClick = onSignOutClick) {
+                        Text(stringResource(R.string.sign_out))
+                    }
+                } else {
+                    // Signed Out State
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.google_account),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            stringResource(R.string.sign_in_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Button(onClick = onSignInClick) {
+                        Text(stringResource(R.string.sign_in))
+                    }
+                }
+            }
+        } // End of Card
+
+        // Settings available only when signed in
+        if (isSignedIn) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Free Trial Status
+            Column(modifier = Modifier.padding(horizontal = 4.dp)) {
                 Text(
-                    text = stringResource(R.string.clear_account_data),
-                    color = MaterialTheme.colorScheme.error
+                    text = stringResource(R.string.free_trial_status),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    //color = MaterialTheme.colorScheme.tertiary // Optional: different color
+                )
+                val callsText = freeCallsRemaining?.let {
+                    stringResource(R.string.free_calls_remaining, it)
+                } ?: stringResource(R.string.loading_calls)
+                Text(
+                    text = callsText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

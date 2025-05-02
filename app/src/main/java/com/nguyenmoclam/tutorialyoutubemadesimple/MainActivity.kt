@@ -61,7 +61,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkSnackbarManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkStateListener
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.NetworkUtils
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
@@ -76,7 +75,6 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     companion object {
         const val YOUTUBE_API_KEY: String = BuildConfig.YOUTUBE_API_KEY
-        const val OPENROUTER_API_KEY: String = BuildConfig.OPENROUTER_API_KEY
     }
 
     val languageChangeHelper by lazy {
@@ -125,9 +123,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
-            val authViewModel: AuthViewModel = viewModel()
-            // val authState by authViewModel.authState.collectAsState() // Remove this line
-
             // Collect user state from the repository
             val user by userDataRepository.userStateFlow.collectAsState()
             

@@ -88,7 +88,8 @@ class SettingsViewModel @Inject constructor(
 
     // Add this state variable
     private val _isInitialSettingsLoaded = MutableStateFlow(false)
-    val isInitialSettingsLoaded: StateFlow<Boolean> = _isInitialSettingsLoaded.asStateFlow() // Expose as StateFlow
+    val isInitialSettingsLoaded: StateFlow<Boolean> =
+        _isInitialSettingsLoaded.asStateFlow() // Expose as StateFlow
 
     // Expose free calls state from UserDataRepository
     val freeCallsState: StateFlow<Int?> = userDataRepository.freeCallsStateFlow
@@ -156,7 +157,7 @@ class SettingsViewModel @Inject constructor(
                 settingsState = settingsState.copy(isNetworkAvailable = isAvailable)
             }
         }
-        
+
         // Observe Firebase user from UserDataRepository
         viewModelScope.launch {
             userDataRepository.userStateFlow.collect { user ->
@@ -187,12 +188,14 @@ class SettingsViewModel @Inject constructor(
                     // Validate format first
                     val formatValidation = validateApiKeyFormat(storedApiKey)
                     if (formatValidation == ApiKeyValidationState.VALIDATING) { // Assuming VALIDATING means format is ok for now
-                        updatedState = updatedState.copy(apiKeyValidationState = ApiKeyValidationState.VALIDATING)
+                        updatedState =
+                            updatedState.copy(apiKeyValidationState = ApiKeyValidationState.VALIDATING)
                         // Update state *before* potential suspension point (network call)
                         settingsState = updatedState
 
                         // Now perform the actual validation network call
-                        val validationState = openRouterRepository.validateApiKey(storedApiKey, false)
+                        val validationState =
+                            openRouterRepository.validateApiKey(storedApiKey, false)
                         // Read the latest state again before copying, in case other flows updated it
                         updatedState = settingsState.copy(apiKeyValidationState = validationState)
 
@@ -203,11 +206,13 @@ class SettingsViewModel @Inject constructor(
                         }
                     } else {
                         // Handle case where format is invalid immediately
-                        updatedState = updatedState.copy(apiKeyValidationState = formatValidation) // Use the actual invalid state
+                        updatedState =
+                            updatedState.copy(apiKeyValidationState = formatValidation) // Use the actual invalid state
                     }
                 } else {
                     // No API key stored
-                    updatedState = updatedState.copy(apiKeyValidationState = ApiKeyValidationState.NOT_VALIDATED)
+                    updatedState =
+                        updatedState.copy(apiKeyValidationState = ApiKeyValidationState.NOT_VALIDATED)
                 }
 
                 // Update the final state once after all checks
@@ -215,7 +220,8 @@ class SettingsViewModel @Inject constructor(
 
             } catch (e: Exception) {
                 // Handle potential errors during loading/validation
-                settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.ERROR) // Example error handling
+                settingsState =
+                    settingsState.copy(apiKeyValidationState = ApiKeyValidationState.ERROR) // Example error handling
                 // Log the exception, e.g., Log.e("SettingsViewModel", "Error loading initial settings", e)
             } finally {
                 // Mark loading as complete regardless of success or failure
@@ -258,66 +264,6 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             setAutoNextQuestionUseCase(auto)
             settingsState = settingsState.copy(autoNextQuestion = auto)
-        }
-    }
-
-    // Google account settings
-    /*
-    fun setGoogleSignIn(signedIn: Boolean) {
-        viewModelScope.launch {
-            if (signedIn) {
-                // We don't actually sign in here - this will be triggered by the activity result
-                // The UI will show the Google Sign-In button which will launch the sign-in intent
-            } else {
-                // Sign out
-                authManager.signOut()
-                setGoogleSignInUseCase(false)
-                settingsState = settingsState.copy(isGoogleSignedIn = false)
-            }
-        }
-    }
-    */
-
-    /**
-     * Process the Google Sign-In result
-     */
-    /*
-    fun handleSignInResult(task: Task<GoogleSignInAccount>) {
-        val account = authManager.handleSignInResult(task)
-        viewModelScope.launch {
-            if (account != null) {
-                // Sign-in successful
-                setGoogleSignInUseCase(true)
-                settingsState = settingsState.copy(isGoogleSignedIn = true)
-
-                // If transcript mode is anonymous, switch to google
-                if (settingsState.transcriptMode == "anonymous") {
-                    setTranscriptMode("google")
-                }
-            }
-        }
-    }
-    */
-
-    /**
-     * Get sign-in intent for launching Google Sign-In
-     */
-    /*
-    fun getSignInIntent(): Intent? {
-        return authViewModel.signIn()
-    }
-    */
-
-    fun setTranscriptMode(mode: String) {
-        viewModelScope.launch {
-            setTranscriptModeUseCase(mode)
-            settingsState = settingsState.copy(transcriptMode = mode)
-        }
-    }
-
-    fun clearAccountData() {
-        viewModelScope.launch {
-            signOut() // Use our new method that delegates to AuthViewModel
         }
     }
 
@@ -430,7 +376,7 @@ class SettingsViewModel @Inject constructor(
             settingsState = settingsState.copy(retryPolicy = policy)
         }
     }
-    
+
     fun setAllowMeteredNetworks(allowed: Boolean) {
         viewModelScope.launch {
             setAllowContentOnMeteredUseCase(allowed)
@@ -478,14 +424,14 @@ class SettingsViewModel @Inject constructor(
                 openRouterApiKey = key,
                 apiKeyValidationState = validateApiKeyFormat(key)
             )
-            
+
             // If format is valid, validate with server
             if (settingsState.apiKeyValidationState == ApiKeyValidationState.VALIDATING) {
                 validateApiKeyWithServer(key)
             }
         }
     }
-    
+
     /**
      * Public method to validate API key - can be called from UI components
      */
@@ -495,13 +441,13 @@ class SettingsViewModel @Inject constructor(
             settingsState = settingsState.copy(
                 apiKeyValidationState = formatState
             )
-            
+
             if (formatState == ApiKeyValidationState.VALIDATING) {
                 validateApiKeyWithServer(key)
             }
         }
     }
-    
+
     /**
      * Validates the API key format
      * A valid OpenRouter API key should start with "sk-or-v1-"
@@ -513,7 +459,7 @@ class SettingsViewModel @Inject constructor(
             else -> ApiKeyValidationState.VALIDATING
         }
     }
-    
+
     /**
      * Validates the API key with the server and fetches models if valid
      */
@@ -521,26 +467,28 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // Set state to validating
-                settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.VALIDATING)
-                
+                settingsState =
+                    settingsState.copy(apiKeyValidationState = ApiKeyValidationState.VALIDATING)
+
                 // Validate the API key with the repository
                 val validationState = openRouterRepository.validateApiKey(key)
-                
+
                 // Update validation state
                 settingsState = settingsState.copy(apiKeyValidationState = validationState)
-                
+
                 // If the key is valid, fetch models and credits
                 if (validationState == ApiKeyValidationState.VALID) {
                     // Save the API key securely
                     openRouterRepository.saveApiKey(key, force = true)
-                    
+
                     // Fetch models and credits
                     fetchModels()
                     fetchCredits()
                 }
             } catch (e: Exception) {
                 // Handle error (timeout, network error, etc.)
-                settingsState = settingsState.copy(apiKeyValidationState = ApiKeyValidationState.INVALID)
+                settingsState =
+                    settingsState.copy(apiKeyValidationState = ApiKeyValidationState.INVALID)
             }
         }
     }
@@ -560,12 +508,13 @@ class SettingsViewModel @Inject constructor(
                 // Fetch ALL models for now (assuming no API pagination support yet)
                 val modelsList = openRouterRepository.getAvailableModels(forceRefresh = true)
                 _allModels.value = modelsList
-                
+
                 // Update the default sort option to MODERATED_FIRST if not already set
                 if (settingsState.modelSortOption == ModelFilter.SortOption.TOP_WEEKLY) {
-                    settingsState = settingsState.copy(modelSortOption = ModelFilter.SortOption.MODERATED_FIRST)
+                    settingsState =
+                        settingsState.copy(modelSortOption = ModelFilter.SortOption.MODERATED_FIRST)
                 }
-                
+
                 // _hasMoreModels.value = modelsList.size >= PAGE_SIZE // Update based on first page size
             } catch (e: Exception) {
                 _allModels.value = emptyList() // Clear on error
@@ -575,7 +524,7 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * Fetches credits information from OpenRouter.
      */
@@ -583,7 +532,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val creditsResponse = openRouterRepository.getCredits(true)
-                settingsState = settingsState.copy(apiKeyCredits = creditsResponse.data.total_credits ?: 0.0)
+                settingsState =
+                    settingsState.copy(apiKeyCredits = creditsResponse.data.total_credits ?: 0.0)
             } catch (e: Exception) {
                 // Handle error
             }
@@ -633,7 +583,10 @@ class SettingsViewModel @Inject constructor(
     /**
      * Applies all active filters to the list of models.
      */
-    private fun applyAllFilters(models: List<ModelInfo>, filters: Map<ModelFilter.Category, Set<String>>): List<ModelInfo> {
+    private fun applyAllFilters(
+        models: List<ModelInfo>,
+        filters: Map<ModelFilter.Category, Set<String>>
+    ): List<ModelInfo> {
         if (filters.isEmpty()) return models
 
         return models.filter { model ->
@@ -644,7 +597,11 @@ class SettingsViewModel @Inject constructor(
 
                 when (category) {
                     ModelFilter.Category.INPUT_MODALITY -> model.inputModalities.contains(option.lowercase())
-                    ModelFilter.Category.CONTEXT_LENGTH -> checkContextLength(model.contextLength, option)
+                    ModelFilter.Category.CONTEXT_LENGTH -> checkContextLength(
+                        model.contextLength,
+                        option
+                    )
+
                     ModelFilter.Category.PRICING -> checkPricingTier(model.promptPrice, option)
                     // Add else branch to make when exhaustive
                     else -> true // Don't filter for unhandled categories (PROVIDER, OUTPUT_MODALITY)
@@ -667,27 +624,30 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /** 
+    /**
      * Helper to check if a model fits a pricing tier filter option.
      * Assumes promptPrice is the price per **million** tokens.
      * NOTE: The thresholds for BUDGET, STANDARD, PREMIUM might need adjustment.
      */
-     private fun checkPricingTier(promptPrice: Double, filterOption: String): Boolean {
-         // Use constants directly from ModelFilter for reliable comparison
-         return when (filterOption) {
-             ModelFilter.PricingTiers.FREE -> promptPrice == 0.0
-             // Adjusted budget to include very small prices > 0
-             ModelFilter.PricingTiers.BUDGET -> promptPrice > 0.0 && promptPrice <= 0.5 // Example threshold
-             ModelFilter.PricingTiers.STANDARD -> promptPrice > 0.5 && promptPrice <= 1.5 // Example threshold
-             ModelFilter.PricingTiers.PREMIUM -> promptPrice > 1.5 // Example threshold
-             else -> true // Default case if filter option is unexpected
-         }
-     }
+    private fun checkPricingTier(promptPrice: Double, filterOption: String): Boolean {
+        // Use constants directly from ModelFilter for reliable comparison
+        return when (filterOption) {
+            ModelFilter.PricingTiers.FREE -> promptPrice == 0.0
+            // Adjusted budget to include very small prices > 0
+            ModelFilter.PricingTiers.BUDGET -> promptPrice > 0.0 && promptPrice <= 0.5 // Example threshold
+            ModelFilter.PricingTiers.STANDARD -> promptPrice > 0.5 && promptPrice <= 1.5 // Example threshold
+            ModelFilter.PricingTiers.PREMIUM -> promptPrice > 1.5 // Example threshold
+            else -> true // Default case if filter option is unexpected
+        }
+    }
 
     /**
      * Sorts the list of models based on the selected sort option.
      */
-    private fun sortModels(models: List<ModelInfo>, sortOption: ModelFilter.SortOption): List<ModelInfo> {
+    private fun sortModels(
+        models: List<ModelInfo>,
+        sortOption: ModelFilter.SortOption
+    ): List<ModelInfo> {
         return when (sortOption) {
             ModelFilter.SortOption.TOP_WEEKLY -> models // Assuming API returns this by default, or implement ranking if available
             ModelFilter.SortOption.NEWEST -> models.sortedByDescending { it.id } // Assuming ID correlates with creation time - might need a real date field
@@ -742,19 +702,19 @@ class SettingsViewModel @Inject constructor(
     //     }
     // }
 
-    /**
-     * Sign out from Firebase and Google
-     * This method delegates to AuthViewModel
-     */
-    fun signOut() {
-        viewModelScope.launch {
-            authManager.signOut()
-            // Update transcript mode to anonymous after sign-out
-            setTranscriptModeUseCase("anonymous")
-            settingsState = settingsState.copy(transcriptMode = "anonymous")
-        }
+    fun resetAllSettings() {
+        setThemeMode("system")
+        setQuestionOrder("sequential")
+        setMaxRetryCount(1)
+        setShowAnswerAfterWrong(false)
+        setAutoNextQuestion(false)
+        setDataSaverMode(false)
+        setConnectionType("any")
+        setConnectionTimeout(120)
+        setRetryPolicy("exponential")
+        setAppLanguage("system")
+        setAllowMeteredNetworks(false)
     }
-
 }
 
 /**

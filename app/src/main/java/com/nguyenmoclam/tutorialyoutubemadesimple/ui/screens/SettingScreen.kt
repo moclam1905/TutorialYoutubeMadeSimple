@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SignalWifiStatusbar4Bar
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -72,6 +73,7 @@ fun SettingScreen(
 ) {
     val state = viewModel.settingsState
     var showResetDialog by remember { mutableStateOf(false) }
+    var showSignOutConfirmDialog by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
     // Collect free calls state
@@ -133,10 +135,8 @@ fun SettingScreen(
                 GoogleAccountSettings(
                     user = user,
                     freeCallsRemaining = freeCallsRemaining,
-                    onTranscriptModeChanged = viewModel::setTranscriptMode,
-                    onClearAccountDataClick = viewModel::clearAccountData,
                     onSignInClick = { authViewModel.signIn()?.let { signInLauncher.launch(it) } },
-                    onSignOutClick = { authViewModel.signOut() }
+                    onSignOutClick = { showSignOutConfirmDialog = true }
                 )
             }
 
@@ -342,16 +342,7 @@ fun SettingScreen(
                     TextButton(
                         onClick = {
                             // Reset all settings to defaults
-                            viewModel.setThemeMode("system")
-                            viewModel.setQuestionOrder("sequential")
-                            viewModel.setMaxRetryCount(1)
-                            viewModel.setShowAnswerAfterWrong(false)
-                            viewModel.setAutoNextQuestion(false)
-                            viewModel.setDataSaverMode(false)
-                            viewModel.setConnectionType("any")
-                            viewModel.setConnectionTimeout(120)
-                            viewModel.setRetryPolicy("exponential")
-                            viewModel.setAppLanguage("system")
+                            viewModel.resetAllSettings()
                             showResetDialog = false
                         }
                     ) {
@@ -360,6 +351,42 @@ fun SettingScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showResetDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+
+        // Sign-out confirmation dialog
+        if (showSignOutConfirmDialog) {
+            AlertDialog(
+                icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
+                title = { Text(stringResource(R.string.confirm_sign_out_title)) },
+                text = {
+                    Text(
+                        stringResource(R.string.confirm_sign_out_message) + "\n\n" + stringResource(
+                            R.string.sign_out_data_deletion_warning
+                        )
+                    )
+                },
+                onDismissRequest = { showSignOutConfirmDialog = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.resetLearningProgress()
+                            viewModel.clearCache()
+                            viewModel.clearQuizHistory()
+                            authViewModel.signOut()
+
+                            showSignOutConfirmDialog = false
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.sign_out))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showSignOutConfirmDialog = false }) {
                         Text(stringResource(R.string.cancel))
                     }
                 }
@@ -409,8 +436,6 @@ fun SettingsSection(
                     fontWeight = FontWeight.Bold
                 )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Section content
             content()
