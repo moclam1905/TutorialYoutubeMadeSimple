@@ -74,6 +74,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
@@ -102,6 +103,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.tra
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -169,15 +171,12 @@ fun QuizDetailDrawerContent(
     var materialsExpanded by remember { mutableStateOf(true) }
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues()
 
-    // Use ModalDrawerSheet or a Column with elevation/background for better Material 3 feel
     Column(
         modifier = Modifier
             .fillMaxHeight()
             .padding(top = statusBarPadding.calculateTopPadding())
-            // Optional: Add background color matching drawer background
-             .background(MaterialTheme.colorScheme.surface) // Or surfaceVariant
+            .background(MaterialTheme.colorScheme.surface)
     ) {
-        // --- Improved Header ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -197,9 +196,8 @@ fun QuizDetailDrawerContent(
                 color = MaterialTheme.colorScheme.onSurface // Use onSurface color
             )
         }
-        // Consider removing Divider or using a lighter one if needed
-        // Divider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-        Spacer(modifier = Modifier.height(12.dp)) // Use Spacer instead of Divider
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         // --- Navigation Items ---
         // Use padding on each item for consistent spacing
@@ -224,7 +222,7 @@ fun QuizDetailDrawerContent(
                         }
                     }
                 }
-             },
+            },
             shape = MaterialTheme.shapes.medium // Rounded shape
         )
 
@@ -232,7 +230,12 @@ fun QuizDetailDrawerContent(
         NavigationDrawerItem(
             modifier = itemModifier,
             // Use filled icon if the section is expanded, otherwise outlined
-            icon = { Icon(if (materialsExpanded) Icons.Default.MenuBook else Icons.Outlined.MenuBook, contentDescription = null) },
+            icon = {
+                Icon(
+                    if (materialsExpanded) Icons.Default.MenuBook else Icons.Outlined.MenuBook,
+                    contentDescription = null
+                )
+            },
             label = { Text(stringResource(R.string.materials_tab)) },
             badge = { // Animated badge icon
                 Icon(
@@ -256,52 +259,61 @@ fun QuizDetailDrawerContent(
         ) {
             // Indent content visually using padding within this Column
             Column(modifier = Modifier.padding(start = 28.dp)) { // Indentation for sub-items
-                val subItemModifier = Modifier.padding(horizontal = 0.dp, vertical = 4.dp) // Adjust padding inside
+                val subItemModifier =
+                    Modifier.padding(horizontal = 0.dp, vertical = 4.dp) // Adjust padding inside
 
-                 // Summary Item
+                // Summary Item
                 NavigationDrawerItem(
                     modifier = subItemModifier.fillMaxWidth(),
-                    icon = { Icon(if (selectedContentIndex == 0) Icons.Default.Summarize else Icons.Outlined.Summarize, contentDescription = null) },
+                    icon = {
+                        Icon(
+                            if (selectedContentIndex == 0) Icons.Default.Summarize else Icons.Outlined.Summarize,
+                            contentDescription = null
+                        )
+                    },
                     label = { Text(stringResource(R.string.summary_tab)) },
                     selected = selectedContentIndex == 0,
                     onClick = {
-                         scope.launch { slidingNavState.closeMenu() } // Close drawer on click
-                         onContentIndexChange(0)
+                        scope.launch { slidingNavState.closeMenu() }
+                        onContentIndexChange(0)
                     },
-                    shape = MaterialTheme.shapes.medium // Rounded shape for sub-items too
-                    // Colors are often handled well by default in M3, but you can customize:
-                    // colors = NavigationDrawerItemDefaults.colors(
-                    //     selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    //     unselectedContainerColor = Color.Transparent, // Keep unselected transparent
-                    //     selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    //     selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    // )
+                    shape = MaterialTheme.shapes.medium
                 )
                 // Questions Item
-                 NavigationDrawerItem(
+                NavigationDrawerItem(
                     modifier = subItemModifier.fillMaxWidth(),
-                    icon = { Icon(if (selectedContentIndex == 1) Icons.Default.Quiz else Icons.Outlined.Quiz, contentDescription = null) },
+                    icon = {
+                        Icon(
+                            if (selectedContentIndex == 1) Icons.Default.Quiz else Icons.Outlined.Quiz,
+                            contentDescription = null
+                        )
+                    },
                     label = { Text(stringResource(R.string.questions_tab)) },
                     selected = selectedContentIndex == 1,
                     onClick = {
                         scope.launch { slidingNavState.closeMenu() }
                         onContentIndexChange(1)
-                     },
+                    },
                     shape = MaterialTheme.shapes.medium
                 )
                 // Mind Map Item
-                 NavigationDrawerItem(
+                NavigationDrawerItem(
                     modifier = subItemModifier.fillMaxWidth(),
-                    icon = { Icon(if (selectedContentIndex == 2) Icons.Default.AccountTree else Icons.Outlined.AccountTree, contentDescription = null) },
+                    icon = {
+                        Icon(
+                            if (selectedContentIndex == 2) Icons.Default.AccountTree else Icons.Outlined.AccountTree,
+                            contentDescription = null
+                        )
+                    },
                     label = { Text(stringResource(R.string.mindmap_tab)) },
                     selected = selectedContentIndex == 2,
                     onClick = {
                         scope.launch { slidingNavState.closeMenu() }
                         onContentIndexChange(2)
-                     },
-                     shape = MaterialTheme.shapes.medium
-                 )
-                 Spacer(modifier = Modifier.height(8.dp)) // Spacing after sub-items
+                    },
+                    shape = MaterialTheme.shapes.medium
+                )
+                Spacer(modifier = Modifier.height(8.dp)) // Spacing after sub-items
             }
         }
 
@@ -366,20 +378,6 @@ fun QuizDetailTopAppBar(
     )
 }
 
-// Removed definitions for:
-// - OfflineModeIndicator
-// - OfflineSummaryWebView
-// - LoadingState
-// - ErrorState
-// - QuestionHeader
-// - MultipleChoiceOptionItem
-// - MultipleChoiceQuestionBody
-// - TrueFalseOptionItem
-// - TrueFalseQuestionBody
-// - QuizNavigationButtons
-// - QuizContent
-
-
 /**
  * The main content area of the QuizDetailScreen, displayed within the Scaffold.
  * Handles switching between Loading, Error, Summary, Questions, and MindMap views.
@@ -399,15 +397,20 @@ fun QuizDetailScreenContent(
     isCorrect: Boolean,
     onIsCorrectChange: (Boolean) -> Unit,
     answeredQuestions: Map<Int, String>, // Pass down for QuizContent logic
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    authViewModel: AuthViewModel
 ) {
     val context = LocalContext.current
     val navController = LocalNavController.current // Get NavController from CompositionLocal
     val networkUtils = LocalNetworkUtils.current
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .padding(paddingValues)) { // Wrapped in Box to allow FAB positioning
+    val freeCallsRemaining by authViewModel.freeCallsStateFlow.collectAsStateWithLifecycle()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+    ) { // Wrapped in Box to allow FAB positioning
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -419,7 +422,9 @@ fun QuizDetailScreenContent(
                         else -> 50f // Default progress for detail loading (can be adjusted)
                     }
                     val message = when {
-                        selectedContentIndex == 2 -> quizDetailViewModel.state.currentMindMapStep.getMessage(context) // Mind map generation
+                        selectedContentIndex == 2 -> quizDetailViewModel.state.currentMindMapStep.getMessage(
+                            context
+                        ) // Mind map generation
                         else -> stringResource(R.string.loading_quiz_details) // Default message
                     }
                     LoadingState(progress = progress, message = message)
@@ -461,7 +466,8 @@ fun QuizDetailScreenContent(
                                     quizDetailViewModel.state.quizCompleted -> {
                                         // Fetch the answer maps from the ViewModel
                                         val userAnswersMap = quizDetailViewModel.getUserAnswersMap()
-                                        val correctAnswersMap = quizDetailViewModel.getCorrectAnswersMap()
+                                        val correctAnswersMap =
+                                            quizDetailViewModel.getCorrectAnswersMap()
 
                                         QuizResultsScreen(
                                             quizQuestions = quizQuestions,
@@ -529,7 +535,9 @@ fun QuizDetailScreenContent(
                                                 // answeredQuestions state is updated via LaunchedEffect observing ViewModel
                                             },
                                             onSkipQuestion = {
-                                                quizDetailViewModel.skipQuestion(currentQuestionIndex)
+                                                quizDetailViewModel.skipQuestion(
+                                                    currentQuestionIndex
+                                                )
                                                 // If this was the last question, immediately check completion
                                                 if (currentQuestionIndex >= quizQuestions.size - 1) {
                                                     quizDetailViewModel.checkQuizCompletion()
@@ -538,7 +546,9 @@ fun QuizDetailScreenContent(
                                             },
                                             onNextQuestion = {
                                                 if (currentQuestionIndex < quizQuestions.size - 1) {
-                                                    onCurrentQuestionIndexChange(currentQuestionIndex + 1)
+                                                    onCurrentQuestionIndexChange(
+                                                        currentQuestionIndex + 1
+                                                    )
                                                     onSelectedAnswerChange("")
                                                     onShowFeedbackChange(false)
                                                 } else {
@@ -592,10 +602,19 @@ fun QuizDetailScreenContent(
                                                 )
                                                 return@Button
                                             }
-                                            
+
+                                            // Check free calls
+                                            if (freeCallsRemaining == 0) {
+                                                quizDetailViewModel.showApiRequirementDialog(
+                                                    context.getString(R.string.trial_exhausted_title),
+                                                    context.getString(R.string.trial_exhausted_message)
+                                                )
+                                                return@Button
+                                            }
+
                                             // Get settings from settings view model
                                             val settingsState = settingsViewModel.settingsState
-                                            
+
                                             // Check for OpenRouter API key
                                             if (settingsState.apiKeyValidationState != ApiKeyValidationState.VALID) {
                                                 // Show API key required dialog
@@ -606,7 +625,7 @@ fun QuizDetailScreenContent(
                                                 )
                                                 return@Button
                                             }
-                                            
+
                                             // Check for model selection
                                             if (settingsState.selectedModel.isBlank()) {
                                                 // Show model selection required dialog
@@ -617,9 +636,9 @@ fun QuizDetailScreenContent(
                                                 )
                                                 return@Button
                                             }
-                                            
+
                                             // All requirements met, proceed with mind map generation
-                                            quizDetailViewModel.generateMindMap() 
+                                            quizDetailViewModel.generateMindMap()
                                         }) {
                                             Text(stringResource(R.string.generate_mindmap))
                                         }
@@ -631,7 +650,7 @@ fun QuizDetailScreenContent(
                 }
             }
         }
-        
+
         // Show FAB only when Summary tab is selected, regardless of content
         if (selectedContentIndex == 0 && quizDetailViewModel.state.quiz != null) {
             quizDetailViewModel.state.quiz?.let { quiz ->
@@ -655,9 +674,6 @@ fun QuizDetailScreenContent(
     }
 }
 
-
-// --- Main Screen Composable ---
-
 /**
  * QuizDetailScreen: Displays quiz details (summary, questions, mind map) with a navigation drawer.
  * Handles loading, error states, and quiz progression logic via ViewModels.
@@ -669,7 +685,8 @@ fun QuizDetailScreen(
     quizId: String,
     navController: NavHostController,
     quizDetailViewModel: QuizDetailViewModel = hiltViewModel(), // Use hiltViewModel here
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    authViewModel: AuthViewModel
 ) {
     val quizIdLong = remember(quizId) { quizId.toLongOrNull() ?: -1L }
 
@@ -751,21 +768,22 @@ fun QuizDetailScreen(
         ) {
             if (quizQuestions.isNotEmpty() && quizDetailViewModel.state.quizStarted) {
                 answeredQuestions = quizDetailViewModel.state.answeredQuestions
-                
+
                 // Check if we just skipped a question
-                val justSkipped = quizDetailViewModel.state.skippedQuestions.contains(currentQuestionIndex)
-                
+                val justSkipped =
+                    quizDetailViewModel.state.skippedQuestions.contains(currentQuestionIndex)
+
                 // Check for quiz completion if we're on the last question and it was skipped
                 // This needs to happen BEFORE we calculate nextIndexToShow
                 if (justSkipped && currentQuestionIndex >= quizQuestions.size - 1) {
                     quizDetailViewModel.checkQuizCompletion()
                 }
-                
+
                 // If the quiz is now completed due to skipping the last question, don't proceed with navigation
                 if (quizDetailViewModel.state.quizCompleted) {
                     return@LaunchedEffect  // Exit the effect early
                 }
-                
+
                 val lastAnsweredIndex =
                     quizDetailViewModel.getLastAnsweredQuestionIndex() // Get latest index from VM
                 val nextIndexToShow =
@@ -773,7 +791,7 @@ fun QuizDetailScreen(
                         // If we just skipped and not on the last question, advance to the next question
                         currentQuestionIndex + 1
                     } else if (lastAnsweredIndex >= 0 && lastAnsweredIndex < quizQuestions.size) {
-                        lastAnsweredIndex 
+                        lastAnsweredIndex
                     } else {
                         quizDetailViewModel.state.currentQuestionIndex
                     }
@@ -880,7 +898,8 @@ fun QuizDetailScreen(
                         isCorrect = isCorrect,
                         onIsCorrectChange = { isCorrect = it },
                         answeredQuestions = answeredQuestions, // Pass down
-                        settingsViewModel = settingsViewModel
+                        settingsViewModel = settingsViewModel,
+                        authViewModel = authViewModel
                     )
                 }
             }

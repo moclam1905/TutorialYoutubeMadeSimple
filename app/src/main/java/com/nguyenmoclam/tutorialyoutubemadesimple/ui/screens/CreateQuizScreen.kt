@@ -107,6 +107,8 @@ fun CreateQuizScreen(
     val dialogMessageApi = stringResource(R.string.api_key_required_message)
     val dialogTitleModel = stringResource(R.string.model_required)
     val dialogMessageModel = stringResource(R.string.model_required_message)
+    val dialogTitleTrial = stringResource(R.string.trial_exhausted_title)
+    val dialogMessageTrial = stringResource(R.string.trial_exhausted_message)
 
     // Effect to reset state when this screen becomes the current destination ---
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -176,6 +178,14 @@ fun CreateQuizScreen(
                         // Show network required dialog
                         dialogTitle = dialogTitleNetwork
                         dialogMessage = dialogMessageNetwork
+                        showDialog = true
+                        return
+                    }
+
+                    // Check for trial usage if needed
+                    if (freeCallsRemaining == 0) {
+                        dialogTitle = dialogTitleTrial
+                        dialogMessage = dialogMessageTrial
                         showDialog = true
                         return
                     }
@@ -264,7 +274,6 @@ fun CreateQuizScreen(
                             TrialRemainingWarning(
                                 callsRemaining = freeCallsRemaining ?: 0,
                                 onGetApiKey = {
-                                    // Mở OpenRouter keys page
                                     val intent = Intent(
                                         Intent.ACTION_VIEW,
                                         "https://openrouter.ai/keys".toUri()
@@ -277,12 +286,6 @@ fun CreateQuizScreen(
 
                         StepIndicator(currentStep = currentStep, totalSteps = 3)
                         Spacer(modifier = Modifier.height(16.dp))
-                        // ErrorMessage is handled by Snackbar in LaunchedEffect now,
-                        // but keep the component if viewModel.errorMessage is a separate state
-                        // ErrorMessage(
-                        //     errorMessage = viewModel.errorMessage, // From QuizViewModel (URL/Input validation)
-                        //     isLoading = viewModel.isLoading // From QuizViewModel (URL/Input validation)
-                        // )
                     }
 
                     // Content based on current step
@@ -326,7 +329,6 @@ fun CreateQuizScreen(
                                         it
                                     )
                                 },
-                                // Pass creationState.isLoading to disable inputs if needed
                                 isLoading = creationState.isLoading
                             )
                         }
@@ -338,7 +340,6 @@ fun CreateQuizScreen(
                             onNext = { moveToNextStep() },
                             viewModel = viewModel,
                             isSettingsLoaded = isSettingsLoaded,
-                            // Disable Next/Generate button while creation is in progress
                             isNextEnabled = !creationState.isLoading
                         )
                         Spacer(

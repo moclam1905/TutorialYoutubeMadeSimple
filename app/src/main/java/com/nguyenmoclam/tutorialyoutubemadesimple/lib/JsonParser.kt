@@ -121,9 +121,8 @@ fun parseKeyPointsFromJson(
     jsonStr: String,
     errorCallback: ((LLMError) -> Unit?)? = null
 ): List<String> {
-    // --- LOGGING START ---
     println("LLMProcessor: Attempting to parse key points from JSON: $jsonStr")
-    // --- LOGGING END ---
+
     return try {
         val json = Json.parseToJsonElement(jsonStr).jsonObject
         // Check for "key_points" or "key_point" key

@@ -35,9 +35,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 enum class ProcessingCreateStep(val messageRes: Int) {
@@ -123,6 +123,7 @@ class QuizCreationViewModel @Inject constructor(
 
     // Rename internal mutable state
     private val _state = mutableStateOf(QuizState())
+
     // Expose state as read-only State<QuizState>
     val state: State<QuizState> = _state
 
@@ -202,7 +203,8 @@ class QuizCreationViewModel @Inject constructor(
         }
 
         // Update internal state
-        _state.value = QuizState(isLoading = true, currentStep = ProcessingCreateStep.FETCH_METADATA_START)
+        _state.value =
+            QuizState(isLoading = true, currentStep = ProcessingCreateStep.FETCH_METADATA_START)
 
         viewModelScope.launch(coroutineExceptionHandler) {
             // Extract video ID using the use case
@@ -221,14 +223,16 @@ class QuizCreationViewModel @Inject constructor(
             }
 
             // Update internal state
-            _state.value = _state.value.copy(currentStep = ProcessingCreateStep.FETCH_METADATA_COMPLETE)
+            _state.value =
+                _state.value.copy(currentStep = ProcessingCreateStep.FETCH_METADATA_COMPLETE)
 
             val fetchedTitle = metadata.title
             val fetchedThumb = metadata.thumbnailUrl
             val fetchedDescription = metadata.description
 
             // Process transcript using the use case
-            _state.value = _state.value.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT_START)
+            _state.value =
+                _state.value.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT_START)
             val transcriptResult = processYouTubeTranscriptUseCase(
                 videoId = videoId,
                 languages = listOf("en"), transcriptMode = transcriptMode
@@ -239,8 +243,10 @@ class QuizCreationViewModel @Inject constructor(
             }
 
             // Update internal state
-            _state.value = _state.value.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT_COMPLETE)
-            _state.value = _state.value.copy(currentStep = ProcessingCreateStep.PROCESS_TRANSCRIPT_START)
+            _state.value =
+                _state.value.copy(currentStep = ProcessingCreateStep.FETCH_TRANSCRIPT_COMPLETE)
+            _state.value =
+                _state.value.copy(currentStep = ProcessingCreateStep.PROCESS_TRANSCRIPT_START)
 
             val transcriptContent = transcriptResult.text
 
@@ -370,11 +376,15 @@ class QuizCreationViewModel @Inject constructor(
                 }
             }
             // Update internal state
-            _state.value = _state.value.copy(currentStep = ProcessingCreateStep.PROCESS_TRANSCRIPT_COMPLETE)
+            _state.value =
+                _state.value.copy(currentStep = ProcessingCreateStep.PROCESS_TRANSCRIPT_COMPLETE)
+
+            // Variables to track if a free call was used by either process
+            var summaryUsedFreeCall = false
+            var questionsUsedFreeCall = false
 
             val newState = if (generateSummary && generateQuestions) {
-                supervisorScope {
-
+                coroutineScope {
                     val summaryDeferred = async {
                         // Update internal state
                         _state.value =
@@ -398,6 +408,8 @@ class QuizCreationViewModel @Inject constructor(
                             _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_PROCESSING_75)
                         _state.value =
                             _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_COMPLETE)
+                        // Store if free call was used
+                        summaryUsedFreeCall = result.wasFreeCallUsed
                         result.content
                     }
 
@@ -419,22 +431,6 @@ class QuizCreationViewModel @Inject constructor(
                         if (result.error != null) {
                             throw IllegalStateException(result.error)
                         }
-                        // Decrement free call if needed
-                        if (result.wasFreeCallUsed) {
-                            // Get userId from UserDataRepository
-                            val userId = userDataRepository.userStateFlow.first()?.uid
-                            if (userId != null) {
-                                // Call Firestore directly
-                                val decrementResult = firestoreRepository.decrementFreeCall(userId)
-                                // Update central state if successful
-                                if (decrementResult is FirestoreState.Success) {
-                                    userDataRepository.updateFreeCalls(decrementResult.data)
-                                } else if (decrementResult is FirestoreState.Error) {
-                                    // Handle error if needed (e.g., log, show message)
-                                    Log.e("QuizCreationVM", "Error decrementing free call: ${decrementResult.message}")
-                                }
-                            }
-                        }
                         // Update internal state
                         _state.value =
                             _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_PROCESSING_75)
@@ -444,12 +440,19 @@ class QuizCreationViewModel @Inject constructor(
                         // Update internal state
                         _state.value =
                             _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_COMPLETE)
+                        // Store if free call was used
+                        questionsUsedFreeCall = result.wasFreeCallUsed
                         result.content
                     }
 
                     try {
                         val summary = summaryDeferred.await()
                         val questionsJson = questionsDeferred.await()
+
+                        // --- Decrement call only if BOTH operations succeeded and either used a free call --- 
+                        if (summaryUsedFreeCall && questionsUsedFreeCall) {
+                            decrementFreeCall()
+                        }
 
                         // Update internal state
                         _state.value =
@@ -479,12 +482,14 @@ class QuizCreationViewModel @Inject constructor(
                             quizIdInserted = quizId
                         )
                     } catch (e: Exception) {
+                        // Exception caught, coroutineScope ensures both async blocks are cancelled.
                         throw e
                     }
                 }
             } else if (generateSummary) {
                 // Update internal state
-                _state.value = _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_START)
+                _state.value =
+                    _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_START)
                 val summaryResult = generateQuizSummaryUseCase(
                     fetchedTitle,
                     fetchedThumb,
@@ -492,16 +497,22 @@ class QuizCreationViewModel @Inject constructor(
                     selectedLanguage
                 )
                 // Update internal state
-                _state.value = _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_COMPLETE)
+                _state.value =
+                    _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_SUMMARY_COMPLETE)
 
                 if (summaryResult.error != null) {
                     throw IllegalStateException(summaryResult.error)
                 }
 
+                // Decrement call only if the single operation succeeded
+                if (summaryResult.wasFreeCallUsed) {
+                    decrementFreeCall()
+                }
                 val summary = summaryResult.content
 
                 // Update internal state
-                _state.value = _state.value.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_START)
+                _state.value =
+                    _state.value.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_START)
                 // Save summary to database using domain model and use case
                 createQuizSummaryUseCase(
                     Summary(
@@ -519,7 +530,8 @@ class QuizCreationViewModel @Inject constructor(
                 )
             } else if (generateQuestions) {
                 // Update internal state
-                _state.value = _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_START)
+                _state.value =
+                    _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_START)
                 val questionsResult = generateQuestionsUseCase(
                     transcriptContent,
                     selectedLanguage,
@@ -527,32 +539,22 @@ class QuizCreationViewModel @Inject constructor(
                     numberOfQuestions
                 )
                 // Update internal state
-                _state.value = _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_COMPLETE)
+                _state.value =
+                    _state.value.copy(currentStep = ProcessingCreateStep.GENERATE_QUESTIONS_COMPLETE)
 
                 if (questionsResult.error != null) {
                     throw IllegalStateException(questionsResult.error)
                 }
-                // Decrement free call if needed
+                // Decrement call only if the single operation succeeded
                 if (questionsResult.wasFreeCallUsed) {
-                    // Get userId from UserDataRepository
-                    val userId = userDataRepository.userStateFlow.first()?.uid
-                    if (userId != null) {
-                        // Call Firestore directly
-                        val decrementResult = firestoreRepository.decrementFreeCall(userId)
-                        // Update central state if successful
-                        if (decrementResult is FirestoreState.Success) {
-                            userDataRepository.updateFreeCalls(decrementResult.data)
-                        } else if (decrementResult is FirestoreState.Error) {
-                            // Handle error if needed (e.g., log, show message)
-                            Log.e("QuizCreationVM", "Error decrementing free call: ${decrementResult.message}")
-                        }
-                    }
+                    decrementFreeCall()
                 }
 
                 val questionsJson = questionsResult.content
 
                 // Update internal state
-                _state.value = _state.value.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_START)
+                _state.value =
+                    _state.value.copy(currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_START)
                 // Save key points extracted during question generation
                 val keyPoints = generateQuestionsUseCase.getLastExtractedKeyPoints()
                 saveKeyPointsUseCase(keyPoints, quizId)
@@ -561,15 +563,12 @@ class QuizCreationViewModel @Inject constructor(
                 val questions = parseQuestionsUseCase(questionsJson, quizId)
                 createQuizQuestionsUseCase(questions)
 
-                // Return the final state data
                 _state.value.copy(
                     isLoading = false,
                     currentStep = ProcessingCreateStep.SAVE_TO_DATABASE_COMPLETE,
                     quizIdInserted = quizId
                 )
             } else {
-                // Neither summary nor questions - just save the basic quiz info
-                // Return the final state data
                 _state.value.copy(
                     isLoading = false,
                     currentStep = ProcessingCreateStep.NONE,
@@ -583,6 +582,22 @@ class QuizCreationViewModel @Inject constructor(
             if (newState.quizIdInserted != -1L && !newState.isLoading) { // Ensure quiz was saved and process finished
                 quizStateManager.markForRefresh()
                 Log.d("QuizCreationViewModel", "Marked QuizStateManager for refresh.")
+            }
+        }
+    }
+
+    private suspend fun decrementFreeCall() {
+        // Get userId from UserDataRepository
+        val userId = userDataRepository.userStateFlow.first()?.uid
+        if (userId != null) {
+            // Call Firestore directly
+            val decrementResult = firestoreRepository.decrementFreeCall(userId)
+            // Update central state if successful
+            if (decrementResult is FirestoreState.Success) {
+                userDataRepository.updateFreeCalls(decrementResult.data)
+            } else if (decrementResult is FirestoreState.Error) {
+                // Handle error if needed (e.g., log, show message)
+                Log.e("QuizCreationVM", "Error decrementing free call: ${decrementResult.message}")
             }
         }
     }

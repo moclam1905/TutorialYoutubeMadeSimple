@@ -502,8 +502,8 @@ fun MindMapContent(
                 ) {
                     CircularProgressIndicator()
                 }
-            } // End Progress Indicator Overlay
-        } // End Outer Box
+            }
+        }
     }
 }
 

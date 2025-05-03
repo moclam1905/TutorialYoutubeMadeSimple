@@ -113,23 +113,27 @@ class LLMProcessor @Inject constructor(
         transcript: String,
         title: String,
         language: String = "English"
-    ): List<Topic> {
+    ): Pair<List<Topic>, Boolean> {
         val prompt = extractTopicsAndQuestionsPrompt(transcript, title, language)
-        val (responseContent, _) = callLLM(prompt, null) // Deconstruct Pair, ignore Boolean for now
+        val (responseContent, wasFreeCallUsed) = callLLM(
+            prompt,
+            null
+        )
 
-        return parseTopicsFromJson(responseContent, errorCallback)
+        val keyPoints = parseTopicsFromJson(responseContent, errorCallback)
+        return Pair(keyPoints, wasFreeCallUsed)
     }
 
     suspend fun processContent(
         topics: List<Topic>,
         transcript: String,
         language: String = "English"
-    ): List<Topic> {
-        if (topics.isEmpty()) return emptyList()
-
+    ): Pair<List<Topic>, Boolean> {
         val prompt = processContentPrompt(topics, transcript, language)
-        val (responseContent, _) = callLLM(prompt, null) // Deconstruct Pair
-        return parseBatchProcessedContent(topics, responseContent, errorCallback)
+        val (responseContent, wasFreeCallUsed) = callLLM(prompt, null) // Deconstruct Pair
+        val content = parseBatchProcessedContent(topics, responseContent, errorCallback)
+
+        return Pair(content, wasFreeCallUsed)
     }
 
     /**
@@ -313,7 +317,6 @@ class LLMProcessor @Inject constructor(
                 throw Exception(errorMessage)
             }
 
-            // Log the RAW successful response content BEFORE processing
             val rawContent = apiResponse.choices.firstOrNull()?.message?.content ?: ""
 
             // Reset unavailability status if the call succeeded for this model

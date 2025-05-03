@@ -58,11 +58,11 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.utils.highlightText // Import 
 fun LearningChallengeItem(
     quiz: Quiz,
     isStatsExpanded: Boolean,
-    quizStats: QuizStats?, // Correctly nullable
-    onToggleStats: () -> Unit, // These are now simple callbacks
-    onDeleteQuiz: () -> Unit, // These are now simple callbacks
+    quizStats: QuizStats?,
+    onToggleStats: () -> Unit,
+    onDeleteQuiz: () -> Unit,
     daysSinceLastUpdate: Int,
-    onQuizClick: () -> Unit, // These are now simple callbacks
+    onQuizClick: () -> Unit,
     searchQuery: String = ""
 ) {
     Card(
@@ -283,12 +283,12 @@ fun QuizItemStatsSection(
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.average_score)) },
                     trailingContent = { Text(String.format("%.1f%%", quizStats.completionScore * 100), fontWeight = FontWeight.Bold) },
-                    modifier = Modifier.padding(vertical = (-4).dp) // Adjust padding if needed
+                    modifier = Modifier.padding(vertical = 4.dp) // Adjust padding if needed
                 )
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.average_completion_time)) },
                     trailingContent = { Text(stringResource(R.string.time_elapsed_seconds, quizStats.timeElapsedSeconds), fontWeight = FontWeight.Bold) },
-                    modifier = Modifier.padding(vertical = (-4).dp) // Adjust padding if needed
+                    modifier = Modifier.padding(vertical = 4.dp) // Adjust padding if needed
                 )
             } else {
                 Text(

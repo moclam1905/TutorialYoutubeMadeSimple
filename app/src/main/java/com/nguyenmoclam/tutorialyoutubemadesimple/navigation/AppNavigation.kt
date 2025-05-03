@@ -120,7 +120,8 @@ fun AppNavigation(
                 quizId = quizId.toString(),
                 navController = navController,
                 quizDetailViewModel = quizDetailViewModel,
-                settingsViewModel = settingsViewModel
+                settingsViewModel = settingsViewModel,
+                authViewModel = authViewModel
             )
         }
         // Quiz Setting Screen

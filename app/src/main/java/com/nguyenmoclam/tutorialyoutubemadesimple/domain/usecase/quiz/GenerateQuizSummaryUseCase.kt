@@ -30,6 +30,7 @@ class GenerateQuizSummaryUseCase @Inject constructor(
      */
     data class SummaryResult(
         val content: String,
+        val wasFreeCallUsed: Boolean = false, // Add boolean flag
         val error: String? = null
     )
 
@@ -47,27 +48,33 @@ class GenerateQuizSummaryUseCase @Inject constructor(
         transcriptContent: String,
         language: String = "English"
     ): SummaryResult = withContext(Dispatchers.IO) {
+        var finalWasFreeCallUsed = false
         try {
-            // --- LOGGING START ---
             println("GenerateQuizSummaryUseCase: Attempting to extract topics for title: $title")
-            // --- LOGGING END ---
 
-            val topics = llmProcessor.extractTopicsAndQuestions(transcriptContent, title, language)
+            val (topics, topicsAndQuestionsUsedFreeCall) = llmProcessor.extractTopicsAndQuestions(
+                transcriptContent,
+                title,
+                language
+            )
+            if (topicsAndQuestionsUsedFreeCall) finalWasFreeCallUsed = true
 
-            // --- LOGGING START ---
             println("GenerateQuizSummaryUseCase: Extracted ${topics.size} topics.")
-            // --- LOGGING END ---
 
             if (topics.isEmpty()) {
-                // --- LOGGING START ---
                 println("GenerateQuizSummaryUseCase: No topics extracted, returning error.")
-                // --- LOGGING END ---
+
                 return@withContext SummaryResult(
                     content = "",
-                    error = "No topics could be extracted" // Giữ nguyên thông báo lỗi này
+                    error = "No topics could be extracted",
+                    wasFreeCallUsed = finalWasFreeCallUsed
                 )
             }
-            val processedTopics = llmProcessor.processContent(topics, transcriptContent, language)
+            val (processedTopics, processedTopicsUsedFreeCall) = llmProcessor.processContent(
+                topics,
+                transcriptContent,
+                language
+            )
             // Store the processed topics for later retrieval
             lastProcessedTopics = processedTopics
             val sections = processedTopics.map { topic ->
@@ -94,12 +101,10 @@ class GenerateQuizSummaryUseCase @Inject constructor(
                 imageUrl = optimizedImageUrl,
                 sections = sections
             )
-
-            SummaryResult(content = htmlContent)
+            if (processedTopicsUsedFreeCall) finalWasFreeCallUsed = true
+            SummaryResult(content = htmlContent, wasFreeCallUsed = finalWasFreeCallUsed)
         } catch (e: Exception) {
-            // --- LOGGING START ---
             println("GenerateQuizSummaryUseCase: Exception occurred: ${e.message}")
-            // --- LOGGING END ---
             SummaryResult(content = "", error = e.message ?: "Unknown error generating summary")
         }
     }
