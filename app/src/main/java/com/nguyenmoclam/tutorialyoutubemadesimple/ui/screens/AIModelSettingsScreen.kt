@@ -2,7 +2,6 @@ package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,9 +49,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -69,9 +68,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.nguyenmoclam.tutorialyoutubemadesimple.BuildConfig
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ModelFilter
@@ -86,7 +87,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.UsageViewModel
 import kotlinx.coroutines.launch
-import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,14 +104,17 @@ fun AIModelSettingsScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     // Add current user state
     val currentUser by settingsViewModel.currentUser.collectAsStateWithLifecycle()
-//    // Add free calls remaining state if the user is logged in
-//    val freeCallsRemaining by if (currentUser != null) {
-//        settingsViewModel.freeCallsState.collectAsStateWithLifecycle()
-//    } else {
-//        remember { mutableStateOf<Int?>(null) }
-//    }
     val freeCallsRemaining by authViewModel.freeCallsStateFlow.collectAsState()
     val context = LocalContext.current
+
+    val localTrialApiKey = BuildConfig.OPENROUTER_API_KEY
+    val shouldClearApiKey = freeCallsRemaining == 0 && state.openRouterApiKey == localTrialApiKey
+
+    LaunchedEffect(shouldClearApiKey) {
+        if (shouldClearApiKey) {
+            settingsViewModel.setOpenRouterApiKey("")
+        }
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),

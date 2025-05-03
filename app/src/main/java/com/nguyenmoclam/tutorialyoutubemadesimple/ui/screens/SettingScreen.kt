@@ -60,6 +60,7 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ThemeSettings
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import androidx.compose.runtime.collectAsState
+import com.nguyenmoclam.tutorialyoutubemadesimple.BuildConfig
 
 /**
  * SettingScreen composable that displays all app settings organized by category.
@@ -79,6 +80,7 @@ fun SettingScreen(
     // Collect free calls state
     //val freeCallsRemaining by viewModel.freeCallsState.collectAsState()
     val freeCallsRemaining by authViewModel.freeCallsStateFlow.collectAsState()
+    val localTrialApiKey = BuildConfig.OPENROUTER_API_KEY
 
     // Collect user state
     val user by authViewModel.userStateFlow.collectAsState()
@@ -373,6 +375,8 @@ fun SettingScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
+                            viewModel.setOpenRouterApiKey(localTrialApiKey)
+
                             viewModel.resetLearningProgress()
                             viewModel.clearCache()
                             viewModel.clearQuizHistory()
