@@ -43,6 +43,9 @@ class HomeViewModel @Inject constructor(
     private val _state = MutableStateFlow(HomeViewState())
     val state: StateFlow<HomeViewState> = _state
 
+    // Expose the refresh state directly
+    val needsRefresh: StateFlow<Boolean> = quizStateManager.needsRefresh
+
     // SharedFlow for raw search query input
     private val searchQueryFlow = MutableSharedFlow<String>(replay = 1)
 
@@ -51,14 +54,6 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             quizRepository.getAllTagsWithCount().collect { tagsWithCount ->
                 _state.update { it.copy(allTagsWithCount = tagsWithCount) }
-            }
-        }
-
-        viewModelScope.launch {
-            quizStateManager.needsRefresh.collect { needsRefresh ->
-                if (needsRefresh) {
-                    refreshQuizzes()
-                }
             }
         }
 
@@ -334,5 +329,10 @@ class HomeViewModel @Inject constructor(
     // Calculate days since last update using the GetDaysSinceLastUpdateUseCase
     fun getDaysSinceLastUpdate(lastUpdatedTimestamp: Long): Int {
         return getDaysSinceLastUpdateUseCase(lastUpdatedTimestamp)
+    }
+
+    // Function for the UI to call after handling the refresh
+    fun acknowledgeRefresh() {
+        quizStateManager.acknowledgeRefresh()
     }
 }

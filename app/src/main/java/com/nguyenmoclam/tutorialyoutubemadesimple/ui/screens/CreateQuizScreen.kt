@@ -1,7 +1,11 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
+import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -18,43 +22,44 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.nguyenmoclam.tutorialyoutubemadesimple.MainActivity
 import com.nguyenmoclam.tutorialyoutubemadesimple.R
 import com.nguyenmoclam.tutorialyoutubemadesimple.data.model.ApiKeyValidationState
 import com.nguyenmoclam.tutorialyoutubemadesimple.navigation.AppScreens
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ApiRequirementDialog
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ErrorMessage
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.ErrorDialog
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.LoadingState
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.NavigationButtons
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step1Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step2Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.Step3Content
 import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.StepIndicator
+import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.TrialRemainingWarning
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
+import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.TrialRemainingWarning
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.AuthViewModel
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.net.toUri
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,6 +77,8 @@ fun CreateQuizScreen(
     // Get NetworkUtils from CompositionLocal
     val networkUtils = LocalNetworkUtils.current
     val context = LocalContext.current
+    // Collect QuizCreationViewModel state
+    val creationState by quizViewModel.state
 
     // Collect user and free calls state from AuthViewModel (which exposes from UserDataRepository)
     val user by authViewModel.userStateFlow.collectAsStateWithLifecycle()
@@ -100,6 +107,34 @@ fun CreateQuizScreen(
     val dialogMessageApi = stringResource(R.string.api_key_required_message)
     val dialogTitleModel = stringResource(R.string.model_required)
     val dialogMessageModel = stringResource(R.string.model_required_message)
+
+    // Effect to reset state when this screen becomes the current destination ---
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    LaunchedEffect(currentBackStackEntry) {
+        if (currentBackStackEntry?.destination?.route == AppScreens.CreateQuiz.route) {
+            Log.d("CreateQuizScreen", "Destination is CreateQuiz. Resetting state.")
+            quizViewModel.resetState()
+        }
+    }
+
+    if (creationState.errorMessage != null) {
+        ErrorDialog(
+            errorMessage = creationState.errorMessage ?: errorString,
+            onDismiss = { quizViewModel.clearError() } // Clear error on dismiss
+        )
+    }
+
+    // LaunchedEffect to handle navigation after successful quiz creation ---
+    LaunchedEffect(creationState.quizIdInserted) {
+        // Navigate only when quizIdInserted becomes positive
+        if (creationState.quizIdInserted > 0) {
+            navController.navigate(AppScreens.QuizDetail.withArgs(creationState.quizIdInserted.toString())) {
+                popUpTo(AppScreens.CreateQuiz.route) { inclusive = true }
+            }
+            // Reset the ID *after* navigation is triggered
+            quizViewModel.resetQuizId()
+        }
+    }
 
     // Function to validate the current step and move to the next
     fun moveToNextStep() {
@@ -174,17 +209,6 @@ fun CreateQuizScreen(
                         numberOfQuestions = viewModel.numberOfQuestions,
                         transcriptMode = settingsState.transcriptMode
                     )
-
-                    // Navigate to QuizDetailScreen if no error
-                    if (quizViewModel.state.errorMessage == null) {
-                        navController.navigate(AppScreens.QuizDetail.withArgs("-1"))
-                    } else {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                quizViewModel.state.errorMessage ?: errorString
-                            )
-                        }
-                    }
                 }
             }
         }
@@ -224,81 +248,117 @@ fun CreateQuizScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
 
         ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .navigationBarsPadding()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            item {
-                if (user != null && (freeCallsRemaining ?: 0) in 0..3) {
-                    TrialRemainingWarning(
-                        callsRemaining = freeCallsRemaining ?: 0,
-                        onGetApiKey = {
-                            // Mở OpenRouter keys page
-                            val intent = Intent(Intent.ACTION_VIEW,
-                                "https://openrouter.ai/keys".toUri())
-                            context.startActivity(intent)
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .navigationBarsPadding()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Show StepIndicator and Trial Warning only when not loading
+                if (!creationState.isLoading) {
+                    item {
+                        if (user != null && (freeCallsRemaining ?: 0) in 0..3) {
+                            TrialRemainingWarning(
+                                callsRemaining = freeCallsRemaining ?: 0,
+                                onGetApiKey = {
+                                    // Mở OpenRouter keys page
+                                    val intent = Intent(
+                                        Intent.ACTION_VIEW,
+                                        "https://openrouter.ai/keys".toUri()
+                                    )
+                                    context.startActivity(intent)
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
 
-                StepIndicator(currentStep = currentStep, totalSteps = 3)
-                Spacer(modifier = Modifier.height(16.dp))
-                ErrorMessage(
-                    errorMessage = viewModel.errorMessage,
-                    isLoading = viewModel.isLoading
-                )
+                        StepIndicator(currentStep = currentStep, totalSteps = 3)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        // ErrorMessage is handled by Snackbar in LaunchedEffect now,
+                        // but keep the component if viewModel.errorMessage is a separate state
+                        // ErrorMessage(
+                        //     errorMessage = viewModel.errorMessage, // From QuizViewModel (URL/Input validation)
+                        //     isLoading = viewModel.isLoading // From QuizViewModel (URL/Input validation)
+                        // )
+                    }
+
+                    // Content based on current step
+                    item {
+                        when (currentStep) {
+                            1 -> Step1Content(
+                                youtubeUrlValue = TextFieldValue(viewModel.youtubeUrl),
+                                onYoutubeUrlChange = { viewModel.updateYoutubeUrl(it.text) },
+                                selectedLanguage = viewModel.selectedLanguage,
+                                onLanguageSelected = { viewModel.updateSelectedLanguage(it) },
+                                showLanguageDropdown = showLanguageDropdown,
+                                onShowLanguageDropdownChange = { showLanguageDropdown = it },
+                                languages = languages
+                            )
+
+                            2 -> Step2Content(
+                                questionType = viewModel.questionType,
+                                onQuestionTypeChange = { viewModel.updateQuestionType(it) },
+                                questionCountMode = viewModel.questionCountMode,
+                                onQuestionCountModeChange = {
+                                    viewModel.updateQuestionCountMode(
+                                        it
+                                    )
+                                },
+                                questionLevel = viewModel.questionLevel,
+                                onQuestionLevelChange = { viewModel.updateQuestionLevel(it) },
+                                manualQuestionCount = viewModel.manualQuestionCount,
+                                onManualQuestionCountChange = {
+                                    viewModel.updateManualQuestionCount(
+                                        it
+                                    )
+                                }
+                            )
+
+                            3 -> Step3Content(
+                                generateSummary = viewModel.generateSummary,
+                                onGenerateSummaryChange = { viewModel.updateGenerateSummary(it) },
+                                generateQuestions = viewModel.generateQuestions,
+                                onGenerateQuestionsChange = {
+                                    viewModel.updateGenerateQuestions(
+                                        it
+                                    )
+                                },
+                                // Pass creationState.isLoading to disable inputs if needed
+                                isLoading = creationState.isLoading
+                            )
+                        }
+                    }
+                    item {
+                        NavigationButtons(
+                            currentStep = currentStep,
+                            onBack = { moveToPreviousStep() },
+                            onNext = { moveToNextStep() },
+                            viewModel = viewModel,
+                            isSettingsLoaded = isSettingsLoaded,
+                            // Disable Next/Generate button while creation is in progress
+                            isNextEnabled = !creationState.isLoading
+                        )
+                        Spacer(
+                            modifier = Modifier
+                                .padding(bottom = 64.dp)
+                                .navigationBarsPadding()
+                        )
+                    }
+                }
             }
 
-            // Content based on current step
-            item {
-                when (currentStep) {
-                    1 -> Step1Content(
-                        youtubeUrlValue = TextFieldValue(viewModel.youtubeUrl),
-                        onYoutubeUrlChange = { viewModel.updateYoutubeUrl(it.text) },
-                        selectedLanguage = viewModel.selectedLanguage,
-                        onLanguageSelected = { viewModel.updateSelectedLanguage(it) },
-                        showLanguageDropdown = showLanguageDropdown,
-                        onShowLanguageDropdownChange = { showLanguageDropdown = it },
-                        languages = languages
-                    )
-
-                    2 -> Step2Content(
-                        questionType = viewModel.questionType,
-                        onQuestionTypeChange = { viewModel.updateQuestionType(it) },
-                        questionCountMode = viewModel.questionCountMode,
-                        onQuestionCountModeChange = { viewModel.updateQuestionCountMode(it) },
-                        questionLevel = viewModel.questionLevel,
-                        onQuestionLevelChange = { viewModel.updateQuestionLevel(it) },
-                        manualQuestionCount = viewModel.manualQuestionCount,
-                        onManualQuestionCountChange = { viewModel.updateManualQuestionCount(it) }
-                    )
-
-                    3 -> Step3Content(
-                        generateSummary = viewModel.generateSummary,
-                        onGenerateSummaryChange = { viewModel.updateGenerateSummary(it) },
-                        generateQuestions = viewModel.generateQuestions,
-                        onGenerateQuestionsChange = { viewModel.updateGenerateQuestions(it) },
-                        isLoading = viewModel.isLoading
-                    )
-                }
-            }
-            item {
-                NavigationButtons(
-                    currentStep = currentStep,
-                    onBack = { moveToPreviousStep() },
-                    onNext = { moveToNextStep() },
-                    viewModel = viewModel,
-                    isSettingsLoaded = isSettingsLoaded
-                )
-                Spacer(
+            // --- Loading State Overlay ---
+            if (creationState.isLoading) {
+                LoadingState(
+                    progress = creationState.currentStep.getProgressPercentage(),
+                    message = creationState.currentStep.getMessage(context),
                     modifier = Modifier
-                        .padding(bottom = 64.dp)
-                        .navigationBarsPadding()
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)) // Optional: Dim background
+                        .padding(paddingValues) // Apply Scaffold padding
                 )
             }
         }

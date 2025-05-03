@@ -7,7 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -16,8 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,14 +22,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Quiz
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -46,14 +43,13 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -525,7 +521,8 @@ fun NavigationButtons(
     onBack: () -> Unit,
     onNext: () -> Unit,
     viewModel: QuizViewModel,
-    isSettingsLoaded: Boolean
+    isSettingsLoaded: Boolean,
+    isNextEnabled: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -543,7 +540,8 @@ fun NavigationButtons(
             Spacer(modifier = Modifier.weight(1f))
         }
 
-        val isNextEnabled = !viewModel.isLoading &&
+        // Combine the internal validation logic with the external isNextEnabled flag
+        val finalIsNextEnabled = isNextEnabled && // External flag (e.g., !creationState.isLoading)
                 when (currentStep) {
                     1 -> viewModel.youtubeUrl.isNotBlank()
                     2 -> viewModel.questionCountMode != "manual" ||
@@ -556,7 +554,7 @@ fun NavigationButtons(
 
         Button(
             onClick = onNext,
-            enabled = isNextEnabled
+            enabled = finalIsNextEnabled // Use the combined enabled state
         ) {
             Text(if (currentStep < 3) "Next" else "Create")
             if (currentStep < 3) {
@@ -565,4 +563,28 @@ fun NavigationButtons(
             }
         }
     }
+}
+
+/**
+ * A dialog to display error messages.
+ *
+ * @param errorMessage The error message to display.
+ * @param onDismiss Lambda function to be called when the dialog is dismissed.
+ */
+@Composable
+fun ErrorDialog(
+    errorMessage: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Filled.ErrorOutline, contentDescription = "Error Icon") },
+        title = { Text(stringResource(R.string.error_occurred)) },
+        text = { Text(errorMessage) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.ok))
+            }
+        }
+    )
 }

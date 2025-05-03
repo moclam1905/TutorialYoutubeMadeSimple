@@ -519,4 +519,6 @@
     <string name="confirm_sign_out_title">Đăng xuất</string>
     <string name="confirm_sign_out_message">Bạn có chắc chắn muốn đăng xuất không?</string>
     <string name="sign_out_data_deletion_warning">Toàn bộ dữ liệu tài khoản của bạn trong ứng dụng (lịch sử bài kiểm tra, tiến độ học tập,...) sẽ bị xóa vĩnh viễn.</string>
+    <string name="invalid_quiz_id">ID bài kiểm tra không hợp lệ</string>
+
 </resources>

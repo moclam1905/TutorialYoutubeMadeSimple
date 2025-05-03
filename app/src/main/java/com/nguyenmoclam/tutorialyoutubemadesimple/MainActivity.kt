@@ -150,6 +150,9 @@ class MainActivity : ComponentActivity() {
             YouTubeSummaryTheme(darkTheme = isDarkTheme) {
                 val quizViewModel: QuizViewModel = viewModel()
                 val quizCreationViewModel: QuizCreationViewModel = viewModel()
+                // Collect quiz creation state for bottom bar visibility logic
+                val quizCreationState = quizCreationViewModel.state.value // Access .value directly
+
                 navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
@@ -185,7 +188,8 @@ class MainActivity : ComponentActivity() {
                     currentRoute,
                     isScrollingDown,
                     remember { derivedStateOf { homeScreenLazyListState.firstVisibleItemIndex } },
-                    remember { derivedStateOf { homeScreenLazyListState.firstVisibleItemScrollOffset } }
+                    remember { derivedStateOf { homeScreenLazyListState.firstVisibleItemScrollOffset } },
+                    quizCreationState.isLoading
                 ) {
                     derivedStateOf {
                         val isAtTop =
@@ -199,7 +203,7 @@ class MainActivity : ComponentActivity() {
                             AppScreens.Login.route -> false // Hide bottom bar on login screen
                             else -> false
                         }
-                        finalVisibility
+                        finalVisibility && !quizCreationState.isLoading
                     }
                 }
 
@@ -350,7 +354,6 @@ class MainActivity : ComponentActivity() {
                                 saveState = true
                             }
                             launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 )

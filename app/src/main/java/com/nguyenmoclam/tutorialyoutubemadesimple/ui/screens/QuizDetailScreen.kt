@@ -1,5 +1,6 @@
 package com.nguyenmoclam.tutorialyoutubemadesimple.ui.screens
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -101,7 +102,6 @@ import com.nguyenmoclam.tutorialyoutubemadesimple.ui.components.drawercustom.tra
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.LocalNetworkUtils
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineDataManager
 import com.nguyenmoclam.tutorialyoutubemadesimple.utils.OfflineSyncManager
-import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizCreationViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.QuizDetailViewModel
 import com.nguyenmoclam.tutorialyoutubemadesimple.viewmodel.SettingsViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -387,8 +387,6 @@ fun QuizDetailTopAppBar(
 @Composable
 fun QuizDetailScreenContent(
     paddingValues: PaddingValues,
-    quizIdLong: Long,
-    quizViewModel: QuizCreationViewModel,
     quizDetailViewModel: QuizDetailViewModel,
     selectedContentIndex: Int,
     quizQuestions: List<Any>,
@@ -414,33 +412,25 @@ fun QuizDetailScreenContent(
             modifier = Modifier.fillMaxSize()
         ) {
             when {
-                // Loading State
-                quizViewModel.state.isLoading || quizDetailViewModel.state.isLoading -> {
+                // Loading State - Simplify based only on QuizDetailViewModel
+                quizDetailViewModel.state.isLoading -> {
                     val progress = when {
-                        quizIdLong <= 0 && selectedContentIndex != 2 -> quizViewModel.state.currentStep.getProgressPercentage() // Creation flow
                         selectedContentIndex == 2 -> quizDetailViewModel.state.currentMindMapStep.getProgressPercentage() // Mind map generation
-                        else -> if (quizDetailViewModel.state.isLoading) 50f else 0f // Detail loading
+                        else -> 50f // Default progress for detail loading (can be adjusted)
                     }
                     val message = when {
-                        quizIdLong <= 0 && selectedContentIndex != 2 -> quizViewModel.state.currentStep.getMessage(
-                            context
-                        )
-
-                        selectedContentIndex == 2 -> quizDetailViewModel.state.currentMindMapStep.getMessage(
-                            context
-                        )
-
-                        else -> stringResource(R.string.loading_quiz_details)
+                        selectedContentIndex == 2 -> quizDetailViewModel.state.currentMindMapStep.getMessage(context) // Mind map generation
+                        else -> stringResource(R.string.loading_quiz_details) // Default message
                     }
                     LoadingState(progress = progress, message = message)
                 }
 
-                // Error State
-                quizViewModel.state.errorMessage != null || quizDetailViewModel.state.errorMessage != null -> {
+                // Error State - Simplify based only on QuizDetailViewModel
+                quizDetailViewModel.state.errorMessage != null -> {
                     // Use the component from CommonComponents.kt
                     ErrorStateComponent(
-                        errorMessage = quizViewModel.state.errorMessage
-                            ?: quizDetailViewModel.state.errorMessage
+                        // Combine errors if needed, but primarily rely on quizDetailViewModel now
+                        errorMessage = quizDetailViewModel.state.errorMessage
                             ?: stringResource(R.string.unknown_error)
                     )
                 }
@@ -450,12 +440,11 @@ fun QuizDetailScreenContent(
                     when (selectedContentIndex) {
                         // Summary Tab
                         0 -> {
-                            val summaryContent =
-                                if (quizIdLong > 0) quizDetailViewModel.state.summary else quizViewModel.state.quizSummary
+                            // Simplify summary retrieval - always comes from quizDetailViewModel
+                            val summaryContent = quizDetailViewModel.state.summary
                             if (summaryContent.isNotEmpty()) {
                                 SummaryContent(summaryContent)
                             } else {
-                                // Sử dụng EmptyStateComponent cho Summary
                                 EmptyStateComponent(
                                     icon = Icons.Outlined.Summarize,
                                     title = stringResource(R.string.no_summary_available),
@@ -680,7 +669,6 @@ fun QuizDetailScreen(
     quizId: String,
     navController: NavHostController,
     quizDetailViewModel: QuizDetailViewModel = hiltViewModel(), // Use hiltViewModel here
-    quizViewModel: QuizCreationViewModel = hiltViewModel(), // For creation flow state,
     settingsViewModel: SettingsViewModel
 ) {
     val quizIdLong = remember(quizId) { quizId.toLongOrNull() ?: -1L }
@@ -717,18 +705,21 @@ fun QuizDetailScreen(
             remember(screenWidthPx) { (0.7f * screenWidthPx).toInt() } // Adjust drag distance if needed
         val slidingNavState = rememberSlidingRootNavState()
 
-        // --- Effects ---
-
         // Back Navigation Handler (only when quiz is active)
         BackHandler(enabled = quizDetailViewModel.state.quizStarted && !quizDetailViewModel.state.quizCompleted && selectedContentIndex == 1) {
             quizDetailViewModel.showExitConfirmation()
         }
 
-        // Load Quiz Data Effect
-        LaunchedEffect(quizIdLong, quizViewModel.state.quizIdInserted) {
-            val idToLoad = if (quizIdLong > 0) quizIdLong else quizViewModel.state.quizIdInserted
-            if (idToLoad >= 0L) {
-                quizDetailViewModel.loadQuizById(idToLoad)
+        // Load Quiz Data Effect - Simplify: remove dependency on quizViewModel.state.quizIdInserted
+        LaunchedEffect(quizIdLong) { // Key only on quizIdLong
+            if (quizIdLong > 0) { // Only load if quizIdLong is valid
+                quizDetailViewModel.loadQuizById(quizIdLong)
+            } else {
+                // Handle invalid ID case (e.g., show error, navigate back) - should not happen with new CreateQuizScreen logic
+                Log.e("QuizDetailScreen", "Invalid quizId received: $quizIdLong")
+                // Optionally show a snackbar or navigate back
+                scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.invalid_quiz_id)) }
+                navController.popBackStack()
             }
         }
 
@@ -864,8 +855,8 @@ fun QuizDetailScreen(
                 Scaffold(
                     modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
                     topBar = {
-                        // Show TopAppBar only when not loading
-                        if (!quizViewModel.state.isLoading && !quizDetailViewModel.state.isLoading) {
+                        // Show TopAppBar only when not loading - Simplify check
+                        if (!quizDetailViewModel.state.isLoading) {
                             QuizDetailTopAppBar(
                                 slidingNavState = slidingNavState,
                                 scope = scope,
@@ -877,8 +868,6 @@ fun QuizDetailScreen(
                 ) { paddingValues ->
                     QuizDetailScreenContent(
                         paddingValues = paddingValues,
-                        quizIdLong = quizIdLong,
-                        quizViewModel = quizViewModel,
                         quizDetailViewModel = quizDetailViewModel,
                         selectedContentIndex = selectedContentIndex,
                         quizQuestions = quizQuestions,

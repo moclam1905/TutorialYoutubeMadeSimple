@@ -21,11 +21,14 @@ class QuizStateManager @Inject constructor() {
 
     fun updateQuizzes(newQuizzes: List<Quiz>) {
         _quizzes.value = newQuizzes
-        _needsRefresh.value = false
     }
 
     fun markForRefresh() {
         _needsRefresh.value = true
+    }
+
+    fun acknowledgeRefresh() {
+        _needsRefresh.value = false
     }
 
     fun clearQuizzes() {

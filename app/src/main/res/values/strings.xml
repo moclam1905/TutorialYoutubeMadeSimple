@@ -527,5 +527,7 @@
     <string name="sign_out_data_deletion_warning">
 All your in-app account data (quiz history, learning progress, etc.) will be permanently deleted.
 </string>
+    <string name="invalid_quiz_id">Invalid Quiz ID</string>
+
 
 </resources>

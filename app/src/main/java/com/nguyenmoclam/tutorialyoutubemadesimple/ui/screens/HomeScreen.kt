@@ -21,6 +21,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -55,6 +56,17 @@ fun HomeScreen(
     val modalSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true // Typically better for filter sheets
     )
+
+    // Collect the needsRefresh state
+    val needsRefresh by viewModel.needsRefresh.collectAsState()
+
+    // Effect to react to needsRefresh
+    LaunchedEffect(needsRefresh) {
+        if (needsRefresh) {
+            viewModel.refreshQuizzes() // Trigger the refresh
+            viewModel.acknowledgeRefresh() // Reset the flag
+        }
+    }
 
     // --- Bottom Sheet Logic ---
     if (state.isTagSheetVisible) {

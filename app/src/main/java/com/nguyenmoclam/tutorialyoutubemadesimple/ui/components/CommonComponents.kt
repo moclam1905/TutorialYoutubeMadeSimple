@@ -114,27 +114,3 @@ fun ErrorStateComponent(errorMessage: String, modifier: Modifier = Modifier) {
         )
     }
 }
-
-/**
- * Displays an error message when present and not in loading state.
- * (Previously in ErrorMessage.kt)
- *
- * @param errorMessage The error message string to display, or null if no error.
- * @param isLoading Boolean indicating if content is currently loading.
- * @param modifier Modifier for the Text component.
- */
-@Composable
-fun ErrorMessage(
-    errorMessage: String?,
-    isLoading: Boolean,
-    modifier: Modifier = Modifier // Add modifier parameter
-) {
-    // Only show error message if it exists and we're not in loading state
-    if (!isLoading && errorMessage != null) {
-        Text(
-            text = errorMessage, // Use the parameter directly
-            color = MaterialTheme.colorScheme.error,
-            modifier = modifier.padding(8.dp) // Apply padding to the passed modifier
-        )
-    }
-}

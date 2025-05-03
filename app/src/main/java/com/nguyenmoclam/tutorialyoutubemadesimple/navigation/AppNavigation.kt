@@ -120,7 +120,6 @@ fun AppNavigation(
                 quizId = quizId.toString(),
                 navController = navController,
                 quizDetailViewModel = quizDetailViewModel,
-                quizViewModel = quizViewModel,
                 settingsViewModel = settingsViewModel
             )
         }
